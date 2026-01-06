@@ -13,11 +13,27 @@ namespace RPG_Launcher.Util
     {
         // LATER, THE credentials.dat FILE WILL BE A .json FILE WITH MULTIPLE FIELDS
 
-        // TODO: STORE ENTROPY BYTES IN SOME SECURE CONTAINER
+        // This is the hard-coded base entropy that is attached directly to the application. This is not
+        //  the final value.
         // https://stackoverflow.com/questions/1326001/windows-dpapi-what-to-do-with-entropy
-        private static readonly byte[] entropy = [ 73, 161, 134, 115,   46, 185, 242, 41,   218, 14, 199, 147,   16, 131, 186, 8 ];
+        // https://stackoverflow.com/questions/2585746/securely-storing-optional-entropy-while-using-dpapi
+        private static readonly byte[] entropyBase =
+            [ 73, 161, 134, 115,   46, 185, 242, 41,   218, 14, 199, 147,   16, 131, 186, 8 ];
 
         private static readonly string filePath = "credentials.dat";
+
+
+
+        // TODO: ADD ENTROPY 'SEED' DATA, WHICH SHOULD BE MANAGED BY THIS CLASS (DOES NOT NEED TO BE STORED IN AppStateData)
+        // We will store an appinfo.json file with inconspicuous data. Fields include:
+        //  - application version
+        //  - first run timestamp
+        //  - windows username
+        // As discussed in OneNote, this will be retrieved on each application startup and re-generated if the
+        //  application version field changes (or if the file is empty or does not exist). May also be regenerated
+        //  if the windows username changes (PROBABLY SHOULD BE).
+
+
 
         public static void SaveRefreshToken(string token)
         {
@@ -36,7 +52,7 @@ namespace RPG_Launcher.Util
                 using StreamWriter sw = new(fileStream);
 
                 byte[] originalText = Encoding.UTF8.GetBytes(token);
-                byte[] encryptedText = ProtectedData.Protect(originalText, entropy, DataProtectionScope.CurrentUser);
+                byte[] encryptedText = ProtectedData.Protect(originalText, entropyBase, DataProtectionScope.CurrentUser);
                 sw.WriteLine(Convert.ToBase64String(encryptedText));
             }
             catch (Exception ex)
@@ -55,7 +71,7 @@ namespace RPG_Launcher.Util
                 if (string.IsNullOrEmpty(line)) return string.Empty;
 
                 byte[] encryptedText = Convert.FromBase64String(line);
-                byte[] originalText = ProtectedData.Unprotect(encryptedText, entropy, DataProtectionScope.CurrentUser);
+                byte[] originalText = ProtectedData.Unprotect(encryptedText, entropyBase, DataProtectionScope.CurrentUser);
                 return Encoding.UTF8.GetString(originalText);
             }
             catch (Exception ex)

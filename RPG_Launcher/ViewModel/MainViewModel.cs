@@ -14,6 +14,10 @@ namespace RPG_Launcher.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        // TEMP BOOL JUST FOR EASY TESTING
+        public bool TempTrue { get; } = true;
+        // TEMP
+
         private string loginUsername            = string.Empty;
         private SecureString loginPassword      = new();
         private string loginErrorMessage        = string.Empty;
@@ -50,6 +54,7 @@ namespace RPG_Launcher.ViewModel
         // Commands
         public ICommand LoginClickedCommand { get; }
         public ICommand ForgotPasswordClickedCommand { get; }
+        public ICommand LogoutClickedCommand { get; }
         
 
 
@@ -57,6 +62,8 @@ namespace RPG_Launcher.ViewModel
         {
             LoginClickedCommand = new ViewModelCommand(ExecuteLoginClickedCommand, CanExecuteLoginClickedCommand);
             ForgotPasswordClickedCommand = new ViewModelCommand((obj) => ExecuteForgotPasswordClickedCommand(LoginUsername), CanExecuteForgotPasswordClickedCommand);
+
+            LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
         }
 
 
@@ -107,6 +114,28 @@ namespace RPG_Launcher.ViewModel
         {
             return true;
         }
+
+        #endregion
+
+        #region Private: LogoutClickedCommand
+
+        private void ExecuteLogoutClickedCommand(object? obj)
+        {
+            // Call API service logout method, which will always successfully log us out.
+            LoginApiService.Instance.Logout();
+
+            // After logout, we must return to the login screen (show login window and hide main).
+            IsLoginSubgridVisible = true;
+            IsMainSubgridVisible = false;
+
+            // TODO: WE MUST FIGURE OUT HOW TO CLEAR SECUREPASSWORD FIELD. IT CANNOT BE AUTO-POPULATED.
+        }
+
+        private bool CanExecuteLogoutClickedCommand(object? obj)
+        {
+            return IsMainSubgridVisible;
+        }
+
 
         #endregion
     }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace RPG_Launcher
         {
             { "testusername", "testpassword" }
         };
-        private static readonly HashSet<string> testRefreshTokens = [];
+        private static readonly Dictionary<string, string> testRefreshTokens = [];
         private static readonly HashSet<string> testAccessTokens = [];
 
         private static string jwtKey = string.Empty;
@@ -28,10 +29,8 @@ namespace RPG_Launcher
 
         public static void Initialize()
         {
-            Trace.WriteLine("TempLoginApiImitator.Initialize() called.");
-
             ReadTestRefreshTokenContainerFromFile();
-            jwtKey = ReadJwtKey();
+            jwtKey = ReadJwtKeyFromFile();
 
             //WriteJwtKey("q0Ix3sI9Gk5jb9a8HHjOJJ2RHvsFN1HZkT8VASLApM0");     // Only use this to completely overwrite existing JWT Key.
         }
@@ -45,21 +44,30 @@ namespace RPG_Launcher
             // TODO: THE API WILL RETURN JSON WITH BOTH TOKENS (RE-GENERATES REFRESH TOKEN)
 
             string[]? tokens = null;
-            if (testRefreshTokens.Contains(refreshToken))
+
+            // Retrieve the token from the refreshToken string, returning null if invalid.
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(refreshToken);
+            if (token == null) return null;
+
+            // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
+            var username = ReadUsernameFromJwtToken(token);
+            if (username == null) return null;
+
+
+            if (testRefreshTokens.ContainsKey(username))
             {
-                // Check the expiration time of the existing token.
-                var handler = new JwtSecurityTokenHandler();
-                var token = handler.ReadJwtToken(refreshToken);
-                if (token != null && DateTime.UtcNow < token.ValidTo)
+
+                // If stored name is valid and token is not expired, we have successfully logged in.
+                if (DateTime.UtcNow < token.ValidTo)
                 {
                     // Generate new valid tokens if passed-in refresh token is valid.
                     tokens = new string[2];
-                    tokens[0] = GenerateAccessToken(minutes: 15);
-                    tokens[1] = GenerateRefreshToken(days: 30);
+                    tokens[0] = GenerateAccessToken(username, minutes: 15);
+                    tokens[1] = GenerateRefreshToken(username, days: 30);
 
-                    // We must replace the old refresh token with the new one.
-                    testRefreshTokens.Remove(refreshToken);
-                    testRefreshTokens.Add(tokens[1]);
+                    // We must replace the old refresh token with the new one. Can use index operator [] to replace existing.
+                    testRefreshTokens[username] = tokens[1];
 
                     // Add new access token to container.
                     testAccessTokens.Add(tokens[0]);
@@ -87,12 +95,12 @@ namespace RPG_Launcher
                 if (storedPassword == password)     // Will be hashed password on API side.
                 {
                     tokens = new string[2];
-                    tokens[0] = GenerateAccessToken(minutes: 15);
-                    tokens[1] = GenerateRefreshToken(days: 30);
+                    tokens[0] = GenerateAccessToken(username, minutes: 15);
+                    tokens[1] = GenerateRefreshToken(username, days: 30);
 
                     // Add both tokens to containers.
                     testAccessTokens.Add(tokens[0]);
-                    testRefreshTokens.Add(tokens[1]);
+                    testRefreshTokens[username] = tokens[1];    // Replace if existing.
                 }
             }
 
@@ -109,12 +117,12 @@ namespace RPG_Launcher
             if (testUserAccounts.TryAdd(username, password))
             {
                 tokens = new string[2];
-                tokens[0] = GenerateAccessToken(minutes: 15);
-                tokens[1] = GenerateRefreshToken(days: 30);
+                tokens[0] = GenerateAccessToken(username, minutes: 15);
+                tokens[1] = GenerateRefreshToken(username, days: 30);
 
                 // Add both tokens to containers.
                 testAccessTokens.Add(tokens[0]);
-                testRefreshTokens.Add(tokens[1]);
+                testRefreshTokens[username] = tokens[1];    // Replace if existing.
             }
 
             // TEMP: Write changes in token containers to file anytime they are changed.
@@ -123,32 +131,62 @@ namespace RPG_Launcher
             return tokens;
         }
 
+        public static void Logout(string accessToken)   // TODO: UPDATE TO TAKE GUID
+        {
+            // TODO: CREATE LOGIC TO READ USERNAME FROM ACCESS TOKEN, WHICH WILL BE USED TO INVALIDATE REFRESH AND ACCESS TOKENS
+            // Both will need to be removed, and we will store a map of accessToken:tokenDataClass on the server later for easy
+            //  search. The tokenDataClass will contain data like username and application instance ID to help with lookup.
+            // Regardless of where the username is retrieved from, the database will have the refresh token stored within the
+            //  document, and this can be removed easily via querying on the username.
+
+            // Always remove the access token directly first. Then, try to remove from refresh tokens via token's stored username.
+            testAccessTokens.Remove(accessToken);
+
+            // Retrieve the token from the refreshToken string, returning null if invalid.
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadJwtToken(accessToken);
+            if (token == null) return;
+
+            // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
+            var username = ReadUsernameFromJwtToken(token);
+            if (username == null) return;
+
+            testRefreshTokens.Remove(username);
+
+            // TEMP: Write changes in token containers to file anytime they are changed.
+            WriteTestRefreshTokenContainerToFile();
+        }
+
         #endregion
 
         #region Private: Access Token Generation
 
-        private static string GenerateAccessToken(int minutes)
+        private static string GenerateAccessToken(string username, int minutes)
         {
             // THIS WILL ALSO BE DONE IN THE API CALL, AS DATABASE MUST STORE ACCESS TOKEN
 
-            string accessToken = GenerateToken(DateTime.UtcNow.AddMinutes(minutes));
+            string accessToken = GenerateToken(username, DateTime.UtcNow.AddMinutes(minutes));
             return accessToken;
         }
 
-        private static string GenerateRefreshToken(int days)
+        private static string GenerateRefreshToken(string username, int days)
         {
-            string refreshToken = GenerateToken(DateTime.UtcNow.AddDays(days));
+            string refreshToken = GenerateToken(username, DateTime.UtcNow.AddDays(days));
             return refreshToken;
         }
 
-        private static string GenerateToken(DateTime expiration)
+        private static string GenerateToken(string username, DateTime expiration)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ReadJwtKey()));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ReadJwtKeyFromFile()));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor()
             {
                 SigningCredentials = credentials,
-                Expires = expiration
+                Expires = expiration,
+                Subject = new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.Name, username)    // IMPORTANT: ClaimTypes.Name maps to JwtRegisteredClaimNames.UniqueName.
+                ]),
             };
 
             // Use new token handler to create and write a new token, then return it.
@@ -178,14 +216,21 @@ namespace RPG_Launcher
                         byte[] originalText = ProtectedData.Unprotect(encryptedText, null, DataProtectionScope.CurrentUser);
                         string tokenString = Encoding.UTF8.GetString(originalText);
 
-                        // Skip if token is expired (will overwrite file later).
+                        // Retrieve the token from the string, skipping if invalid.
                         var token = handler.ReadJwtToken(tokenString);
-                        if (token != null && DateTime.UtcNow >= token.ValidTo)
+                        if (token == null) continue;
+
+                        // Get username from string, returning if not found.
+                        var username = ReadUsernameFromJwtToken(token);
+                        if (username == null) continue;
+
+                        // Skip if token is expired (will overwrite file later).
+                        if (DateTime.UtcNow >= token.ValidTo)
                         {
                             continue;
                         }
 
-                        testRefreshTokens.Add(tokenString);
+                        testRefreshTokens.Add(username, tokenString);
                     }
                 }
             }
@@ -203,13 +248,15 @@ namespace RPG_Launcher
             {
                 var handler = new JwtSecurityTokenHandler();
 
+                // Else container has values, so write all.
                 using (FileStream fileStream = new("test_server_refresh_tokens.dat", FileMode.OpenOrCreate, FileAccess.Write))
                 {
                     using StreamWriter sw = new(fileStream);
 
-                    foreach (string tokenString in testRefreshTokens)
+                    foreach (KeyValuePair<string, string> pair in testRefreshTokens)
                     {
                         // Remove and skip any expired tokens before writing to file.
+                        string tokenString = pair.Value;
                         var token = handler.ReadJwtToken(tokenString);
                         if (token != null && DateTime.UtcNow >= token.ValidTo)
                         {
@@ -223,6 +270,15 @@ namespace RPG_Launcher
                     }
 
                 }
+
+                // If container is empty after loop, then we wrote nothing, so we must clear file entirely.
+                if (testRefreshTokens.Count == 0)
+                {
+                    // FileMode.Create will completely overwrite existing data.
+                    using FileStream fileStream = new("test_server_refresh_tokens.dat", FileMode.Create, FileAccess.Write);
+                    using StreamWriter sw = new(fileStream);
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -234,7 +290,7 @@ namespace RPG_Launcher
 
         #region Private: JWT Token Read/Write
 
-        private static string ReadJwtKey()
+        private static string ReadJwtKeyFromFile()
         {
             // IN THESE TEMPORARY METHODS, WE ARE NOT USING ENTROPY BECAUSE THEY AREN'T REAL.
 
@@ -256,7 +312,7 @@ namespace RPG_Launcher
             }
         }
 
-        private static void WriteJwtKey(string jwtKey)
+        private static void WriteJwtKeyToFile(string jwtKey)
         {
             // IN THESE TEMPORARY METHODS, WE ARE NOT USING ENTROPY BECAUSE THEY AREN'T REAL.
 
@@ -276,6 +332,18 @@ namespace RPG_Launcher
             }
         }
 
+
+        #endregion
+
+        #region Private: JWT Token Utility
+
+        private static string? ReadUsernameFromJwtToken(JwtSecurityToken token)
+        {
+            // Retrieve username from token. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
+            var username = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
+
+            return username;    // May be null.
+        }
 
         #endregion
     }

@@ -94,5 +94,19 @@ namespace RPG_Launcher.Model
             return false;
         }
 
+        public void Logout()
+        {
+            // Call the API logout endpoint, passing it our access token so it can find us (logout requires valid access token).
+            // This method will not need to return anything. If we call this logout endpoint with an access token that the
+            //  server cannot find (somehow), it does not matter because the server will not allow us to use any endpoint
+            //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
+            //  should log the user out of everything).
+
+            TempLoginApiImitator.Logout(AppStateData.AccessToken);
+
+            // After logout, reset access and refresh tokens to empty.
+            AppStateData.AccessToken = string.Empty;
+            AppStateData.RefreshToken = string.Empty;
+        }
     }
 }

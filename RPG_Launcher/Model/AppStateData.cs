@@ -20,6 +20,17 @@ namespace RPG_Launcher.Model
         //  upon login, and one must be received each time the application is run.
         public static string AccessToken { get; set; }  = string.Empty;
 
+        // Application instance GUID is used to identify the application sending a request to the server. This
+        //  will help the server determine if login requests are valid (ex. repeated requests with different
+        //  GUIDs is suspicious, or a spam request from one client but a legitimate request from another may
+        //  indicate that the real user is attempting to log in legitimately while a malicious actor is
+        //  spamming login attempts to their account).
+        public static Guid InstanceGuid { get; private set; } = new Guid();
+
+        // TODO: ACTUALLY USE GUID IN FAKE API LOGIN REQUESTS (WILL BE SENT AS JSON)
+
+        // TODO: MAKE TOKENS READONLY, BUT ADD METHODS TO SET THEM INSTEAD (MAYBE DO THIS???)
+
 
 
         public static void Initialize()

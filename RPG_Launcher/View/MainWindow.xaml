@@ -158,10 +158,11 @@
             <!-- BELOW IS THE MAIN CONTENT SECTION -->
             <Grid Name="MainContentSubgrid"
                   Grid.Row="1">
-                <!-- Bind visibility to boolean in MainViewModel. -->
+                <!-- Bind visibility to boolean in MainViewModel. IsMainSubgridVisible -->
                 <Grid.Visibility>
                     <Binding Path="IsMainSubgridVisible"  Mode="TwoWay" Converter="{StaticResource BooleanToVisibility}"/>
                 </Grid.Visibility>
+                
                 <StackPanel Orientation="Vertical"
                         Margin="300,100,300,100"
                         Grid.Row="1">
@@ -171,6 +172,39 @@
                            FontFamily="Segoe UI"
                            TextAlignment="Center"
                            Margin="0,150,0,0"/>
+                    
+                    <Button Name="ButtonLogout"
+                            Command="{Binding LogoutClickedCommand}"
+                            Height="40"
+                            Foreground="LightGray"
+                            Content="LOG OUT"
+                            FontSize="20"
+                            Cursor="Hand"
+                            Margin="250,50,250,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#ab3a3a"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="IndianRed"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#bc4b4b"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border CornerRadius="5"
+                                        Background="{TemplateBinding Background}">
+                                    <ContentPresenter VerticalAlignment="Center"
+                                                      HorizontalAlignment="Center"
+                                                      Margin="0,0,0,2"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
             </Grid>
 
@@ -237,7 +271,7 @@
 
                     <!-- Login button. -->
                     <Button Name="ButtonLogin"
-                        Command="{Binding LoginCommand}"
+                        Command="{Binding LoginClickedCommand}"
                         Height="40"
                         Foreground="LightGray"
                         Content="LOG IN"
