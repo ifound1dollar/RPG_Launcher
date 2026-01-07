@@ -27,16 +27,14 @@ namespace RPG_Launcher
             if (LoginApiService.Instance.TryLoginFromRefreshToken(AppStateData.RefreshToken))
             {
                 // If our existing token is valid, hide login subgrid and show main subgrid, then show entire window.
-                mainWindow.MainViewModel.IsLoginSubgridVisible = false;
-                mainWindow.MainViewModel.IsMainSubgridVisible = true;
+                mainWindow.MainViewModel.HideLoginSubgrid();
                 mainWindow.Show();
                 return;
             }
 
             // If we cannot auto-login with saved refresh token, destroy the token and show login window.
             AppStateData.RefreshToken = string.Empty;
-            mainWindow.MainViewModel.IsMainSubgridVisible = false;
-            mainWindow.MainViewModel.IsLoginSubgridVisible = true;
+            mainWindow.MainViewModel.ShowLoginSubgrid();
             mainWindow.Show();
         }
 

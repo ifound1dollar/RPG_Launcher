@@ -32,6 +32,16 @@ namespace RPG_Launcher.ViewModel
         }
         public SecureString LoginPassword
         {
+            // IMPORTANT: This is not directly bound to via the MVVM pattern. SecureStrings do not support
+            //  binding by default, so we had to shift behavior to the code-behind. Whenever the PasswordBox
+            //  field is updated, we receive an update directly from the code-behind rather than binding
+            //  it directly to this ViewModel. This is necessary to allow PasswordBox.Clear() to be called,
+            //  which must be done the instant that the login button is pressed. We still process the login
+            //  here, pulling directly from this variable (which IMPORTANTLY is automatically updated via
+            //  the code-behind whenever the PasswordBox is changed in the UI).
+            // The only real difference is how this field is updated; the code-behind has more
+            //  responsibility in this case and directly controls what this value reads, rather than the
+            //  other way around.
             get => loginPassword;
             set { loginPassword = value; OnPropertyChanged(nameof(LoginPassword)); }
         }
@@ -66,6 +76,21 @@ namespace RPG_Launcher.ViewModel
             LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
         }
 
+        public void ShowLoginSubgrid()
+        {
+            // Populate username field with saved username.
+            LoginUsername = AppStateData.SavedUsername;
+
+            IsLoginSubgridVisible = true;
+            IsMainSubgridVisible = false;
+        }
+
+        public void HideLoginSubgrid()
+        {
+            IsMainSubgridVisible = true;
+            IsLoginSubgridVisible = false;
+        }
+
 
 
         #region Private: LoginClickedCommand
@@ -82,12 +107,9 @@ namespace RPG_Launcher.ViewModel
 
             // Call API service login method with Username and Password.
             bool loginSuccess = LoginApiService.Instance.Login(new System.Net.NetworkCredential(LoginUsername, LoginPassword));
-            //Password.Clear();   // Immediately clear password once used.
             if (loginSuccess)
             {
-                // Set login subgrid invisible, then show main subgrid.
-                IsLoginSubgridVisible = false;
-                IsMainSubgridVisible = true;
+                HideLoginSubgrid();
                 return;
             }
 
@@ -125,14 +147,12 @@ namespace RPG_Launcher.ViewModel
             LoginApiService.Instance.Logout();
 
             // After logout, we must return to the login screen (show login window and hide main).
-            IsLoginSubgridVisible = true;
-            IsMainSubgridVisible = false;
-
-            // TODO: WE MUST FIGURE OUT HOW TO CLEAR SECUREPASSWORD FIELD. IT CANNOT BE AUTO-POPULATED.
+            ShowLoginSubgrid();
         }
 
         private bool CanExecuteLogoutClickedCommand(object? obj)
         {
+            // Can only logout if main subgrid is visible (already logged in).
             return IsMainSubgridVisible;
         }
 

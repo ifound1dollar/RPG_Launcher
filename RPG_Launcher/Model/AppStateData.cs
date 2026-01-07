@@ -14,7 +14,16 @@ namespace RPG_Launcher.Model
         private static bool isInitialized = false;
 
         // Refresh token is long-lived and is securely written to disk. Loads on startup, writes on shutdown.
-        public static string RefreshToken { get; set; } = string.Empty;
+        private static string refreshToken = string.Empty;
+        public static string RefreshToken
+        {
+            get => refreshToken;
+            set
+            {
+                refreshToken = value;
+                DataProtection.SaveRefreshToken(refreshToken);  // Immediately write new token to file when changed.
+            }
+        }
 
         // Access token is short-lived and is never stored outside of memory. A new access token is received
         //  upon login, and one must be received each time the application is run.
@@ -27,9 +36,13 @@ namespace RPG_Launcher.Model
         //  spamming login attempts to their account).
         public static Guid InstanceGuid { get; private set; } = new Guid();
 
-        // TODO: ACTUALLY USE GUID IN FAKE API LOGIN REQUESTS (WILL BE SENT AS JSON)
+        // Saved username is the username that this application most recently logged in with. It is used
+        //  exclusively to auto-populate the 'username' login field with the most recent account username.
+        public static string SavedUsername { get; private set; } = string.Empty;
 
-        // TODO: MAKE TOKENS READONLY, BUT ADD METHODS TO SET THEM INSTEAD (MAYBE DO THIS???)
+
+
+        // TODO: ACTUALLY USE GUID IN FAKE API LOGIN REQUESTS (WILL BE SENT AS JSON)
 
 
 
@@ -41,10 +54,15 @@ namespace RPG_Launcher.Model
                 RefreshToken = DataProtection.LoadRefreshToken();
                 isInitialized = true;
             }
+
+            // TODO: ACTUALLY PULL THIS VALUE FROM FILE
+            SavedUsername = "savedusername";
         }
 
         public static void Deinitialize()
         {
+            // WE DO NOT REALLY NEED TO DO THIS, AS WE UPDATE THE TOKEN ANY TIME IT IS CHANGED.
+
             // Save stored refresh token to file on shutdown.
             DataProtection.SaveRefreshToken(RefreshToken);
         }

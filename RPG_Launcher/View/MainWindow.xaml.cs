@@ -52,14 +52,8 @@ namespace RPG_Launcher
             // On enter key pressed, fire the same command as the login button.
             if (e.Key == Key.Enter)
             {
-                // Will only allow execution if login subgrid is visible (checks within MainViewModel).
-                if (MainViewModel.LoginClickedCommand.CanExecute(sender))
-                {
-                    MainViewModel.LoginClickedCommand.Execute(sender);
-
-                    // Clear password field. Data binding does not work properly, so manually clear PasswordBox also.
-                    //loginViewModel.Password.Clear();
-                }
+                // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
+                ButtonLogin_Click(sender, e);
             }
         }
 
@@ -85,5 +79,28 @@ namespace RPG_Launcher
 
         }
 
+
+
+        // BELOW METHODS TECHNICALLY VIOLATE MVVM PATTERN, BUT THIS IS NECESSARY FOR SECURITY (CLEARING PASSWORDBOX).
+
+        private void TextBoxPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            // Update MainViewModel directly when this password box is updated. This includes after Clear() is called.
+            MainViewModel.LoginPassword = TextBoxPassword.SecurePassword;
+        }
+
+        private void ButtonLogin_Click(object sender, RoutedEventArgs e)
+        {
+            // Will only allow execution if login subgrid is visible (checks within MainViewModel).
+            if (MainViewModel.LoginClickedCommand.CanExecute(sender))
+            {
+                // Execute command according to MVVM pattern, then also call Click method below to clear field.
+                MainViewModel.LoginClickedCommand.Execute(sender);
+
+                // We should be immediately clearing the PasswordBox when we attempt login, successful or not.
+                TextBoxPassword.Clear();
+            }
+
+        }
     }
 }

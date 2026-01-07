@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RPG_Launcher"
         xmlns:viewModel="clr-namespace:RPG_Launcher.ViewModel"
-        xmlns:customcontrols="clr-namespace:RPG_Launcher.CustomControls"
         mc:Ignorable="d"
         Title="MainWindow" Height="720" Width="1280"
         WindowStyle="None"
@@ -253,14 +252,27 @@
                          Margin="10,2,10,0"
                          Padding="5,2,5,2"/>
 
-                    <!-- Password header and text box. Uses custom control. -->
+                    <!-- Password header and text box. Breaks MVVM pattern for security. -->
                     <TextBlock Text="Password"
                            Foreground="LightSlateGray"
                            FontSize="16"
                            FontFamily="Segoe UI"
                            HorizontalAlignment="Left"
                            Margin="12,20,0,0"/>
-                    <customcontrols:BindablePasswordBox Password="{Binding LoginPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <PasswordBox Name="TextBoxPassword"
+                                 Height="28"
+                                 VerticalContentAlignment="Center"
+                                 Foreground="LightGray"
+                                 Background="#33000000"
+                                 FontSize="16"
+                                 FontFamily="Segoe UI Semibold"
+                                 CaretBrush="LightSlateGray"
+                                 BorderBrush="SlateGray"
+                                 BorderThickness="0,0,0,0"
+                                 Margin="10,2,10,0"
+                                 Padding="5,2,5,2"
+                                 PasswordChanged="TextBoxPassword_PasswordChanged">
+                    </PasswordBox>
 
                     <!-- Login error message. -->
                     <TextBlock Text="{Binding LoginErrorMessage, Mode=TwoWay}"
@@ -269,15 +281,15 @@
                            FontFamily="Segoe UI"
                            Margin="10,10,10,0"/>
 
-                    <!-- Login button. -->
+                    <!-- Login button. Manually calls ViewModel command, necessary for PasswordBox security. -->
                     <Button Name="ButtonLogin"
-                        Command="{Binding LoginClickedCommand}"
-                        Height="40"
-                        Foreground="LightGray"
-                        Content="LOG IN"
-                        FontSize="20"
-                        Cursor="Hand"
-                        Margin="40,10,40,0">
+                            Height="40"
+                            Foreground="LightGray"
+                            Content="LOG IN"
+                            FontSize="20"
+                            Cursor="Hand"
+                            Margin="40,10,40,0"
+                            Click="ButtonLogin_Click">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="#4b4094"/>
