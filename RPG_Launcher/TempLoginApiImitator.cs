@@ -35,7 +35,7 @@ namespace RPG_Launcher
             { "testusername", "testpassword" },
             { "secondusername", "secondpassword" }
         };
-        private static readonly Dictionary<string, string> testRefreshTokens = [];
+        private static readonly Dictionary<string, string> testRefreshTokens = [];  // will be database elements, not in-memory data
         private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
 
         private static string jwtKey = string.Empty;
@@ -68,25 +68,22 @@ namespace RPG_Launcher
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadJwtToken(refreshTokenString);
             if (token == null) return null;
-            var username = ReadUsernameFromJwtToken(token);
+            string? username = ReadUsernameFromJwtToken(token);
             if (username == null) return null;
 
             // Try to find the passed-in refresh token (will be database query on account username in the future).
-            if (testRefreshTokens.TryGetValue(username, out string? storedTokenString))
+            if (testRefreshTokens.ContainsKey(username))
             {
-                // CLIENT GUID CHECK: If we have a stored token for this client, verify that stored client GUID matches.
-                var storedToken = handler.ReadJwtToken(storedTokenString);
-                if (storedToken == null)
-                {
-                    // If stored token is not readable (somehow), remove and return null string[].
-                    testRefreshTokens.Remove(username); WriteTestRefreshTokenContainerToFile(); // TEMP
-                    return tokens;
-                }
-                var storedGuid = ReadGuidFromJwtToken(storedToken);
-                if (storedGuid == null || storedGuid != clientId)
+                // BASIC GUID VALIDATION: We simply check whether the passed-in refresh token's GUID matches the client GUID.
+                // Note that we cannot check the refresh token stored in the database, because it will be stored as a hash.
+                var tokenGuid = ReadGuidFromJwtToken(token);
+                if (tokenGuid == null || tokenGuid != clientId)
                 {
                     // If null or mismatch, then we should deny the login (retrieved refresh token from different
-                    //  client from the one that actually generated the refresh token).
+                    //  client than the one that the refresh token actually belongs to). Refresh tokens should be strictly
+                    //  attached to the client machine that the refresh token was generated for and thus belongs to.
+                    // This can easily be faked by a malicious actor, but it is still useful to check just as an added
+                    //  security measure.
                     testRefreshTokens.Remove(username); WriteTestRefreshTokenContainerToFile(); // TEMP
                     return tokens;
                 }
@@ -202,7 +199,7 @@ namespace RPG_Launcher
 
         #endregion
 
-        #region Private: Access Token Generation
+        #region Private: Token Generation
 
         private static string GenerateAccessToken(string username, Guid clientGuid, double minutes)
         {
