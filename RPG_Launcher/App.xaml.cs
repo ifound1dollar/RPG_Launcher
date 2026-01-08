@@ -14,7 +14,7 @@ namespace RPG_Launcher
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            // Initialize in-memory application state data. This will load any secure data into memory.
+            // Initialize in-memory application state data. This will load any secure data into memory (ex. refresh token).
             AppStateData.Initialize();
 
             // TEMP: INITIALIZE TempLoginApiImitator
@@ -29,13 +29,13 @@ namespace RPG_Launcher
                 // If our existing token is valid, hide login subgrid and show main subgrid, then show entire window.
                 mainWindow.MainViewModel.HideLoginSubgrid();
                 mainWindow.Show();
-                return;
             }
-
-            // If we cannot auto-login with saved refresh token, destroy the token and show login window.
-            AppStateData.RefreshToken = string.Empty;
-            mainWindow.MainViewModel.ShowLoginSubgrid();
-            mainWindow.Show();
+            else
+            {
+                // If automatic login with refresh token failed, show login window.
+                mainWindow.MainViewModel.ShowLoginSubgrid();
+                mainWindow.Show();
+            }
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

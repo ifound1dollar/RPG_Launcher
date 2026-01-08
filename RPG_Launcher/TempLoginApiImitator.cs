@@ -15,15 +15,33 @@ namespace RPG_Launcher
 {
     public static class TempLoginApiImitator
     {
+        private class AccessTokenData
+        {
+            public string Username { get; private set; }
+            public Guid ClientGuid { get; private set; }
+            public DateTime Expiration { get; private set; }
+
+            public AccessTokenData(string username, Guid clientGuid, double durationMinutes)
+            {
+                Username = username;
+                ClientGuid = clientGuid;
+                Expiration = DateTime.Now.AddMinutes(durationMinutes);
+            }
+        }
+
         // this is pretending to be the user_accounts MongoDB document model; is just username and password for now
         private static readonly Dictionary<string, string> testUserAccounts = new()
         {
-            { "testusername", "testpassword" }
+            { "testusername", "testpassword" },
+            { "secondusername", "secondpassword" }
         };
         private static readonly Dictionary<string, string> testRefreshTokens = [];
-        private static readonly HashSet<string> testAccessTokens = [];
+        private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
 
         private static string jwtKey = string.Empty;
+
+        private static readonly double ACCESS_TOKEN_DURATION_MINUTES = 15;
+        private static readonly double REFRESH_TOKEN_DURATION_DAYS = 30;
 
 
 
@@ -39,43 +57,56 @@ namespace RPG_Launcher
 
         #region Public: API Methods
 
-        public static string[]? LoginFromRefreshToken(string refreshToken)
+        public static string[]? LoginFromRefreshToken(string refreshTokenString, Guid clientId)
         {
-            // TODO: THE API WILL RETURN JSON WITH BOTH TOKENS (RE-GENERATES REFRESH TOKEN)
+            // We use the passed-in client GUID here to ensure that the logging-in machine is the same machine
+            //  that the refresh token was originally generated for. Deny if mismatch (indicates security breach).
 
             string[]? tokens = null;
 
-            // Retrieve the token from the refreshToken string, returning null if invalid.
+            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
             var handler = new JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(refreshToken);
+            var token = handler.ReadJwtToken(refreshTokenString);
             if (token == null) return null;
-
-            // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
             var username = ReadUsernameFromJwtToken(token);
             if (username == null) return null;
 
-
-            if (testRefreshTokens.ContainsKey(username))
+            // Try to find the passed-in refresh token (will be database query on account username in the future).
+            if (testRefreshTokens.TryGetValue(username, out string? storedTokenString))
             {
+                // CLIENT GUID CHECK: If we have a stored token for this client, verify that stored client GUID matches.
+                var storedToken = handler.ReadJwtToken(storedTokenString);
+                if (storedToken == null)
+                {
+                    // If stored token is not readable (somehow), remove and return null string[].
+                    testRefreshTokens.Remove(username); WriteTestRefreshTokenContainerToFile(); // TEMP
+                    return tokens;
+                }
+                var storedGuid = ReadGuidFromJwtToken(storedToken);
+                if (storedGuid == null || storedGuid != clientId)
+                {
+                    // If null or mismatch, then we should deny the login (retrieved refresh token from different
+                    //  client from the one that actually generated the refresh token).
+                    testRefreshTokens.Remove(username); WriteTestRefreshTokenContainerToFile(); // TEMP
+                    return tokens;
+                }
 
-                // If stored name is valid and token is not expired, we have successfully logged in.
+                // ACTUAL TOKEN VALIDITY CHECK: If stored name is valid and token is not expired, we have successfully logged in.
                 if (DateTime.UtcNow < token.ValidTo)
                 {
                     // Generate new valid tokens if passed-in refresh token is valid.
                     tokens = new string[2];
-                    tokens[0] = GenerateAccessToken(username, minutes: 15);
-                    tokens[1] = GenerateRefreshToken(username, days: 30);
+                    tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
+                    tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
-                    // We must replace the old refresh token with the new one. Can use index operator [] to replace existing.
+                    // Add both tokens to containers. We replace existing refresh token using index operator [] if already exists.
                     testRefreshTokens[username] = tokens[1];
-
-                    // Add new access token to container.
-                    testAccessTokens.Add(tokens[0]);
+                    testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
                 }
                 else
                 {
                     // If invalid, we simply remove the stored token.
-                    testRefreshTokens.Remove(refreshToken);
+                    testRefreshTokens.Remove(refreshTokenString);
                 }
             }
 
@@ -85,9 +116,9 @@ namespace RPG_Launcher
             return tokens;
         }
 
-        public static string[]? Login(string username, string password)
+        public static string[]? Login(string username, string password, Guid clientId)
         {
-            // TODO: THIS IS WHERE WE WILL ACTUALLY MAKE THE API CALL (DO NOT HASH PASSWORD HERE)
+            // Client GUID is only used for token creation here (no comparison).
 
             string[]? tokens = null;
             if (testUserAccounts.TryGetValue(username, out var storedPassword))
@@ -95,11 +126,11 @@ namespace RPG_Launcher
                 if (storedPassword == password)     // Will be hashed password on API side.
                 {
                     tokens = new string[2];
-                    tokens[0] = GenerateAccessToken(username, minutes: 15);
-                    tokens[1] = GenerateRefreshToken(username, days: 30);
+                    tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
+                    tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
                     // Add both tokens to containers.
-                    testAccessTokens.Add(tokens[0]);
+                    testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
                     testRefreshTokens[username] = tokens[1];    // Replace if existing.
                 }
             }
@@ -110,18 +141,20 @@ namespace RPG_Launcher
             return tokens;
         }
 
-        public static string[]? Register(string email, string username, string password)
+        public static string[]? Register(string email, string username, string password, Guid clientId)
         {
-            // the actual API endpoint will also take an email argument, but we only do username/password for testing
+            // Client GUID is only used for token creation here (no comparison).
+
+            // the actual API endpoint will actually use the email argument, but we only do username/password for testing
             string[]? tokens = null;
             if (testUserAccounts.TryAdd(username, password))
             {
                 tokens = new string[2];
-                tokens[0] = GenerateAccessToken(username, minutes: 15);
-                tokens[1] = GenerateRefreshToken(username, days: 30);
+                tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
+                tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
                 // Add both tokens to containers.
-                testAccessTokens.Add(tokens[0]);
+                testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
                 testRefreshTokens[username] = tokens[1];    // Replace if existing.
             }
 
@@ -131,27 +164,37 @@ namespace RPG_Launcher
             return tokens;
         }
 
-        public static void Logout(string accessToken)   // TODO: UPDATE TO TAKE GUID
+        public static void Logout(string accessToken)
         {
-            // TODO: CREATE LOGIC TO READ USERNAME FROM ACCESS TOKEN, WHICH WILL BE USED TO INVALIDATE REFRESH AND ACCESS TOKENS
-            // Both will need to be removed, and we will store a map of accessToken:tokenDataClass on the server later for easy
-            //  search. The tokenDataClass will contain data like username and application instance ID to help with lookup.
-            // Regardless of where the username is retrieved from, the database will have the refresh token stored within the
-            //  document, and this can be removed easily via querying on the username.
+            // If we cannot find token token in our container of access tokens, then the accessToken is already completely
+            //  invalidated and we can consider the user already logged out.
+            // HOWEVER, we should also attempt to find the username from the access token to also invalidate any refresh token
+            //  associated with the user (if applicable). Since the client machine should be the only entity other than us that
+            //  has access to a refresh token, we can assume that a valid client is actually trying to log out of their account.
+            //  Any existing refresh token should be immediately invalidated.
+
+            string? username;
 
             // Always remove the access token directly first. Then, try to remove from refresh tokens via token's stored username.
-            testAccessTokens.Remove(accessToken);
+            testAccessTokens.Remove(accessToken, out AccessTokenData? tokenData);
+            if (tokenData != null)
+            {
+                // If we have valid AccessTokenData, use it to directly retrieve username associated with the user logging out.
+                username = tokenData.Username;
+            }
+            else
+            {
+                // Else if we could not find the token, try to use the access token to retrieve the username.
+                var handler = new JwtSecurityTokenHandler();
+                var token = handler.ReadJwtToken(accessToken);
+                if (token == null) return;
 
-            // Retrieve the token from the refreshToken string, returning null if invalid.
-            var handler = new JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(accessToken);
-            if (token == null) return;
+                // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
+                username = ReadUsernameFromJwtToken(token);
+            }
 
-            // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
-            var username = ReadUsernameFromJwtToken(token);
-            if (username == null) return;
-
-            testRefreshTokens.Remove(username);
+            // Remove an existing refresh token associated with the logging-out account ONLY IF we found a valid username. 
+            if (username != null) testRefreshTokens.Remove(username);   // Will query database to clear field in the future.
 
             // TEMP: Write changes in token containers to file anytime they are changed.
             WriteTestRefreshTokenContainerToFile();
@@ -161,23 +204,23 @@ namespace RPG_Launcher
 
         #region Private: Access Token Generation
 
-        private static string GenerateAccessToken(string username, int minutes)
+        private static string GenerateAccessToken(string username, Guid clientGuid, double minutes)
         {
             // THIS WILL ALSO BE DONE IN THE API CALL, AS DATABASE MUST STORE ACCESS TOKEN
 
-            string accessToken = GenerateToken(username, DateTime.UtcNow.AddMinutes(minutes));
+            string accessToken = GenerateToken(username, clientGuid, DateTime.UtcNow.AddMinutes(minutes));
             return accessToken;
         }
 
-        private static string GenerateRefreshToken(string username, int days)
+        private static string GenerateRefreshToken(string username, Guid clientGuid, double days)
         {
-            string refreshToken = GenerateToken(username, DateTime.UtcNow.AddDays(days));
+            string refreshToken = GenerateToken(username, clientGuid, DateTime.UtcNow.AddDays(days));
             return refreshToken;
         }
 
-        private static string GenerateToken(string username, DateTime expiration)
+        private static string GenerateToken(string username, Guid clientGuid, DateTime expiration)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ReadJwtKeyFromFile()));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor()
             {
@@ -185,7 +228,8 @@ namespace RPG_Launcher
                 Expires = expiration,
                 Subject = new ClaimsIdentity(
                 [
-                    new Claim(ClaimTypes.Name, username)    // IMPORTANT: ClaimTypes.Name maps to JwtRegisteredClaimNames.UniqueName.
+                    new Claim(ClaimTypes.Name, username),   // IMPORTANT: ClaimTypes.Name maps to JwtRegisteredClaimNames.UniqueName.
+                    new Claim("client_guid", clientGuid.ToString())     // Custom ClaimType for client GUID.
                 ]),
             };
 
@@ -343,6 +387,24 @@ namespace RPG_Launcher
             var username = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
 
             return username;    // May be null.
+        }
+
+        private static Guid? ReadGuidFromJwtToken(JwtSecurityToken token)
+        {
+            // Retrieve GUID from token. Uses custom claim type string.
+            var guidString = token.Claims.FirstOrDefault(claim => claim.Type == "client_guid")?.Value;
+
+            // Return new GUID if valid claim, else return null.
+            try
+            {
+                if (guidString != null) return new Guid(guidString);
+            }
+            catch
+            {
+                // Empty catch just to prevent crash on failed GUID initialization.
+            }
+
+            return null;
         }
 
         #endregion

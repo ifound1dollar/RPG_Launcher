@@ -14,10 +14,6 @@ namespace RPG_Launcher.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
-        // TEMP BOOL JUST FOR EASY TESTING
-        public bool TempTrue { get; } = true;
-        // TEMP
-
         private string loginUsername            = string.Empty;
         private SecureString loginPassword      = new();
         private string loginErrorMessage        = string.Empty;
