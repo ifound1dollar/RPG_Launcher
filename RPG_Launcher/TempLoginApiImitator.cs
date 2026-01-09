@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace RPG_Launcher
@@ -29,13 +30,40 @@ namespace RPG_Launcher
             }
         }
 
-        // this is pretending to be the user_accounts MongoDB document model; is just username and password for now
-        private static readonly Dictionary<string, string> testUserAccounts = new()
+        private class UserDocumentData
         {
-            { "testusername", "testpassword" },
-            { "secondusername", "secondpassword" }
+            public string Username { get; set; } = string.Empty;
+            public string PasswordHash { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string RefreshToken { get; set; } = string.Empty;
+
+            public UserDocumentData()
+            {
+                // Parameterless constructor for JSON deserialization.
+            }
+
+            public UserDocumentData(string username, string passwordHash, string email)
+            {
+                Username = username;
+                PasswordHash = passwordHash;
+                Email = email;
+            }
+
+            public UserDocumentData(string username, string passwordHash, string email, string refreshToken)
+            {
+                Username = username;
+                PasswordHash = passwordHash;
+                Email = email;
+                RefreshToken = refreshToken;
+            }
+        }
+
+        // this is pretending to be the user_accounts MongoDB document model; is just username and password for now
+        private static readonly Dictionary<string, UserDocumentData> testUserAccounts = new()
+        {
+            { "testusername", new UserDocumentData("testusername", "testpassword", "testuser@email.com") },
+            { "secondusername", new UserDocumentData("secondusername", "secondpassword", "seconduser@email.com") }
         };
-        private static readonly Dictionary<string, string> testRefreshTokens = [];  // will be database elements, not in-memory data
         private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
 
         private static string jwtKey = string.Empty;
@@ -47,7 +75,10 @@ namespace RPG_Launcher
 
         public static void Initialize()
         {
-            ReadTestRefreshTokenContainerFromFile();
+            WriteUserDocumentsToFile();
+            testUserAccounts.Clear();
+
+            ReadUserDocumentsFromFile();
             jwtKey = ReadJwtKeyFromFile();
 
             //WriteJwtKey("q0Ix3sI9Gk5jb9a8HHjOJJ2RHvsFN1HZkT8VASLApM0");     // Only use this to completely overwrite existing JWT Key.
@@ -72,7 +103,7 @@ namespace RPG_Launcher
             if (username == null) return null;
 
             // Try to find the passed-in refresh token (will be database query on account username in the future).
-            if (testRefreshTokens.ContainsKey(username))
+            if (testUserAccounts.TryGetValue(username, out UserDocumentData? userData))
             {
                 // BASIC GUID VALIDATION: We simply check whether the passed-in refresh token's GUID matches the client GUID.
                 // Note that we cannot check the refresh token stored in the database, because it will be stored as a hash.
@@ -84,7 +115,10 @@ namespace RPG_Launcher
                     //  attached to the client machine that the refresh token was generated for and thus belongs to.
                     // This can easily be faked by a malicious actor, but it is still useful to check just as an added
                     //  security measure.
-                    testRefreshTokens.Remove(username); WriteTestRefreshTokenContainerToFile(); // TEMP
+                    userData.RefreshToken = string.Empty; WriteUserDocumentsToFile();   // TEMP
+
+                    // Also remove any access token for this user, just in case one remains.
+                    testAccessTokens.Remove(username);
                     return tokens;
                 }
 
@@ -96,19 +130,16 @@ namespace RPG_Launcher
                     tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
                     tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
-                    // Add both tokens to containers. We replace existing refresh token using index operator [] if already exists.
-                    testRefreshTokens[username] = tokens[1];
+                    // Store both tokens, access token in memory only and refresh token in database.
+                    userData.RefreshToken = tokens[1];
                     testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
                 }
                 else
                 {
                     // If invalid, we simply remove the stored token.
-                    testRefreshTokens.Remove(refreshTokenString);
+                    userData.RefreshToken = string.Empty; WriteUserDocumentsToFile();   //TEMP
                 }
             }
-
-            // TEMP: Write changes in token containers to file anytime they are changed.
-            WriteTestRefreshTokenContainerToFile();
 
             return tokens;
         }
@@ -118,9 +149,11 @@ namespace RPG_Launcher
             // Client GUID is only used for token creation here (no comparison).
 
             string[]? tokens = null;
-            if (testUserAccounts.TryGetValue(username, out var storedPassword))
+            if (testUserAccounts.TryGetValue(username, out var userData))
             {
-                if (storedPassword == password)     // Will be hashed password on API side.
+                // TODO: GENERATE PASSWORD HASH IN ACTUAL API
+
+                if (userData.PasswordHash == password)     // Will be hashed password on API side.
                 {
                     tokens = new string[2];
                     tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
@@ -128,12 +161,12 @@ namespace RPG_Launcher
 
                     // Add both tokens to containers.
                     testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
-                    testRefreshTokens[username] = tokens[1];    // Replace if existing.
+                    userData.RefreshToken = tokens[1];
                 }
             }
 
             // TEMP: Write changes in token containers to file anytime they are changed.
-            WriteTestRefreshTokenContainerToFile();
+            WriteUserDocumentsToFile();
 
             return tokens;
         }
@@ -142,21 +175,25 @@ namespace RPG_Launcher
         {
             // Client GUID is only used for token creation here (no comparison).
 
-            // the actual API endpoint will actually use the email argument, but we only do username/password for testing
             string[]? tokens = null;
-            if (testUserAccounts.TryAdd(username, password))
+
+            // Only allow new registration if an account with this username does not already exist.
+            // IMPORTANT: Will also need to ensure email uniqueness in the future (make index on it).
+            if (!testUserAccounts.ContainsKey(username))
             {
+                // TODO: GENERATE PASSWORD HASH IN THE ACTUAL API
+
                 tokens = new string[2];
                 tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
                 tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
                 // Add both tokens to containers.
                 testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
-                testRefreshTokens[username] = tokens[1];    // Replace if existing.
+                testUserAccounts.TryAdd(username, new UserDocumentData(username, password, email));
             }
 
             // TEMP: Write changes in token containers to file anytime they are changed.
-            WriteTestRefreshTokenContainerToFile();
+            WriteUserDocumentsToFile();
 
             return tokens;
         }
@@ -191,10 +228,13 @@ namespace RPG_Launcher
             }
 
             // Remove an existing refresh token associated with the logging-out account ONLY IF we found a valid username. 
-            if (username != null) testRefreshTokens.Remove(username);   // Will query database to clear field in the future.
+            if (username != null && testUserAccounts.TryGetValue(username, out UserDocumentData? userData))
+            {
+                userData.RefreshToken = string.Empty;
+            }
 
             // TEMP: Write changes in token containers to file anytime they are changed.
-            WriteTestRefreshTokenContainerToFile();
+            WriteUserDocumentsToFile();
         }
 
         #endregion
@@ -239,15 +279,13 @@ namespace RPG_Launcher
 
         #region Private: Refresh Token Container Read/Write
 
-        private static void ReadTestRefreshTokenContainerFromFile()
+        private static void ReadUserDocumentsFromFile()
         {
             // IN THESE TEMPORARY METHODS, WE ARE NOT USING ENTROPY BECAUSE THEY AREN'T REAL.
 
             try
             {
-                var handler = new JwtSecurityTokenHandler();
-
-                using (FileStream fileStream = new("test_server_refresh_tokens.dat", FileMode.Open, FileAccess.Read))
+                using (FileStream fileStream = new("test_server_user_documents.dat", FileMode.Open, FileAccess.Read))
                 {
                     using StreamReader sr = new(fileStream);
                     string? line;
@@ -255,23 +293,14 @@ namespace RPG_Launcher
                     {
                         byte[] encryptedText = Convert.FromBase64String(line);
                         byte[] originalText = ProtectedData.Unprotect(encryptedText, null, DataProtectionScope.CurrentUser);
-                        string tokenString = Encoding.UTF8.GetString(originalText);
+                        string jsonString = Encoding.UTF8.GetString(originalText);
 
-                        // Retrieve the token from the string, skipping if invalid.
-                        var token = handler.ReadJwtToken(tokenString);
-                        if (token == null) continue;
-
-                        // Get username from string, returning if not found.
-                        var username = ReadUsernameFromJwtToken(token);
-                        if (username == null) continue;
-
-                        // Skip if token is expired (will overwrite file later).
-                        if (DateTime.UtcNow >= token.ValidTo)
+                        // The raw string should be a valid JSON object, so try to deserialize it.
+                        UserDocumentData? userData = JsonSerializer.Deserialize<UserDocumentData>(jsonString);// USE ENCRYPTED LATER
+                        if (userData != null)
                         {
-                            continue;
+                            testUserAccounts.Add(userData.Username, userData);
                         }
-
-                        testRefreshTokens.Add(username, tokenString);
                     }
                 }
             }
@@ -281,31 +310,25 @@ namespace RPG_Launcher
             }
         }
 
-        private static void WriteTestRefreshTokenContainerToFile()
+        private static void WriteUserDocumentsToFile()
         {
             // IN THESE TEMPORARY METHODS, WE ARE NOT USING ENTROPY BECAUSE THEY AREN'T REAL.
 
             try
             {
-                var handler = new JwtSecurityTokenHandler();
-
-                // Else container has values, so write all.
-                using (FileStream fileStream = new("test_server_refresh_tokens.dat", FileMode.OpenOrCreate, FileAccess.Write))
+                // FileMode.Create to completely replace existing data in file.
+                using (FileStream fileStream = new("test_server_user_documents.dat", FileMode.Create, FileAccess.Write))
                 {
                     using StreamWriter sw = new(fileStream);
 
-                    foreach (KeyValuePair<string, string> pair in testRefreshTokens)
+                    foreach (KeyValuePair<string, UserDocumentData> pair in testUserAccounts)
                     {
-                        // Remove and skip any expired tokens before writing to file.
-                        string tokenString = pair.Value;
-                        var token = handler.ReadJwtToken(tokenString);
-                        if (token != null && DateTime.UtcNow >= token.ValidTo)
-                        {
-                            testRefreshTokens.Remove(tokenString);
-                            continue;
-                        }
+                        // Serialize UserDocumentData object into JSON string.
+                        string jsonString = JsonSerializer.Serialize(pair.Value, JsonSerializerOptions.Default);
+                        //sw.WriteLine(jsonString);
 
-                        byte[] originalText = Encoding.UTF8.GetBytes(tokenString);
+                        // Encrypt JSON string then write to file.
+                        byte[] originalText = Encoding.UTF8.GetBytes(jsonString);
                         byte[] encryptedText = ProtectedData.Protect(originalText, null, DataProtectionScope.CurrentUser);
                         sw.WriteLine(Convert.ToBase64String(encryptedText));
                     }
@@ -313,10 +336,10 @@ namespace RPG_Launcher
                 }
 
                 // If container is empty after loop, then we wrote nothing, so we must clear file entirely.
-                if (testRefreshTokens.Count == 0)
+                if (testUserAccounts.Count == 0)
                 {
                     // FileMode.Create will completely overwrite existing data.
-                    using FileStream fileStream = new("test_server_refresh_tokens.dat", FileMode.Create, FileAccess.Write);
+                    using FileStream fileStream = new("test_server_user_documents.dat", FileMode.Create, FileAccess.Write);
                     using StreamWriter sw = new(fileStream);
                     return;
                 }
