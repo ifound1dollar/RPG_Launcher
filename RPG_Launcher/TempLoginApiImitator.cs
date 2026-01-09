@@ -3,6 +3,7 @@ using RPG_Launcher.Util;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
@@ -61,8 +62,8 @@ namespace RPG_Launcher
         // this is pretending to be the user_accounts MongoDB document model; is just username and password for now
         private static readonly Dictionary<string, UserDocumentData> testUserAccounts = new()
         {
-            { "testusername", new UserDocumentData("testusername", "testpassword", "testuser@email.com") },
-            { "secondusername", new UserDocumentData("secondusername", "secondpassword", "seconduser@email.com") }
+            //{ "testusername", new UserDocumentData("testusername", "testpassword", "testuser@email.com") },
+            //{ "secondusername", new UserDocumentData("secondusername", "secondpassword", "seconduser@email.com") }
         };
         private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
 
@@ -71,12 +72,15 @@ namespace RPG_Launcher
         private static readonly double ACCESS_TOKEN_DURATION_MINUTES = 15;
         private static readonly double REFRESH_TOKEN_DURATION_DAYS = 30;
 
+        private static readonly JwtSecurityTokenHandler handler = new();
+
+
 
 
         public static void Initialize()
         {
-            WriteUserDocumentsToFile();
-            testUserAccounts.Clear();
+            //WriteUserDocumentsToFile();
+            //testUserAccounts.Clear();     // UNCOMMENT ONLY TO WRITE HARD-CODED ENTRIES TO FILE BEFORE LOADING
 
             ReadUserDocumentsFromFile();
             jwtKey = ReadJwtKeyFromFile();
@@ -96,11 +100,11 @@ namespace RPG_Launcher
             string[]? tokens = null;
 
             // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
-            var handler = new JwtSecurityTokenHandler();
-            var token = handler.ReadJwtToken(refreshTokenString);
-            if (token == null) return null;
+            if (!TryReadJwtToken(refreshTokenString, out JwtSecurityToken? token)) return null;
             string? username = ReadUsernameFromJwtToken(token);
             if (username == null) return null;
+
+            // TODO: ADD handler.ValidateToken() CALL WITH CUSTOM TokenValidationParameters, FOR ACTUAL SECURITY CHECKS.
 
             // Try to find the passed-in refresh token (will be database query on account username in the future).
             if (testUserAccounts.TryGetValue(username, out UserDocumentData? userData))
@@ -218,12 +222,8 @@ namespace RPG_Launcher
             }
             else
             {
-                // Else if we could not find the token, try to use the access token to retrieve the username.
-                var handler = new JwtSecurityTokenHandler();
-                var token = handler.ReadJwtToken(accessToken);
-                if (token == null) return;
-
-                // Retrieve username from token, returning if invalid. IMPORTANT: ClaimType.Name MAPS TO UniqueName.
+                // Try to retrieve username from token, returning if invalid.
+                if (!TryReadJwtToken(accessToken, out JwtSecurityToken? token)) return;
                 username = ReadUsernameFromJwtToken(token);
             }
 
@@ -400,6 +400,12 @@ namespace RPG_Launcher
         #endregion
 
         #region Private: JWT Token Utility
+
+        private static bool TryReadJwtToken(string jwtToken, [NotNullWhen(true)] out JwtSecurityToken? token)
+        {
+            token = (handler.CanReadToken(jwtToken)) ? handler.ReadJwtToken(jwtToken) : null;
+            return token != null;   // Returns true if token is valid, else false if null.
+        }
 
         private static string? ReadUsernameFromJwtToken(JwtSecurityToken token)
         {
