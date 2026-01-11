@@ -75,7 +75,7 @@
                     <ColumnDefinition Width="32px"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="MAIN"
+                <TextBlock Text="{Binding WindowTitle}"
                            Foreground="DimGray"
                            FontSize="16"
                            FontFamily="Segoe UI"

@@ -15,16 +15,17 @@ namespace RPG_Launcher
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             // Initialize in-memory application state data. This will load any secure data into memory (ex. refresh token).
-            AppStateData.Initialize();
+            AppData.Initialize();
 
             // TEMP: INITIALIZE TempLoginApiImitator
             TempLoginApiImitator.Initialize();
 
-            // Create MainWindow, but do not show anything yet.
+            // Create MainWindow, but do not show anything yet. Also set window title from application version.
             var mainWindow = new MainWindow();
+            mainWindow.MainViewModel.WindowTitle = ("VERSION " + AppData.Version);
 
             // First, try to login with existing securely-stored login token (retrieved on Initialize() above).
-            if (LoginApiService.Instance.TryLoginFromRefreshToken(AppStateData.RefreshToken))
+            if (LoginApiService.Instance.TryLoginFromRefreshToken(AppData.RefreshToken))
             {
                 // If our existing token is valid, hide login subgrid and show main subgrid, then show entire window.
                 mainWindow.MainViewModel.HideLoginSubgrid();
@@ -45,9 +46,8 @@ namespace RPG_Launcher
             //  closed with TaskManager, etc.). If the application does not close gracefully, the refresh token
             //  in the file will be expired and the user will need to explicitly log in the next time that the
             //  application is opened.
-            // Refresh token is only read from file once on application startup, and once on application shutdown.
 
-            AppStateData.Deinitialize();
+            //AppData.Deinitialize();
         }
     }
 

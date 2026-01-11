@@ -1,4 +1,5 @@
 ﻿using RPG_Launcher.Model;
+using RPG_Launcher.Util;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace RPG_Launcher.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        private string windowTitle              = string.Empty;
         private string loginUsername            = string.Empty;
         private SecureString loginPassword      = new();
         private string loginErrorMessage        = string.Empty;
@@ -21,6 +23,11 @@ namespace RPG_Launcher.ViewModel
         private bool isMainSubgridVisible       = false;
 
         // View element properties
+        public string WindowTitle
+        {
+            get => windowTitle;
+            set { windowTitle = value; OnPropertyChanged(nameof(WindowTitle)); }
+        }
         public string LoginUsername
         {
             get => loginUsername;
@@ -75,7 +82,7 @@ namespace RPG_Launcher.ViewModel
         public void ShowLoginSubgrid()
         {
             // Populate username field with saved username.
-            LoginUsername = AppStateData.SavedUsername;
+            LoginUsername = AppData.SavedUsername;
 
             IsLoginSubgridVisible = true;
             IsMainSubgridVisible = false;
@@ -95,7 +102,7 @@ namespace RPG_Launcher.ViewModel
         {
             // Clear error message, then validate input.
             LoginErrorMessage = string.Empty;
-            if (LoginUsername.Length < 3 || LoginPassword.Length < 3)
+            if (LoginUsername.Length < 0 || LoginPassword.Length < 0)
             {
                 LoginErrorMessage = "Both input fields must be set.";
                 return;
