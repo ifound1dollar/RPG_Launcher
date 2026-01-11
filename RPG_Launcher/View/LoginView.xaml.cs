@@ -54,7 +54,7 @@ namespace RPG_Launcher.View
         private void TextBoxPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             // Update MainViewModel directly when this password box is updated. This includes after Clear() is called.
-            LoginVM.SetSecurePassword(TextBoxPassword.SecurePassword);
+            LoginVM.SecurePassword = (TextBoxPassword.SecurePassword);
         }
 
         private void ButtonLogin_Click(object sender, RoutedEventArgs e)

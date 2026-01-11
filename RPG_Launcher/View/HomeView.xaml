@@ -10,15 +10,7 @@
              d:DesignHeight="720" d:DesignWidth="1280"
              d:DataContext="{d:DesignInstance Type=vm:HomeViewModel}">
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
-    </UserControl.Resources>
-
     <Grid>
-        <!-- Bind visibility to boolean. -->
-        <Grid.Visibility>
-            <Binding Path="IsHomeViewVisible" Converter="{StaticResource BooleanToVisibility}"/>
-        </Grid.Visibility>
 
         <StackPanel Orientation="Vertical"
                         Margin="300,100,300,100"

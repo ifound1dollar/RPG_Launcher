@@ -13,14 +13,11 @@ namespace RPG_Launcher.ViewModel
     {
         private bool isHomeViewVisible = false;
 
-        public bool IsHomeViewVisible
-        {
-            get => isHomeViewVisible;
-            private set { isHomeViewVisible = value; OnPropertyChanged(nameof(IsHomeViewVisible)); }
-        }
+        // Bindable properties here
 
 
 
+        // Commands
         public ICommand LogoutClickedCommand { get; }
 
 
@@ -32,12 +29,12 @@ namespace RPG_Launcher.ViewModel
 
         public void ShowHomeView()
         {
-            IsHomeViewVisible = true;
+            isHomeViewVisible = true;
         }
 
         public void HideHomeView()
         {
-            IsHomeViewVisible = false;
+            isHomeViewVisible = false;
         }
 
 
@@ -56,7 +53,7 @@ namespace RPG_Launcher.ViewModel
         private bool CanExecuteLogoutClickedCommand(object? obj)
         {
             // Can only logout if main subgrid is visible (already logged in).
-            return IsHomeViewVisible;
+            return isHomeViewVisible;
         }
 
         #endregion

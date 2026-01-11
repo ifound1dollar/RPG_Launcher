@@ -11,15 +11,7 @@
              KeyDown="Universal_KeyDown"
              d:DataContext="{d:DesignInstance Type=vm:LoginViewModel}">
 
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
-    </UserControl.Resources>
-
     <Grid Name="LoginSubgrid">
-        <!-- Bind visibility to boolean in MainViewModel. -->
-        <Grid.Visibility>
-            <Binding Path="IsLoginViewVisible" Converter="{StaticResource BooleanToVisibility}"/>
-        </Grid.Visibility>
 
         <StackPanel Width="250px"
                         Orientation="Vertical"
@@ -45,7 +37,7 @@
                            HorizontalAlignment="Left"
                            Margin="12,20,0,0"/>
             <TextBox Name="TextBoxUsername"
-                         Text="{Binding LoginUsername, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                          Height="28"
                          VerticalContentAlignment="Center"
                          Foreground="LightGray"
@@ -81,7 +73,7 @@
             </PasswordBox>
 
             <!-- Login error message. -->
-            <TextBlock Text="{Binding LoginErrorMessage, Mode=TwoWay}"
+            <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
                            Foreground="IndianRed"
                            FontSize="12"
                            FontFamily="Segoe UI"

@@ -13,16 +13,16 @@ namespace RPG_Launcher.ViewModel
 {
     public class LoginViewModel : ViewModelBase
     {
+        private bool isLoginViewVisible = false;
+
         private string username = string.Empty;
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
-        private bool isLoginViewVisible = false;
-
         public string Username
         {
             get => username;
-            private set { username = value; OnPropertyChanged(nameof(Username)); }
+            set { username = value; OnPropertyChanged(nameof(Username)); }
         }
         public SecureString SecurePassword
         {
@@ -37,23 +37,12 @@ namespace RPG_Launcher.ViewModel
             //  responsibility in this case and directly controls what this value reads, rather than the
             //  other way around.
             get => securePassword;
-            private set { securePassword = value; OnPropertyChanged(nameof(SecurePassword)); }
+            set { securePassword = value; OnPropertyChanged(nameof(SecurePassword)); }
         }
         public string ErrorMessage
         {
             get => errorMessage;
-            private set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
-        }
-        public bool IsLoginViewVisible
-        {
-            get => isLoginViewVisible;
-            private set { isLoginViewVisible = value; OnPropertyChanged(nameof(IsLoginViewVisible)); }
-        }
-
-        // Explicit setter for password so we can keep LoginPassword private set.
-        public void SetSecurePassword(SecureString password)
-        {
-            SecurePassword = password;
+            set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
 
 
@@ -75,12 +64,12 @@ namespace RPG_Launcher.ViewModel
             // Auto-populate username field with saved username.
             Username = AppData.SavedUsername;
 
-            IsLoginViewVisible = true;
+            isLoginViewVisible = true;
         }
 
         public void HideLoginView()
         {
-            IsLoginViewVisible = false;
+            isLoginViewVisible = false;
         }
 
 
@@ -112,7 +101,7 @@ namespace RPG_Launcher.ViewModel
         private bool CanExecuteLoginClickedCommand(object? obj)
         {
             // Login button can only be clicked if login subgrid is visible.
-            return IsLoginViewVisible;
+            return isLoginViewVisible;
         }
 
         #endregion
@@ -126,7 +115,7 @@ namespace RPG_Launcher.ViewModel
 
         private bool CanExecuteForgotPasswordClickedCommand(object? obj)
         {
-            return IsLoginViewVisible;
+            return isLoginViewVisible;
         }
 
         #endregion
