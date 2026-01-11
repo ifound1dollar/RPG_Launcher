@@ -30,25 +30,27 @@ namespace RPG_Launcher.Util
             public string Timestamp { get; private set; }
             public string ClientGuid { get; private set; }
             public string SavedUsername { get; private set; }
+            public string PathToExecutable { get; private set; }
 
-            public AppDataJson(string version, string timestamp, string clientGuid, string savedUsername)
+            public AppDataJson(string version, string timestamp, string clientGuid, string savedUsername, string pathToExecutable)
             {
                 Version = version;
                 Timestamp = timestamp;
                 ClientGuid = clientGuid;
                 SavedUsername = savedUsername;
+                PathToExecutable = pathToExecutable;
             }
 
 
 
             public static AppDataJson CreateNew()
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty, defaultPathToExecutable);
             }
 
             public static AppDataJson CreateNewWithUsername(string username)
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username, defaultPathToExecutable);
             }
 
             public static AppDataJson UpdateExistingVersion(AppDataJson appData, string version)
@@ -70,6 +72,8 @@ namespace RPG_Launcher.Util
         private static readonly string version = "0.0.1";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataPath = "appdata.json";
+        // Default path to executable.
+        private static readonly string defaultPathToExecutable = "/";
 
 
 
@@ -99,10 +103,21 @@ namespace RPG_Launcher.Util
             set
             {
                 savedUsername = value;
-                SaveAppData(new AppDataJson(version, Timestamp, ClientGuid.ToString(), savedUsername));
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, PathToExecutable));
             }
         }
 
+        // Path to executable is the path to the folder/directory where the game executable is located.
+        private static string pathToExecutable = string.Empty;
+        public static string PathToExecutable
+        {
+            get => pathToExecutable;
+            set
+            {
+                pathToExecutable = value;
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, pathToExecutable));
+            }
+        }
 
         #endregion
 
@@ -177,6 +192,7 @@ namespace RPG_Launcher.Util
                     // Store newly-generated data in static fields (saved username remains empty).
                     Timestamp = appData.Timestamp;
                     ClientGuid = Guid.Parse(appData.ClientGuid);
+                    PathToExecutable = appData.PathToExecutable;    // Uses default path on AppDataJson creation.
 
                     // Since file does not exist, we cannot read refresh token, so reset token and return.
                     DataProtection.ResetRefreshToken();
@@ -197,10 +213,11 @@ namespace RPG_Launcher.Util
 
                     }
 
-                    // Store new values in fields.
+                    // Store values read from the file in fields.
                     Timestamp = appData.Timestamp;
                     ClientGuid = Guid.Parse(appData.ClientGuid);
                     SavedUsername = appData.SavedUsername;
+                    PathToExecutable = appData.PathToExecutable;
                 }
             }
             catch (Exception ex)

@@ -12,8 +12,7 @@
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
-        MouseLeftButtonDown="Universal_MouseLeftButtonDown"
-        KeyDown="Universal_KeyDown">
+        MouseLeftButtonDown="Universal_MouseLeftButtonDown">
 
     <!-- We can also set the DataContext in the codebehind. The DataContext
         is used to directly access fields and properties within the bound
@@ -22,20 +21,6 @@
         <viewModel:MainViewModel/>
     </Window.DataContext>
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
-    </Window.Resources>
-
-    <!--
-    <Border.BorderBrush>
-    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="MediumSlateBlue" Offset="0"/>
-        <GradientStop Color="DarkMagenta" Offset="0.5"/>
-        <GradientStop Color="MediumSlateBlue" Offset="1"/>
-    </LinearGradientBrush>
-    </Border.BorderBrush>
-    -->
-
     <Grid Name="RootGrid">
         <!-- The mask border must be here, and for some reason must be black. -->
         <Border Name="MaskBorder" CornerRadius="12" Background="Black"/>
@@ -43,7 +28,7 @@
         <!-- This grid must be transparent for masking to function. -->
         <Grid Name="RowGrid" Background="Transparent">
             
-            <!--#region BASIC WINDOW STUFF -->
+            <!--#region BASIC WINDOW HEADER STUFF -->
             
             <Grid.OpacityMask>
                 <VisualBrush Visual="{Binding ElementName=MaskBorder}"/>
@@ -157,185 +142,12 @@
             <!-- BELOW IS THE MAIN CONTENT SECTION -->
             <Grid Name="MainContentSubgrid"
                   Grid.Row="1">
-                <!-- Bind visibility to boolean in MainViewModel. IsMainSubgridVisible -->
-                <Grid.Visibility>
-                    <Binding Path="IsMainSubgridVisible"  Mode="TwoWay" Converter="{StaticResource BooleanToVisibility}"/>
-                </Grid.Visibility>
-                
-                <StackPanel Orientation="Vertical"
-                        Margin="300,100,300,100"
-                        Grid.Row="1">
-                    <TextBlock Text="Successfully Logged In!"
-                           Foreground="SlateGray"
-                           FontSize="40"
-                           FontFamily="Segoe UI"
-                           TextAlignment="Center"
-                           Margin="0,150,0,0"/>
-                    
-                    <Button Name="ButtonLogout"
-                            Command="{Binding LogoutClickedCommand}"
-                            Height="40"
-                            Foreground="LightGray"
-                            Content="LOG OUT"
-                            FontSize="20"
-                            Cursor="Hand"
-                            Margin="250,50,250,0">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#ab3a3a"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="IndianRed"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#bc4b4b"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border CornerRadius="5"
-                                        Background="{TemplateBinding Background}">
-                                    <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"
-                                                      Margin="0,0,0,2"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                </StackPanel>
-            </Grid>
 
-            <!-- LOGIN SECTION SUBGRID -->
-            <Grid Name="LoginSubgrid"
-                  Grid.Row="1">
-                <!-- Bind visibility to boolean in MainViewModel. -->
-                <Grid.Visibility>
-                    <Binding Path="IsLoginSubgridVisible"  Mode="TwoWay" Converter="{StaticResource BooleanToVisibility}"/>
-                </Grid.Visibility>
-                
-                <StackPanel Width="250px"
-                        Orientation="Vertical"
-                        Margin="0,120,0,130"
-                        Grid.Row="1">
-                    <StackPanel.Background>
-                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                            <GradientStop Color="#001b1448" Offset="-0.5"/>
-                            <GradientStop Color="#1b1424" Offset="1"/>
-                        </LinearGradientBrush>
-                    </StackPanel.Background>
-
-                    <Image Source="/Images/logo.png"
-                       Width="100" Height="100"
-                       Margin="0,25,0,0"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
-
-                    <!-- Username header and text box. -->
-                    <TextBlock Text="Username"
-                           Foreground="LightSlateGray"
-                           FontSize="16"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Left"
-                           Margin="12,20,0,0"/>
-                    <TextBox Name="TextBoxUsername"
-                         Text="{Binding LoginUsername, UpdateSourceTrigger=PropertyChanged}"
-                         Height="28"
-                         VerticalContentAlignment="Center"
-                         Foreground="LightGray"
-                         Background="#33000000"
-                         FontSize="16"
-                         FontFamily="Segoe UI Semibold"
-                         CaretBrush="LightSlateGray"
-                         BorderBrush="SlateGray"
-                         BorderThickness="0,0,0,0"
-                         Margin="10,2,10,0"
-                         Padding="5,2,5,2"/>
-
-                    <!-- Password header and text box. Breaks MVVM pattern for security. -->
-                    <TextBlock Text="Password"
-                           Foreground="LightSlateGray"
-                           FontSize="16"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Left"
-                           Margin="12,20,0,0"/>
-                    <PasswordBox Name="TextBoxPassword"
-                                 Height="28"
-                                 VerticalContentAlignment="Center"
-                                 Foreground="LightGray"
-                                 Background="#33000000"
-                                 FontSize="16"
-                                 FontFamily="Segoe UI Semibold"
-                                 CaretBrush="LightSlateGray"
-                                 BorderBrush="SlateGray"
-                                 BorderThickness="0,0,0,0"
-                                 Margin="10,2,10,0"
-                                 Padding="5,2,5,2"
-                                 PasswordChanged="TextBoxPassword_PasswordChanged">
-                    </PasswordBox>
-
-                    <!-- Login error message. -->
-                    <TextBlock Text="{Binding LoginErrorMessage, Mode=TwoWay}"
-                           Foreground="IndianRed"
-                           FontSize="12"
-                           FontFamily="Segoe UI"
-                           Margin="10,10,10,0"/>
-
-                    <!-- Login button. Manually calls ViewModel command, necessary for PasswordBox security. -->
-                    <Button Name="ButtonLogin"
-                            Height="40"
-                            Foreground="LightGray"
-                            Content="LOG IN"
-                            FontSize="20"
-                            Cursor="Hand"
-                            Margin="40,10,40,0"
-                            Click="ButtonLogin_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="#4b4094"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="SlateBlue"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter Property="Background" Value="#5a4cb5"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border CornerRadius="5"
-                                    Background="{TemplateBinding Background}">
-                                    <ContentPresenter VerticalAlignment="Center"
-                                                  HorizontalAlignment="Center"
-                                                  Margin="0,0,0,2"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-
-                    <!-- Forgot Password interactable (clickable) text block. -->
-                    <TextBlock Name="ForgotPasswordTextBlock"
-                           Text="Forgot Password?"
-                           Background="Transparent"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Center"
-                           Cursor="Hand"
-                           Margin="0,20,0,0"
-                           MouseLeftButtonDown="ForgotPasswordTextBlock_MouseLeftButtonDown">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="LightSlateGray"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Foreground" Value="LightGray"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                <!-- We bind the displayed Content to the CurrentViewModel field
+                        in MainViewModel. This uses the DataTemplates defined in
+                        App.xaml to automatically display the correct view based
+                        on the current ViewModel bound here. -->
+                <ContentControl Content="{Binding CurrentViewModel}"/>
 
             </Grid>
 

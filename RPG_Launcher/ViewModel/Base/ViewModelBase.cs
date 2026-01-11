@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RPG_Launcher.ViewModel
+namespace RPG_Launcher.ViewModel.Base
 {
     public abstract class ViewModelBase : INotifyPropertyChanged
     {

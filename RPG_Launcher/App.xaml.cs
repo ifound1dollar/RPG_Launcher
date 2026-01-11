@@ -22,19 +22,19 @@ namespace RPG_Launcher
 
             // Create MainWindow, but do not show anything yet. Also set window title from application version.
             var mainWindow = new MainWindow();
-            mainWindow.MainViewModel.WindowTitle = ("VERSION " + AppData.Version);
+            mainWindow.MainVM.WindowTitle = ("VERSION " + AppData.Version);
 
             // First, try to login with existing securely-stored login token (retrieved on Initialize() above).
             if (LoginApiService.Instance.TryLoginFromRefreshToken(AppData.RefreshToken))
             {
                 // If our existing token is valid, hide login subgrid and show main subgrid, then show entire window.
-                mainWindow.MainViewModel.HideLoginSubgrid();
+                mainWindow.MainVM.ShowHomeViewCommand.Execute(sender);
                 mainWindow.Show();
             }
             else
             {
                 // If automatic login with refresh token failed, show login window.
-                mainWindow.MainViewModel.ShowLoginSubgrid();
+                mainWindow.MainVM.ShowLoginViewCommand.Execute(sender);
                 mainWindow.Show();
             }
         }
