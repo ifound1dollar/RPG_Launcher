@@ -7,8 +7,9 @@
              xmlns:v="clr-namespace:RPG_Launcher.View"
              xmlns:local="clr-namespace:RPG_Launcher.View"
              mc:Ignorable="d" 
-             d:DesignHeight="720" d:DesignWidth="1280"
+             d:DesignHeight="690" d:DesignWidth="1280"
              d:DataContext="{d:DesignInstance Type=vm:HomeViewModel}">
+    <!-- DesignHeight is 690 and not 720 because we have a 30px header. -->
 
     <Grid>
 

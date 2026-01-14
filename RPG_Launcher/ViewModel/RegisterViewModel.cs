@@ -1,25 +1,31 @@
 ﻿using RPG_Launcher.Model;
-using RPG_Launcher.Util;
 using RPG_Launcher.ViewModel.Base;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace RPG_Launcher.ViewModel
 {
-    public class LoginViewModel : ViewModelBase
+    public class RegisterViewModel : ViewModelBase
     {
-        private bool isLoginViewVisible = false;
+        private bool isRegisterViewVisible = false;
 
+        private string email = string.Empty;
         private string username = string.Empty;
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
+        public string Email
+        {
+            get => email;
+            set {  email = value; OnPropertyChanged(nameof(Email)); }
+        }
         public string Username
         {
             get => username;
@@ -49,95 +55,92 @@ namespace RPG_Launcher.ViewModel
 
 
         // Commands
-        public ICommand LoginClickedCommand { get; }
-        public ICommand ForgotPasswordClickedCommand { get; }
-        public ICommand NewUserClickedCommand { get; }
+        public ICommand RegisterClickedCommand { get; }
+        public ICommand AlreadyHaveClickedCommand { get; }
 
 
 
-        public LoginViewModel()
+        public RegisterViewModel()
         {
-            LoginClickedCommand = new ViewModelCommand(ExecuteLoginClickedCommand, CanExecuteLoginClickedCommand);
-            ForgotPasswordClickedCommand = new ViewModelCommand((obj) => ExecuteForgotPasswordClickedCommand(Username), CanExecuteForgotPasswordClickedCommand);
-            NewUserClickedCommand = new ViewModelCommand(ExecuteNewUserClickedCommand, CanExecuteNewUserClickedCommand);
+            RegisterClickedCommand = new ViewModelCommand(ExecuteRegisterClickedCommand, CanExecuteRegisterClickedCommand);
+            AlreadyHaveClickedCommand = new ViewModelCommand(ExecuteAlreadyHaveClickedCommand, CanExecuteAlreadyHaveClickedCommand);
         }
 
         public override void ShowView()
         {
-            // Auto-populate username field with saved username and clear error message.
-            Username = AppData.SavedUsername;
+            // Clear all fields again.
+            Email = string.Empty;
+            Username = string.Empty;
+            SecurePassword.Clear();
             ErrorMessage = string.Empty;
 
-            isLoginViewVisible = true;
+            isRegisterViewVisible = true;
         }
-
         public override void HideView()
         {
-            isLoginViewVisible = false;
+            isRegisterViewVisible = false;
         }
 
 
 
         #region Private: LoginClickedCommand
 
-        private void ExecuteLoginClickedCommand(object? obj)
+        private void ExecuteRegisterClickedCommand(object? obj)
         {
-            Trace.WriteLine(SecurePassword.Length);
-
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
-            if (Username.Length <= 0 || SecurePassword.Length <= 0)
+            if (Email.Length <= 0 || Username.Length <= 0 || SecurePassword.Length <= 0)
             {
-                ErrorMessage = "Both input fields must be set.";
+                ErrorMessage = "All input fields must be set.";
+                return;
+            }
+
+            // Verify that email is legitimate using simple regex.
+            string pattern = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$";
+            if (!Regex.IsMatch(Email, pattern))
+            {
+                ErrorMessage = "Please enter a valid email.";
                 return;
             }
 
             // Call API service login method with Username and Password.
-            bool loginSuccess = LoginApiService.Instance.Login(new System.Net.NetworkCredential(Username, SecurePassword));
-            if (loginSuccess)
+            int registerReturnCode = LoginApiService.Instance.Register(Email, new NetworkCredential(Username, SecurePassword));
+            if (registerReturnCode == 1)
             {
-                MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
+                ErrorMessage = "Invalid input, please try again.";
+                return;
+            }
+            else if (registerReturnCode == 2)
+            {
+                ErrorMessage = "Unavailable email or username.";
                 return;
             }
 
-            // Display login error if unsuccessful
-            ErrorMessage = "Login failed, please try again.";
+            // If no errors, we move onto the home view (LATER WILL BE EMAIL VERIFICATION).
+            MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
         }
 
-        private bool CanExecuteLoginClickedCommand(object? obj)
+        private bool CanExecuteRegisterClickedCommand(object? obj)
         {
             // Login button can only be clicked if login subgrid is visible.
-            return isLoginViewVisible;
+            return isRegisterViewVisible;
         }
 
         #endregion
 
         #region Private: ForgotPasswordClickedCommand
 
-        private void ExecuteForgotPasswordClickedCommand(string username)
+        private void ExecuteAlreadyHaveClickedCommand(object? obj)
         {
-            throw new NotImplementedException();
+            MainViewModel.Instance.ShowLoginViewCommand.Execute(obj);
         }
 
-        private bool CanExecuteForgotPasswordClickedCommand(object? obj)
+        private bool CanExecuteAlreadyHaveClickedCommand(object? obj)
         {
-            return isLoginViewVisible;
-        }
-
-        #endregion
-
-        #region Private: NewUserClickedCommand
-
-        private void ExecuteNewUserClickedCommand(object? obj)
-        {
-            MainViewModel.Instance.ShowRegisterViewCommand.Execute(obj);
-        }
-
-        private bool CanExecuteNewUserClickedCommand(object? obj)
-        {
-            return isLoginViewVisible;
+            return isRegisterViewVisible;
         }
 
         #endregion
+
     }
 }

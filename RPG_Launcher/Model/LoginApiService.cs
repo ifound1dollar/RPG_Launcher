@@ -103,19 +103,19 @@ namespace RPG_Launcher.Model
 
         /// <summary>
         /// Attempts to register a new user to the API with an email, username, and password. Makes an HTTPS
-        ///  request to the API endpoint. Returns whether the operation was successful and updates
-        ///  AppStateData fields within the method.
+        ///  request to the API endpoint. Returns a status code describing attempt success or failure and
+        ///  updates AppData token fields within the method.
         /// </summary>
         /// <param name="email"> The email associated with the account attempting to be registered. </param>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
-        /// <returns> Whether the registration was successful. Automatically sets token fields in AppStateData. </returns>
-        public bool Register(string email, NetworkCredential credential)
+        /// <returns> A status code describing the result of the registration attempt. 0 for success, >0 for failure. </returns>
+        public int Register(string email, NetworkCredential credential)
         {
             // Ensure email and credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
                 || string.IsNullOrEmpty(email))
             {
-                return false;
+                return 1;      // 1 for invalid input
             }
 
             // Actual register API endpoint will take email, username, and string, then returns both tokens.
@@ -128,10 +128,10 @@ namespace RPG_Launcher.Model
                 // Pull tokens from API request (will be JSON in the future). Will check for response status code.
                 AppData.AccessToken = tokens[0];
                 AppData.RefreshToken = tokens[1];
-                return true;
+                return 0;       // 0 for success
             }
 
-            return false;
+            return 2;           // 2 for generic registration failure (email or username unavailable)
         }
 
         /// <summary>

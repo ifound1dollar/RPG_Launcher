@@ -181,9 +181,8 @@ namespace RPG_Launcher
 
             string[]? tokens = null;
 
-            // Only allow new registration if an account with this username does not already exist.
-            // IMPORTANT: Will also need to ensure email uniqueness in the future (make index on it).
-            if (!testUserAccounts.ContainsKey(username))
+            // Only allow new registration with unique emails or usernames.
+            if (!testUserAccounts.ContainsKey(username) && IsEmailUnique(email))
             {
                 // TODO: GENERATE PASSWORD HASH IN THE ACTUAL API
 
@@ -277,7 +276,7 @@ namespace RPG_Launcher
 
         #endregion
 
-        #region Private: Refresh Token Container Read/Write
+        #region Private: User Document Utilities
 
         private static void ReadUserDocumentsFromFile()
         {
@@ -348,6 +347,18 @@ namespace RPG_Launcher
             {
                 Trace.WriteLine(ex);
             }
+        }
+
+        private static bool IsEmailUnique(string email)
+        {
+            // Will simply use a database index for uniqueness in the future.
+
+            foreach (KeyValuePair<string, UserDocumentData> entry in testUserAccounts)
+            {
+                if (email.Equals(entry.Value.Email)) return false;
+            }
+
+            return true;
         }
 
         #endregion

@@ -7,9 +7,10 @@
              xmlns:v="clr-namespace:RPG_Launcher.View"
              xmlns:local="clr-namespace:RPG_Launcher.View"
              mc:Ignorable="d" 
-             d:DesignHeight="720" d:DesignWidth="1280"
+             d:DesignHeight="690" d:DesignWidth="1280"
              KeyDown="Universal_KeyDown"
              d:DataContext="{d:DesignInstance Type=vm:LoginViewModel}">
+    <!-- DesignHeight is 690 and not 720 because we have a 30px header. -->
 
     <Grid Name="LoginSubgrid">
 
@@ -122,6 +123,27 @@
                            Cursor="Hand"
                            Margin="0,20,0,0"
                            MouseLeftButtonDown="ForgotPasswordTextBlock_MouseLeftButtonDown">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="LightSlateGray"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- New User / Register interactable (clickable) text block. -->
+            <TextBlock Name="NewUserTextBlock"
+               Text="Don't have an account? Register"
+               Background="Transparent"
+               FontFamily="Segoe UI"
+               HorizontalAlignment="Center"
+               Cursor="Hand"
+               Margin="0,20,0,0"
+               MouseLeftButtonDown="NewUserTextBlock_MouseLeftButtonDown">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Foreground" Value="LightSlateGray"/>

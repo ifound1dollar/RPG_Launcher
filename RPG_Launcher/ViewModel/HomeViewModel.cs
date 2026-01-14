@@ -27,12 +27,12 @@ namespace RPG_Launcher.ViewModel
             LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
         }
 
-        public void ShowHomeView()
+        public override void ShowView()
         {
             isHomeViewVisible = true;
         }
 
-        public void HideHomeView()
+        public override void HideView()
         {
             isHomeViewVisible = false;
         }

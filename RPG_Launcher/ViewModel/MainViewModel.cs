@@ -36,10 +36,12 @@ namespace RPG_Launcher.ViewModel
         // Sub-viewmodels (read-only)
         public HomeViewModel HomeVM { get; } = new HomeViewModel();
         public LoginViewModel LoginVM { get; } = new LoginViewModel();
+        public RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
 
         // Commands (for showing Views)
         public ICommand ShowHomeViewCommand;
         public ICommand ShowLoginViewCommand;
+        public ICommand ShowRegisterViewCommand;
         
 
 
@@ -52,6 +54,17 @@ namespace RPG_Launcher.ViewModel
 
             ShowHomeViewCommand = new ViewModelCommand(ExecuteShowHomeViewCommand);
             ShowLoginViewCommand = new ViewModelCommand(ExecuteShowLoginViewCommand);
+            ShowRegisterViewCommand = new ViewModelCommand(ExecuteShowRegisterViewCommand);
+        }
+
+        public override void HideView()
+        {
+            // Main ViewModel is always running and visible.
+        }
+
+        public override void ShowView()
+        {
+            // Main ViewModel is always running and visible.
         }
 
 
@@ -60,16 +73,27 @@ namespace RPG_Launcher.ViewModel
         {
             CurrentViewModel = HomeVM;
 
-            HomeVM.ShowHomeView();
-            LoginVM.HideLoginView();
+            HomeVM.ShowView();
+            LoginVM.HideView();
+            RegisterVM.HideView();
         }
 
         private void ExecuteShowLoginViewCommand(object? obj)
         {
             CurrentViewModel = LoginVM;
 
-            LoginVM.ShowLoginView();
-            HomeVM.HideHomeView();
+            LoginVM.ShowView();
+            HomeVM.HideView();
+            RegisterVM.HideView();
+        }
+
+        private void ExecuteShowRegisterViewCommand(object? obj)
+        {
+            CurrentViewModel = RegisterVM;
+
+            RegisterVM.ShowView();
+            LoginVM.HideView();
+            HomeVM.HideView();
         }
 
     }

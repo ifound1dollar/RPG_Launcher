@@ -30,8 +30,6 @@ namespace RPG_Launcher.View
             LoginVM = MainViewModel.Instance.LoginVM;
         }
 
-
-        
         private void Universal_KeyDown(object sender, KeyEventArgs e)
         {
             // On enter key pressed, fire the same command as the login button.
@@ -42,18 +40,13 @@ namespace RPG_Launcher.View
             }
         }
 
-        private void ForgotPasswordTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-
 
 
         // BELOW METHODS TECHNICALLY VIOLATE MVVM PATTERN, BUT THIS IS NECESSARY FOR SECURITY (CLEARING PASSWORDBOX).
 
         private void TextBoxPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
-            // Update MainViewModel directly when this password box is updated. This includes after Clear() is called.
+            // Update ViewModel directly when this password box is updated. This includes after Clear() is called.
             LoginVM.SecurePassword = (TextBoxPassword.SecurePassword);
         }
 
@@ -67,9 +60,26 @@ namespace RPG_Launcher.View
 
                 // We should be immediately clearing the PasswordBox when we attempt login, successful or not.
                 TextBoxPassword.Clear();
+                LoginVM.SecurePassword.Clear();     // Also clear ViewModel property, in case it isnt automatically cleared.
             }
 
         }
 
+        private void ForgotPasswordTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
+
+        private void NewUserTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (LoginVM.NewUserClickedCommand.CanExecute(sender))
+            {
+                LoginVM.NewUserClickedCommand.Execute(sender);
+
+                // Always immediately clear password box and ViewModel property.
+                TextBoxPassword.Clear();
+                LoginVM.SecurePassword.Clear();     // Also clear ViewModel property, in case it isnt automatically cleared.
+            }
+        }
     }
 }

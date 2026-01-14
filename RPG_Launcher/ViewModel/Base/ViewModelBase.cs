@@ -15,5 +15,10 @@ namespace RPG_Launcher.ViewModel.Base
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+
+
+        public abstract void ShowView();
+        public abstract void HideView();
     }
 }
