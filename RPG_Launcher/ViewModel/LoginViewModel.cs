@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
@@ -82,26 +83,35 @@ namespace RPG_Launcher.ViewModel
 
         private void ExecuteLoginClickedCommand(object? obj)
         {
-            Trace.WriteLine(SecurePassword.Length);
-
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
-            if (Username.Length <= 0 || SecurePassword.Length <= 0)
+            if (Username.Length == 0 || SecurePassword.Length == 0)
             {
                 ErrorMessage = "Both input fields must be set.";
                 return;
             }
 
             // Call API service login method with Username and Password.
-            bool loginSuccess = LoginApiService.Instance.Login(new System.Net.NetworkCredential(Username, SecurePassword));
-            if (loginSuccess)
+            int loginCode = LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
+            if (loginCode == 0)
             {
+                // Code 0 means full login success, so show home view.
                 MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
                 return;
             }
-
-            // Display login error if unsuccessful
-            ErrorMessage = "Login failed, please try again.";
+            if (loginCode == 1)
+            {
+                // Code 1 means account is not yet confirmed, so we must move onto verification code view.
+                MainViewModel.Instance.VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
+                MainViewModel.Instance.ShowVerificationCodeViewCommand.Execute(obj);
+                return;
+            }
+            else
+            {
+                // Code -1 (any other code) means generic login failure, so display login error message.
+                ErrorMessage = "Login failed, please try again.";
+                return;
+            }
         }
 
         private bool CanExecuteLoginClickedCommand(object? obj)

@@ -1,0 +1,119 @@
+﻿<UserControl x:Class="RPG_Launcher.View.VerificationCodeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:RPG_Launcher.ViewModel"
+             xmlns:v="clr-namespace:RPG_Launcher.View"
+             xmlns:local="clr-namespace:RPG_Launcher.View"
+             mc:Ignorable="d" 
+             d:DesignHeight="690" d:DesignWidth="1280"
+             KeyDown="Universal_KeyDown"
+             d:DataContext="{d:DesignInstance Type=vm:VerificationCodeViewModel}">
+
+    <Grid Name="VerificationCodeSubgrid">
+
+        <StackPanel Width="250px"
+                    Orientation="Vertical"
+                    Margin="0,120,0,130"
+                    Grid.Row="1">
+            <StackPanel.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#001b1448" Offset="-0.5"/>
+                    <GradientStop Color="#1b1424" Offset="1"/>
+                </LinearGradientBrush>
+            </StackPanel.Background>
+
+            <Image Source="/Images/logo.png"
+                       Width="100" Height="100"
+                       Margin="0,25,0,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+
+            <!-- Username header and text box. -->
+            <TextBlock Text="Verification Code"
+                       Foreground="LightSlateGray"
+                       FontSize="16"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Margin="0,50,0,0"/>
+            <TextBox Name="TextBoxVerificationCode"
+                     Text="{Binding VerificationCode, UpdateSourceTrigger=PropertyChanged}"
+                     Height="32"
+                     VerticalContentAlignment="Center"
+                     HorizontalContentAlignment="Center"
+                     Foreground="LightGray"
+                     Background="#33000000"
+                     FontSize="20"
+                     FontFamily="Segoe UI Semibold"
+                     CaretBrush="LightSlateGray"
+                     BorderBrush="SlateGray"
+                     BorderThickness="0,0,0,0"
+                     Margin="50,2,50,0"
+                     Padding="5,2,5,2"/>
+
+            <!-- Login error message. -->
+            <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
+                       Foreground="IndianRed"
+                       FontSize="12"
+                       FontFamily="Segoe UI"
+                       Margin="10,10,10,0"/>
+
+            <!-- Login button. Manually calls ViewModel command, necessary for PasswordBox security. -->
+            <Button Name="ButtonSubmit"
+                    Height="40"
+                    Foreground="LightGray"
+                    Content="SUBMIT"
+                    FontSize="20"
+                    Cursor="Hand"
+                    Margin="40,10,40,0"
+                    Command="{Binding SubmitButtonClicked}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#4b4094"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="SlateBlue"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#5a4cb5"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="5"
+                                Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="0,0,0,2"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <!-- Forgot Password interactable (clickable) text block. -->
+            <TextBlock Name="ResendCodeTextBlock"
+                        Text="Resend code"
+                        Background="Transparent"
+                        FontFamily="Segoe UI"
+                        HorizontalAlignment="Center"
+                        Cursor="Hand"
+                        Margin="0,20,0,0"
+                        MouseLeftButtonDown="ResendCodeTextBlock_MouseLeftButtonDown">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="LightSlateGray"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+        </StackPanel>
+
+    </Grid>
+</UserControl>

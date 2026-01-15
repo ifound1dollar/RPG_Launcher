@@ -105,19 +105,25 @@ namespace RPG_Launcher.ViewModel
 
             // Call API service login method with Username and Password.
             int registerReturnCode = LoginApiService.Instance.Register(Email, new NetworkCredential(Username, SecurePassword));
+            if (registerReturnCode == 0)
+            {
+                // If no errors, we move onto the email verification view.
+                MainViewModel.Instance.VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
+                MainViewModel.Instance.ShowVerificationCodeViewCommand.Execute(obj);
+                return;
+            }
             if (registerReturnCode == 1)
             {
                 ErrorMessage = "Invalid input, please try again.";
                 return;
             }
-            else if (registerReturnCode == 2)
+            else
             {
+                // Code -1 means generic registration failure, which is typically unavailable email or username.
                 ErrorMessage = "Unavailable email or username.";
                 return;
             }
 
-            // If no errors, we move onto the home view (LATER WILL BE EMAIL VERIFICATION).
-            MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
         }
 
         private bool CanExecuteRegisterClickedCommand(object? obj)

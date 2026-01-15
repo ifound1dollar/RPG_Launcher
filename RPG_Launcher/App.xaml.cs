@@ -1,5 +1,6 @@
 ﻿using RPG_Launcher.Model;
 using RPG_Launcher.Util;
+using RPG_Launcher.ViewModel;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
@@ -25,15 +26,19 @@ namespace RPG_Launcher
             mainWindow.MainVM.WindowTitle = ("VERSION " + AppData.Version);
 
             // First, try to login with existing securely-stored login token (retrieved on Initialize() above).
-            if (LoginApiService.Instance.TryLoginFromRefreshToken(AppData.RefreshToken))
+            int loginCode = LoginApiService.Instance.TryLoginFromRefreshToken();
+            if (loginCode == 0)
             {
-                // If our existing token is valid, hide login subgrid and show main subgrid, then show entire window.
+                // Code 0 means existing token is valid, so move on to home screen, then show entire window.
                 mainWindow.MainVM.ShowHomeViewCommand.Execute(sender);
                 mainWindow.Show();
             }
             else
             {
-                // If automatic login with refresh token failed, show login window.
+                // Else we did not fully log in (code 1 or -1), so return to login screen.
+                // NOTE: Our most-recently-logged-in account might have given us a valid refresh token but without
+                //  confirmation. However, we should always return to the login screen even if we already know we
+                //  are awaiting a code. It is jarring to open the app to a confirmation code screen instantly.
                 mainWindow.MainVM.ShowLoginViewCommand.Execute(sender);
                 mainWindow.Show();
             }

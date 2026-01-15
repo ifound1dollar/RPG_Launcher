@@ -37,11 +37,13 @@ namespace RPG_Launcher.ViewModel
         public HomeViewModel HomeVM { get; } = new HomeViewModel();
         public LoginViewModel LoginVM { get; } = new LoginViewModel();
         public RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
+        public VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
 
         // Commands (for showing Views)
         public ICommand ShowHomeViewCommand;
         public ICommand ShowLoginViewCommand;
         public ICommand ShowRegisterViewCommand;
+        public ICommand ShowVerificationCodeViewCommand;
         
 
 
@@ -55,6 +57,7 @@ namespace RPG_Launcher.ViewModel
             ShowHomeViewCommand = new ViewModelCommand(ExecuteShowHomeViewCommand);
             ShowLoginViewCommand = new ViewModelCommand(ExecuteShowLoginViewCommand);
             ShowRegisterViewCommand = new ViewModelCommand(ExecuteShowRegisterViewCommand);
+            ShowVerificationCodeViewCommand = new ViewModelCommand(ExecuteShowVerificationCodeViewCommand);
         }
 
         public override void HideView()
@@ -74,8 +77,10 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = HomeVM;
 
             HomeVM.ShowView();
+
             LoginVM.HideView();
             RegisterVM.HideView();
+            VerificationCodeVM.HideView();
         }
 
         private void ExecuteShowLoginViewCommand(object? obj)
@@ -83,8 +88,10 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = LoginVM;
 
             LoginVM.ShowView();
+
             HomeVM.HideView();
             RegisterVM.HideView();
+            VerificationCodeVM.HideView();
         }
 
         private void ExecuteShowRegisterViewCommand(object? obj)
@@ -92,8 +99,21 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = RegisterVM;
 
             RegisterVM.ShowView();
+
             LoginVM.HideView();
             HomeVM.HideView();
+            VerificationCodeVM.HideView();
+        }
+
+        private void ExecuteShowVerificationCodeViewCommand(object? obj)
+        {
+            CurrentViewModel = VerificationCodeVM;
+
+            VerificationCodeVM.ShowView();
+
+            HomeVM.HideView();
+            LoginVM.HideView();
+            RegisterVM.HideView();
         }
 
     }

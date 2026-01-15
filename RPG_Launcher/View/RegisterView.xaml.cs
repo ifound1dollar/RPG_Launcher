@@ -21,7 +21,7 @@ namespace RPG_Launcher.View
     /// </summary>
     public partial class RegisterView : UserControl
     {
-        private RegisterViewModel RegisterVM;
+        private RegisterViewModel RegisterVM { get; }
 
         public RegisterView()
         {
