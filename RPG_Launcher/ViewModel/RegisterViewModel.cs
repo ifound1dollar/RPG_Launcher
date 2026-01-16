@@ -83,10 +83,13 @@ namespace RPG_Launcher.ViewModel
 
 
 
-        #region Private: LoginClickedCommand
+        #region Private: RegisterClickedCommand
 
         private void ExecuteRegisterClickedCommand(object? obj)
         {
+            // NOTE: We have to compare Password and Confirm Password fields within the View, not here.
+            //  It is not trivial to compare SecureStrings, so we compare the PasswordBoxes in RegisterView.
+
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
             if (Email.Length <= 0 || Username.Length <= 0 || SecurePassword.Length <= 0)

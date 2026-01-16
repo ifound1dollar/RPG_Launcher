@@ -35,6 +35,8 @@ namespace RPG_Launcher.View
             // On enter key pressed, fire the same command as the submit button.
             if (e.Key == Key.Enter)
             {
+                Keyboard.ClearFocus();
+
                 ButtonSubmit_Click(sender, e);
             }
         }

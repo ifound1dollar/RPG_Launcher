@@ -57,7 +57,7 @@
                            FontSize="16"
                            FontFamily="Segoe UI"
                            HorizontalAlignment="Left"
-                           Margin="12,20,0,0"/>
+                           Margin="12,19,0,0"/>
             <PasswordBox Name="TextBoxPassword"
                                  Height="28"
                                  VerticalContentAlignment="Center"

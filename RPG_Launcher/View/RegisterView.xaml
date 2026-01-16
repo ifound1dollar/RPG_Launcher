@@ -26,7 +26,7 @@
             </StackPanel.Background>
 
             <Image Source="/Images/logo.png"
-                   Width="100" Height="100"
+                   Width="80" Height="80"
                    Margin="0,25,0,0"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
 
@@ -36,7 +36,7 @@
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Left"
-                       Margin="12,20,0,0"/>
+                       Margin="17,10,0,0"/>
             <TextBox Name="TextBoxEmail"
                      Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
                      Height="24"
@@ -48,7 +48,7 @@
                      CaretBrush="LightSlateGray"
                      BorderBrush="SlateGray"
                      BorderThickness="0,0,0,0"
-                     Margin="10,2,10,0"
+                     Margin="15,2,15,0"
                      Padding="5,2,5,2"/>
 
             <!-- Username header and text box. -->
@@ -57,7 +57,7 @@
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Left"
-                       Margin="12,10,0,0"/>
+                       Margin="17,5,0,0"/>
             <TextBox Name="TextBoxUsername"
                      Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                      Height="24"
@@ -69,7 +69,7 @@
                      CaretBrush="LightSlateGray"
                      BorderBrush="SlateGray"
                      BorderThickness="0,0,0,0"
-                     Margin="10,2,10,0"
+                     Margin="15,2,15,0"
                      Padding="5,2,5,2"/>
 
             <!-- Password header and text box. Breaks MVVM pattern for security. -->
@@ -78,7 +78,7 @@
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Left"
-                       Margin="12,10,0,0"/>
+                       Margin="17,5,0,0"/>
             <PasswordBox Name="TextBoxPassword"
                          Height="24"
                          VerticalContentAlignment="Center"
@@ -89,9 +89,30 @@
                          CaretBrush="LightSlateGray"
                          BorderBrush="SlateGray"
                          BorderThickness="0,0,0,0"
-                         Margin="10,2,10,0"
+                         Margin="15,2,15,0"
                          Padding="5,2,5,2"
                          PasswordChanged="TextBoxPassword_PasswordChanged">
+            </PasswordBox>
+
+            <!-- Password header and text box. Breaks MVVM pattern for security. -->
+            <TextBlock Text="Confirm Password"
+                       Foreground="LightSlateGray"
+                       FontSize="14"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Left"
+                       Margin="17,0,0,0"/>
+            <PasswordBox Name="TextBoxConfirmPassword"
+                         Height="24"
+                         VerticalContentAlignment="Center"
+                         Foreground="LightGray"
+                         Background="#33000000"
+                         FontSize="14"
+                         FontFamily="Segoe UI Semibold"
+                         CaretBrush="LightSlateGray"
+                         BorderBrush="SlateGray"
+                         BorderThickness="0,0,0,0"
+                         Margin="15,2,15,0"
+                         Padding="5,2,5,2">
             </PasswordBox>
 
             <!-- Register error message. -->
@@ -99,7 +120,7 @@
                        Foreground="IndianRed"
                        FontSize="12"
                        FontFamily="Segoe UI"
-                       Margin="10,10,10,0"/>
+                       Margin="10,7,10,0"/>
 
             <!-- Register button. Manually calls ViewModel command, necessary for PasswordBox security. -->
             <Button Name="ButtonRegister"
@@ -108,7 +129,7 @@
                         Content="REGISTER"
                         FontSize="20"
                         Cursor="Hand"
-                        Margin="40,10,40,0"
+                        Margin="40,8,40,0"
                         Click="ButtonRegister_Click">
                 <Button.Style>
                     <Style TargetType="Button">

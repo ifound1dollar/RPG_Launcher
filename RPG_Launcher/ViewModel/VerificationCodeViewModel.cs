@@ -71,9 +71,10 @@ namespace RPG_Launcher.ViewModel
         private void ExecuteSubmitButtonClicked(object? obj)
         {
             // Validate input, enforcing specific-length code.
-            if (VerificationCode.Length == 0 || VerificationCode.Length > 6)
+            if (VerificationCode.Length != 6)
             {
                 ErrorMessage = "Verification code must be length 6.";
+                VerificationCode = string.Empty;
                 return;
             }
 
@@ -85,12 +86,16 @@ namespace RPG_Launcher.ViewModel
                 case CodeContext.NewAccountConfirmation:
                     {
                         int resultCode = LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
+
+                        // Clear verification code field immediately after it is used.
+                        VerificationCode = string.Empty;
+
                         if (resultCode == 1)
                         {
                             ErrorMessage = "Invalid input state, please try again.";
                             return;
                         }
-                        else if (resultCode == 2)
+                        else if (resultCode == -1)
                         {
                             ErrorMessage = "Incorrect verification code.";
                             return;
@@ -103,7 +108,7 @@ namespace RPG_Launcher.ViewModel
                         }
                         else
                         {
-                            // Return to main login screen if somehow unsuccessful login via refresh.
+                            // Return to main login screen if somehow unsuccessful login via refresh (should never happen).
                             MainViewModel.Instance.ShowLoginViewCommand.Execute(obj);
                         }
 
@@ -129,6 +134,9 @@ namespace RPG_Launcher.ViewModel
         private void ExecuteResendCodeButtonClicked(object? obj)
         {
             Trace.WriteLine("verification code resend button pressed");
+
+            // Always clear code field right as button Command is executed.
+            VerificationCode = string.Empty;
         }
 
         private bool CanExecuteResendCodeButtonClicked(object? obj)

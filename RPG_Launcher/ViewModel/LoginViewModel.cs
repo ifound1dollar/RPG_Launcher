@@ -67,6 +67,7 @@ namespace RPG_Launcher.ViewModel
         {
             // Auto-populate username field with saved username and clear error message.
             Username = AppData.SavedUsername;
+            SecurePassword.Clear();
             ErrorMessage = string.Empty;
 
             isLoginViewVisible = true;
