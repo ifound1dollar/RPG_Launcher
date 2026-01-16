@@ -34,16 +34,16 @@ namespace RPG_Launcher.ViewModel
         }
 
         // Sub-viewmodels (read-only)
-        public HomeViewModel HomeVM { get; } = new HomeViewModel();
-        public LoginViewModel LoginVM { get; } = new LoginViewModel();
-        public RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
-        public VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
+        private HomeViewModel HomeVM { get; } = new HomeViewModel();
+        private LoginViewModel LoginVM { get; } = new LoginViewModel();
+        private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
+        private VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
 
         // Commands (for showing Views)
         public ICommand ShowHomeViewCommand;
         public ICommand ShowLoginViewCommand;
         public ICommand ShowRegisterViewCommand;
-        public ICommand ShowVerificationCodeViewCommand;
+        public ICommand ShowEmailConfirmViewCommand;
         
 
 
@@ -57,7 +57,7 @@ namespace RPG_Launcher.ViewModel
             ShowHomeViewCommand = new ViewModelCommand(ExecuteShowHomeViewCommand);
             ShowLoginViewCommand = new ViewModelCommand(ExecuteShowLoginViewCommand);
             ShowRegisterViewCommand = new ViewModelCommand(ExecuteShowRegisterViewCommand);
-            ShowVerificationCodeViewCommand = new ViewModelCommand(ExecuteShowVerificationCodeViewCommand);
+            ShowEmailConfirmViewCommand = new ViewModelCommand(ExecuteShowEmailConfirmViewCommand);
         }
 
         public override void HideView()
@@ -70,50 +70,49 @@ namespace RPG_Launcher.ViewModel
             // Main ViewModel is always running and visible.
         }
 
+        private void HideAllViews()
+        {
+            // Hide all views here so we don't have to update every method each time a new VM is added.
+            HomeVM.HideView();
+            LoginVM.HideView();
+            RegisterVM.HideView();
+            VerificationCodeVM.HideView();
+        }
+
 
 
         private void ExecuteShowHomeViewCommand(object? obj)
         {
-            CurrentViewModel = HomeVM;
-
+            HideAllViews();
             HomeVM.ShowView();
 
-            LoginVM.HideView();
-            RegisterVM.HideView();
-            VerificationCodeVM.HideView();
+            CurrentViewModel = HomeVM;
         }
 
         private void ExecuteShowLoginViewCommand(object? obj)
         {
-            CurrentViewModel = LoginVM;
-
+            HideAllViews();
             LoginVM.ShowView();
 
-            HomeVM.HideView();
-            RegisterVM.HideView();
-            VerificationCodeVM.HideView();
+            CurrentViewModel = LoginVM;
         }
 
         private void ExecuteShowRegisterViewCommand(object? obj)
         {
-            CurrentViewModel = RegisterVM;
-
+            HideAllViews();
             RegisterVM.ShowView();
 
-            LoginVM.HideView();
-            HomeVM.HideView();
-            VerificationCodeVM.HideView();
+            CurrentViewModel = RegisterVM;
         }
 
-        private void ExecuteShowVerificationCodeViewCommand(object? obj)
+        private void ExecuteShowEmailConfirmViewCommand(object? obj)
         {
-            CurrentViewModel = VerificationCodeVM;
-
+            HideAllViews();
             VerificationCodeVM.ShowView();
 
-            HomeVM.HideView();
-            LoginVM.HideView();
-            RegisterVM.HideView();
+            VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
+
+            CurrentViewModel = VerificationCodeVM;
         }
 
     }

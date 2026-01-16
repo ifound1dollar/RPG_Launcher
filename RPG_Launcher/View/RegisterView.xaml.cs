@@ -21,13 +21,19 @@ namespace RPG_Launcher.View
     /// </summary>
     public partial class RegisterView : UserControl
     {
-        private RegisterViewModel RegisterVM { get; }
+        private RegisterViewModel? vmRef;
+        private RegisterViewModel RegisterVM
+        {
+            get
+            {
+                vmRef ??= (RegisterViewModel)DataContext;
+                return vmRef;
+            }
+        }
 
         public RegisterView()
         {
             InitializeComponent();
-
-            RegisterVM = MainViewModel.Instance.RegisterVM;
         }
 
         private void Universal_KeyDown(object sender, KeyEventArgs e)
@@ -43,6 +49,10 @@ namespace RPG_Launcher.View
         }
 
 
+
+
+
+        // BELOW METHODS TECHNICALLY VIOLATE MVVM PATTERN, BUT THIS IS NECESSARY FOR SECURITY (CLEARING PASSWORDBOX).
 
         private void TextBoxPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {

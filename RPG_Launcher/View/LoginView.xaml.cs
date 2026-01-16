@@ -21,13 +21,19 @@ namespace RPG_Launcher.View
     /// </summary>
     public partial class LoginView : UserControl
     {
-        private LoginViewModel LoginVM { get; }
+        private LoginViewModel? vmRef;
+        private LoginViewModel LoginVM
+        {
+            get
+            {
+                vmRef ??= (LoginViewModel)DataContext;
+                return vmRef;
+            }
+        }
 
         public LoginView()
         {
             InitializeComponent();
-
-            LoginVM = MainViewModel.Instance.LoginVM;
         }
 
         private void Universal_KeyDown(object sender, KeyEventArgs e)
@@ -41,6 +47,8 @@ namespace RPG_Launcher.View
                 ButtonLogin_Click(sender, e);
             }
         }
+
+
 
 
 

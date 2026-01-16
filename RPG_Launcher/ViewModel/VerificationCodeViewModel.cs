@@ -86,19 +86,15 @@ namespace RPG_Launcher.ViewModel
                 case CodeContext.NewAccountConfirmation:
                     {
                         int resultCode = LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
-
-                        // Clear verification code field immediately after it is used.
-                        VerificationCode = string.Empty;
-
                         if (resultCode == 1)
                         {
                             ErrorMessage = "Invalid input state, please try again.";
-                            return;
+                            break;
                         }
                         else if (resultCode == -1)
                         {
                             ErrorMessage = "Incorrect verification code.";
-                            return;
+                            break;
                         }
 
                         // After account confirmation is successful, we must re-login using the saved refresh token.
@@ -120,6 +116,9 @@ namespace RPG_Launcher.ViewModel
                     }
                 // Do nothing for None.
             }
+
+            // Before returning, clear verification code field.
+            VerificationCode = string.Empty;
         }
 
         private bool CanExecuteSubmitButtonClicked(object? obj)

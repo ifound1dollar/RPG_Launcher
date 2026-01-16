@@ -103,8 +103,7 @@ namespace RPG_Launcher.ViewModel
             if (loginCode == 1)
             {
                 // Code 1 means account is not yet confirmed, so we must move onto verification code view.
-                MainViewModel.Instance.VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
-                MainViewModel.Instance.ShowVerificationCodeViewCommand.Execute(obj);
+                MainViewModel.Instance.ShowEmailConfirmViewCommand.Execute(obj);
                 return;
             }
             else

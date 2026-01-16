@@ -21,13 +21,19 @@ namespace RPG_Launcher.View
     /// </summary>
     public partial class VerificationCodeView : UserControl
     {
-        private VerificationCodeViewModel VerificationCodeVM { get; }
+        private VerificationCodeViewModel? vmRef;
+        private VerificationCodeViewModel VerificationCodeVM
+        {
+            get
+            {
+                vmRef ??= (VerificationCodeViewModel)DataContext;
+                return vmRef;
+            }
+        }
 
         public VerificationCodeView()
         {
             InitializeComponent();
-
-            VerificationCodeVM = MainViewModel.Instance.VerificationCodeVM;
         }
 
         private void Universal_KeyDown(object sender, KeyEventArgs e)

@@ -111,8 +111,7 @@ namespace RPG_Launcher.ViewModel
             if (registerReturnCode == 0)
             {
                 // If no errors, we move onto the email verification view.
-                MainViewModel.Instance.VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
-                MainViewModel.Instance.ShowVerificationCodeViewCommand.Execute(obj);
+                MainViewModel.Instance.ShowEmailConfirmViewCommand.Execute(obj);
                 return;
             }
             if (registerReturnCode == 1)

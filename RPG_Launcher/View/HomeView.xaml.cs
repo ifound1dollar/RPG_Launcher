@@ -21,13 +21,19 @@ namespace RPG_Launcher.View
     /// </summary>
     public partial class HomeView : UserControl
     {
-        private HomeViewModel HomeVM { get; }
+        private HomeViewModel? vmRef;
+        private HomeViewModel HomeVM
+        {
+            get
+            {
+                vmRef ??= (HomeViewModel)DataContext;
+                return vmRef;
+            }
+        }
 
         public HomeView()
         {
             InitializeComponent();
-
-            HomeVM = MainViewModel.Instance.HomeVM;
         }
     }
 }
