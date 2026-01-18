@@ -30,7 +30,7 @@ namespace RPG_Launcher
             if (loginCode == 0)
             {
                 // Code 0 means existing token is valid, so move on to home screen, then show entire window.
-                mainWindow.MainVM.ShowHomeViewCommand.Execute(sender);
+                mainWindow.MainVM.ShowHomeView();
                 mainWindow.Show();
             }
             else
@@ -39,7 +39,7 @@ namespace RPG_Launcher
                 // NOTE: Our most-recently-logged-in account might have given us a valid refresh token but without
                 //  confirmation. However, we should always return to the login screen even if we already know we
                 //  are awaiting a code. It is jarring to open the app to a confirmation code screen instantly.
-                mainWindow.MainVM.ShowLoginViewCommand.Execute(sender);
+                mainWindow.MainVM.ShowLoginView();
                 mainWindow.Show();
             }
         }

@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RPG_Launcher
@@ -30,23 +31,25 @@ namespace RPG_Launcher
                 Expiration = DateTime.Now.AddMinutes(durationMinutes);
             }
         }
-
         private class VerificationCodeData
         {
             public string Code { get; private set; }
+            public DateTime Created { get; private set; }
             public DateTime Expiration { get; private set; }
             public int AttemptCounter { get; set; }
 
             public VerificationCodeData(string code, double durationMinutes = 5)
             {
                 Code = code;
+                Created = DateTime.UtcNow;
                 Expiration = DateTime.UtcNow.AddMinutes(durationMinutes);
                 AttemptCounter = 0;
             }
         }
-
         private class UserDocumentData
         {
+            // Created time will be used to destroy un-confirmed accounts after 30 days (free the username and email).
+            public DateTime Created { get; set; }
             public string Username { get; set; } = string.Empty;
             public string PasswordHash { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
@@ -60,6 +63,7 @@ namespace RPG_Launcher
 
             public UserDocumentData(string username, string passwordHash, string email)
             {
+                Created = DateTime.UtcNow;
                 Username = username;
                 PasswordHash = passwordHash;
                 Email = email;
@@ -67,6 +71,7 @@ namespace RPG_Launcher
 
             public UserDocumentData(string username, string passwordHash, string email, string refreshToken)
             {
+                Created = DateTime.UtcNow;
                 Username = username;
                 PasswordHash = passwordHash;
                 Email = email;
@@ -74,14 +79,9 @@ namespace RPG_Launcher
             }
         }
 
-        // this is pretending to be the user_accounts MongoDB document model; is just username and password for now
-        private static readonly Dictionary<string, UserDocumentData> testUserAccounts = new()
-        {
-            //{ "testusername", new UserDocumentData("testusername", "testpassword", "testuser@email.com") },
-            //{ "secondusername", new UserDocumentData("secondusername", "secondpassword", "seconduser@email.com") }
-        };
+        private static readonly Dictionary<string, UserDocumentData> testUserAccounts = [];
         private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
-        private static readonly Dictionary<string, VerificationCodeData> testConfirmationCodes = [];
+        private static readonly Dictionary<string, VerificationCodeData> testEmailConfirmationCodes = [];
 
         private static string jwtKey = string.Empty;
 
@@ -92,12 +92,8 @@ namespace RPG_Launcher
 
 
 
-
         public static void Initialize()
         {
-            //WriteUserDocumentsToFile();
-            //testUserAccounts.Clear();     // UNCOMMENT ONLY TO WRITE HARD-CODED ENTRIES TO FILE BEFORE LOADING
-
             ReadUserDocumentsFromFile();
             jwtKey = ReadJwtKeyFromFile();
 
@@ -158,7 +154,7 @@ namespace RPG_Launcher
                     userData.RefreshToken = tokens[0];
 
                     // Send confirmation code immediately (will automatically show screen on client).
-                    CreateAndSendConfirmationCode(username, "000000");
+                    CreateAndSendConfirmationCode(username);
                 }
                 else
                 {
@@ -197,7 +193,7 @@ namespace RPG_Launcher
                         userData.RefreshToken = tokens[0];
 
                         // Send confirmation code immediately (will automatically show screen on client).
-                        CreateAndSendConfirmationCode(username, "000000");
+                        CreateAndSendConfirmationCode(username);
                     }
                     else
                     {
@@ -226,6 +222,23 @@ namespace RPG_Launcher
 
             string[]? tokens = null;
 
+            // Verify validity of email, username, and password before moving on.
+            string pattern = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$";       // Email
+            if (!Regex.IsMatch(email, pattern))
+            {
+                return null;
+            }
+            pattern = @"^[a-zA-Z0-9_]{5,20}$";                                          // Username, 5-20 chars, upper lower digit underscore
+            if (!Regex.IsMatch(username, pattern))
+            {
+                return null; 
+            }
+            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$";          // Password, 8+ chars, 1+ upper lower digit symbol
+            if (!Regex.IsMatch(password, pattern))
+            {
+                return null; 
+            }
+
             // Only allow new registration with unique emails or usernames.
             if (!testUserAccounts.ContainsKey(username) && IsEmailUnique(email))
             {
@@ -239,13 +252,45 @@ namespace RPG_Launcher
                 testUserAccounts.TryAdd(username, new UserDocumentData(username, password, email));
 
                 // Generate a confirmation code for this user and await user confirmation.
-                CreateAndSendConfirmationCode(username, "000000");
+                CreateAndSendConfirmationCode(username);
             }
 
             // TEMP: Write changes in token containers to file anytime they are changed.
             WriteUserDocumentsToFile();
 
             return tokens;
+        }
+
+        public static bool ResendEmailConfirmationCode(string refreshToken)
+        {
+            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
+            if (!TryReadJwtToken(refreshToken, out JwtSecurityToken? token)) return false;
+            string? username = ReadUsernameFromJwtToken(token);
+            if (username == null) return false;
+
+            // Ensure that the account we are searching for actually exists.
+            if (testUserAccounts.TryGetValue(username, out var document))
+            {
+                // Verify that the refresh token is the current, valid refresh token AND that the account is not already confirmed.
+                if (document.RefreshToken != refreshToken || document.IsEmailConfirmed)
+                {
+                    return false; 
+                }
+                
+                // If token and account state are valid, check if we have an existing code for this account.
+                if (testEmailConfirmationCodes.TryGetValue(username, out var codeData))
+                {
+                    // Only allow a new code to be created at most once per minute. Old code remains valid.
+                    if ((DateTime.UtcNow - codeData.Created) < TimeSpan.FromMinutes(1)) return false;
+                }
+
+                // Else no existing code or existing code is from more than one minute ago, so generate new.
+                CreateAndSendConfirmationCode(username);
+                return true;
+            }
+
+            // Return false if account does not exist.
+            return false;
         }
 
         public static bool ConfirmAccountEmail(string refreshToken, string verificationCode)
@@ -263,7 +308,7 @@ namespace RPG_Launcher
             if (testUserAccounts.TryGetValue(username, out var document))
             {
                 // Try to retrieve code data from container.
-                if (!testConfirmationCodes.TryGetValue(username, out var verificationCodeData))
+                if (!testEmailConfirmationCodes.TryGetValue(username, out var verificationCodeData))
                 {
                     return false;
                 }
@@ -271,7 +316,7 @@ namespace RPG_Launcher
                 // If code exists, check expiration BEFORE comparing value.
                 if (verificationCodeData.Expiration < DateTime.UtcNow)
                 {
-                    testConfirmationCodes.Remove(refreshToken);
+                    testEmailConfirmationCodes.Remove(username);
                     return false;
                 }
 
@@ -279,16 +324,16 @@ namespace RPG_Launcher
                 if (verificationCodeData.Code != verificationCode)
                 {
                     // If mismatch, increment counter and remove entire code if greater than threshold.
-                    if ((verificationCodeData.AttemptCounter++) >= 3)
+                    if ((verificationCodeData.AttemptCounter++) >= 3)       // Invalidate on 3rd failure.
                     {
-                        testConfirmationCodes.Remove(refreshToken);
+                        testEmailConfirmationCodes.Remove(username);
                         return false;
                     }
                 }
                 else
                 {
                     // If valid code, we can confirm this account and return true.
-                    testConfirmationCodes.Remove(refreshToken);
+                    testEmailConfirmationCodes.Remove(username);
                     document.IsEmailConfirmed = true;
 
                     // TEMP: Write changes in token containers to file anytime they are changed.
@@ -371,9 +416,13 @@ namespace RPG_Launcher
 
         #region Private: Confirmation Code Utility
 
-        private static void CreateAndSendConfirmationCode(string username, string code)
+        private static void CreateAndSendConfirmationCode(string username)
         {
-            testConfirmationCodes.TryAdd(username, new VerificationCodeData(code, durationMinutes: 5));
+            // TEMP HARD-CODED CONFIRMATION CODE
+            string code = "000000";
+
+            // Replace if existing.
+            testEmailConfirmationCodes[username] = new VerificationCodeData(code, durationMinutes: 5);
 
             // TODO: SEND CODE TO TARGET EMAIL IN THE FUTURE, CAN HAVE EMAIL AS PARAMETER OR LOOK IT UP
         }

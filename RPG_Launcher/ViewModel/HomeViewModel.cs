@@ -47,7 +47,7 @@ namespace RPG_Launcher.ViewModel
             LoginApiService.Instance.Logout();
 
             // After logout, we must return to the login screen (show login window and hide main).
-            MainViewModel.Instance.ShowLoginViewCommand.Execute(obj);
+            MainViewModel.Instance.ShowLoginView();
         }
 
         private bool CanExecuteLogoutClickedCommand(object? obj)

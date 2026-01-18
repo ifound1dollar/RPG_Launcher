@@ -139,6 +139,26 @@ namespace RPG_Launcher.Model
         }
 
         /// <summary>
+        /// Requests a new email confirmation code from the login API. Resending will fail if a new code
+        ///  is requested within one minute of a previous code being generated for this account.
+        /// </summary>
+        /// <returns> A status code describing the request result. 0 for success, 1 for invalid token, -1 for resend denied. </returns>
+        public int ResendEmailConfirmationCode()
+        {
+            if (string.IsNullOrEmpty(AppData.RefreshToken))
+            {
+                return 1;       // 1 for invalid input state
+            }
+
+            if (TempLoginApiImitator.ResendEmailConfirmationCode(AppData.RefreshToken))
+            {
+                return 0;
+            }
+
+            return -1;          // -1 for generic failure (has not been long enough)
+        }
+
+        /// <summary>
         /// Attempts to confirm the email of the currently-logged-in account. Sends the current refresh token
         ///  to the API along with the passed-in verification code that will have been sent to the user's
         ///  email. Returns a status code describing the success or failure of the request.

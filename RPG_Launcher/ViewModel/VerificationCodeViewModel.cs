@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace RPG_Launcher.ViewModel
 {
@@ -15,21 +16,36 @@ namespace RPG_Launcher.ViewModel
     {
         public enum CodeContext { None, NewAccountConfirmation, ResetPassword }
 
+        private readonly Brush infoBrush = Brushes.CornflowerBlue;
+        private readonly Brush errorBrush = Brushes.IndianRed;
+
         private bool isVerificationCodeViewVisible = false;
         private CodeContext context;
 
         private string verificationCode = string.Empty;
-        private string errorMessage = string.Empty;
+        private string targetUser = string.Empty;
+        private Brush messageBrush = Brushes.White;
+        private string statusMessage = string.Empty;
 
         public string VerificationCode
         {
             get => verificationCode;
             set { verificationCode = value; OnPropertyChanged(nameof(VerificationCode)); }
         }
-        public string ErrorMessage
+        public string TargetUser
         {
-            get => errorMessage;
-            set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
+            get => targetUser;
+            set { targetUser = value; OnPropertyChanged(nameof(TargetUser)); }
+        }
+        public Brush MessageBrush
+        {
+            get => messageBrush;
+            set { messageBrush = value; OnPropertyChanged(nameof(MessageBrush)); }
+        }
+        public string StatusMessage
+        {
+            get => statusMessage;
+            set { statusMessage = value; OnPropertyChanged(nameof(StatusMessage)); }
         }
 
 
@@ -46,15 +62,17 @@ namespace RPG_Launcher.ViewModel
             ResendCodeButtonClicked = new ViewModelCommand(ExecuteResendCodeButtonClicked, CanExecuteResendCodeButtonClicked);
         }
 
-        public void SetCodeContext(CodeContext context)
+        public void SetViewContext(CodeContext context, string targetUser)
         {
             this.context = context;
+            TargetUser = targetUser;
         }
 
         public override void ShowView()
         {
             VerificationCode = string.Empty;
-            ErrorMessage = string.Empty;
+            TargetUser = string.Empty;
+            StatusMessage = string.Empty;
 
             isVerificationCodeViewVisible = true;
         }
@@ -70,10 +88,13 @@ namespace RPG_Launcher.ViewModel
 
         private void ExecuteSubmitButtonClicked(object? obj)
         {
+            StatusMessage = string.Empty;
+
             // Validate input, enforcing specific-length code.
             if (VerificationCode.Length != 6)
             {
-                ErrorMessage = "Verification code must be length 6.";
+                StatusMessage = "Verification code must be length 6.";
+                MessageBrush = errorBrush;
                 VerificationCode = string.Empty;
                 return;
             }
@@ -88,24 +109,26 @@ namespace RPG_Launcher.ViewModel
                         int resultCode = LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
                         if (resultCode == 1)
                         {
-                            ErrorMessage = "Invalid input state, please try again.";
+                            StatusMessage = "Invalid input state, please try again.";
+                            MessageBrush = errorBrush;
                             break;
                         }
                         else if (resultCode == -1)
                         {
-                            ErrorMessage = "Incorrect verification code.";
+                            StatusMessage = "Incorrect verification code.";
+                            MessageBrush = errorBrush;
                             break;
                         }
 
                         // After account confirmation is successful, we must re-login using the saved refresh token.
                         if (LoginApiService.Instance.TryLoginFromRefreshToken() == 0)
                         {
-                            MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
+                            MainViewModel.Instance.ShowHomeView();
                         }
                         else
                         {
                             // Return to main login screen if somehow unsuccessful login via refresh (should never happen).
-                            MainViewModel.Instance.ShowLoginViewCommand.Execute(obj);
+                            MainViewModel.Instance.ShowLoginView();
                         }
 
                         break;
@@ -132,10 +155,27 @@ namespace RPG_Launcher.ViewModel
 
         private void ExecuteResendCodeButtonClicked(object? obj)
         {
-            Trace.WriteLine("verification code resend button pressed");
-
-            // Always clear code field right as button Command is executed.
+            // Always clear all fields right as button Command is executed.
             VerificationCode = string.Empty;
+            StatusMessage = string.Empty;
+
+            int resultCode = LoginApiService.Instance.ResendEmailConfirmationCode();
+            if (resultCode == 1)
+            {
+                StatusMessage = "Invalid input state, please try again.";
+                MessageBrush = errorBrush;
+                return;
+            }
+            else if (resultCode == -1)
+            {
+                StatusMessage = "Please wait at least 60 seconds before requesting a new code.";
+                MessageBrush = errorBrush;
+                return;
+            }
+
+            // Else successful, so update status message with success confirmation.
+            StatusMessage = "Code successfuly re-sent.";
+            MessageBrush = infoBrush;
         }
 
         private bool CanExecuteResendCodeButtonClicked(object? obj)

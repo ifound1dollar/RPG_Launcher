@@ -90,6 +90,8 @@ namespace RPG_Launcher.ViewModel
             // NOTE: We have to compare Password and Confirm Password fields within the View, not here.
             //  It is not trivial to compare SecureStrings, so we compare the PasswordBoxes in RegisterView.
 
+            NetworkCredential credential = new(Username, SecurePassword);
+
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
             if (Email.Length <= 0 || Username.Length <= 0 || SecurePassword.Length <= 0)
@@ -105,13 +107,27 @@ namespace RPG_Launcher.ViewModel
                 ErrorMessage = "Please enter a valid email.";
                 return;
             }
+            // Verify username is valid.
+            pattern = @"^[a-zA-Z0-9_]{5,20}$";
+            if (!Regex.IsMatch(Username, pattern))
+            {
+                ErrorMessage = "Username must be length 5-20 and include only letters, numbers, and underscores.";
+                return;
+            }
+            // Verify password is valid. Supported characters are in the final [] section.
+            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$";
+            if (!Regex.IsMatch(credential.Password, pattern))
+            {
+                ErrorMessage = "Password must be minimum 8 characters and include at least one uppercase letter, lowercase letter, number, and symbol.";
+                return;
+            }
 
             // Call API service login method with Username and Password.
-            int registerReturnCode = LoginApiService.Instance.Register(Email, new NetworkCredential(Username, SecurePassword));
+            int registerReturnCode = LoginApiService.Instance.Register(Email, credential);
             if (registerReturnCode == 0)
             {
                 // If no errors, we move onto the email verification view.
-                MainViewModel.Instance.ShowEmailConfirmViewCommand.Execute(obj);
+                MainViewModel.Instance.ShowEmailConfirmationView(Email);
                 return;
             }
             if (registerReturnCode == 1)
@@ -136,11 +152,11 @@ namespace RPG_Launcher.ViewModel
 
         #endregion
 
-        #region Private: ForgotPasswordClickedCommand
+        #region Private: AlreadyHaveClickedCommand
 
         private void ExecuteAlreadyHaveClickedCommand(object? obj)
         {
-            MainViewModel.Instance.ShowLoginViewCommand.Execute(obj);
+            MainViewModel.Instance.ShowLoginView();
         }
 
         private bool CanExecuteAlreadyHaveClickedCommand(object? obj)

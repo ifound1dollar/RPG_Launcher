@@ -39,25 +39,12 @@ namespace RPG_Launcher.ViewModel
         private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
         private VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
 
-        // Commands (for showing Views)
-        public ICommand ShowHomeViewCommand;
-        public ICommand ShowLoginViewCommand;
-        public ICommand ShowRegisterViewCommand;
-        public ICommand ShowEmailConfirmViewCommand;
-        
-
-
         public MainViewModel()
         {
             Instance = this;
 
             windowTitle = string.Empty;     // Make window title empty, but is set in App.xaml.cs.
             currentViewModel = HomeVM;      // Default to HomeViewModel, but don't show yet. Set local property (no event).
-
-            ShowHomeViewCommand = new ViewModelCommand(ExecuteShowHomeViewCommand);
-            ShowLoginViewCommand = new ViewModelCommand(ExecuteShowLoginViewCommand);
-            ShowRegisterViewCommand = new ViewModelCommand(ExecuteShowRegisterViewCommand);
-            ShowEmailConfirmViewCommand = new ViewModelCommand(ExecuteShowEmailConfirmViewCommand);
         }
 
         public override void HideView()
@@ -81,7 +68,7 @@ namespace RPG_Launcher.ViewModel
 
 
 
-        private void ExecuteShowHomeViewCommand(object? obj)
+        public void ShowHomeView()
         {
             HideAllViews();
             HomeVM.ShowView();
@@ -89,7 +76,7 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = HomeVM;
         }
 
-        private void ExecuteShowLoginViewCommand(object? obj)
+        public void ShowLoginView()
         {
             HideAllViews();
             LoginVM.ShowView();
@@ -97,7 +84,7 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = LoginVM;
         }
 
-        private void ExecuteShowRegisterViewCommand(object? obj)
+        public void ShowRegisterView()
         {
             HideAllViews();
             RegisterVM.ShowView();
@@ -105,12 +92,12 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = RegisterVM;
         }
 
-        private void ExecuteShowEmailConfirmViewCommand(object? obj)
+        public void ShowEmailConfirmationView(string targetUser)
         {
             HideAllViews();
             VerificationCodeVM.ShowView();
 
-            VerificationCodeVM.SetCodeContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
+            VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation, targetUser);
 
             CurrentViewModel = VerificationCodeVM;
         }

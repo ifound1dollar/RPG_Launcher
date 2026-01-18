@@ -97,13 +97,13 @@ namespace RPG_Launcher.ViewModel
             if (loginCode == 0)
             {
                 // Code 0 means full login success, so show home view.
-                MainViewModel.Instance.ShowHomeViewCommand.Execute(obj);
+                MainViewModel.Instance.ShowHomeView();
                 return;
             }
             if (loginCode == 1)
             {
-                // Code 1 means account is not yet confirmed, so we must move onto verification code view.
-                MainViewModel.Instance.ShowEmailConfirmViewCommand.Execute(obj);
+                // Code 1 means account is not yet confirmed, so we must move onto confirmation code view.
+                MainViewModel.Instance.ShowEmailConfirmationView(Username);
                 return;
             }
             else
@@ -140,7 +140,7 @@ namespace RPG_Launcher.ViewModel
 
         private void ExecuteNewUserClickedCommand(object? obj)
         {
-            MainViewModel.Instance.ShowRegisterViewCommand.Execute(obj);
+            MainViewModel.Instance.ShowRegisterView();
         }
 
         private bool CanExecuteNewUserClickedCommand(object? obj)

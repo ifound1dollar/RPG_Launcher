@@ -92,7 +92,7 @@
                     </Button.Style>
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border CornerRadius="4"
+                            <Border CornerRadius="0"
                                     Background="{TemplateBinding Background}">
                                 <ContentPresenter VerticalAlignment="Bottom"
                                                   HorizontalAlignment="Center"/>
@@ -126,7 +126,7 @@
                     </Button.Style>
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border CornerRadius="4"
+                            <Border CornerRadius="0"
                                     Background="{TemplateBinding Background}">
                                 <ContentPresenter VerticalAlignment="Top"
                                                   HorizontalAlignment="Center"
