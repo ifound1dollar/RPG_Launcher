@@ -1,4 +1,4 @@
-﻿using RPG_Launcher.ViewModel;
+﻿using RPG_Launcher.ViewModel.Account;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,21 +17,21 @@ using System.Windows.Shapes;
 namespace RPG_Launcher.View
 {
     /// <summary>
-    /// Interaction logic for ReturnToLoginView.xaml
+    /// Interaction logic for ForgotPasswordView.xaml
     /// </summary>
-    public partial class ReturnToLoginView : UserControl
+    public partial class ForgotPasswordView : UserControl
     {
-        private ReturnToLoginViewModel? vmRef;
-        private ReturnToLoginViewModel ReturnToLoginVM
+        private ForgotPasswordViewModel? vmRef;
+        private ForgotPasswordViewModel ForgotPasswordVM
         {
             get
             {
-                vmRef ??= (ReturnToLoginViewModel)DataContext;
+                vmRef ??= (ForgotPasswordViewModel)DataContext;
                 return vmRef;
             }
         }
 
-        public ReturnToLoginView()
+        public ForgotPasswordView()
         {
             InitializeComponent();
         }
@@ -44,17 +44,25 @@ namespace RPG_Launcher.View
                 Keyboard.ClearFocus();
 
                 // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
-                ButtonReturn_Click(sender, e);
+                ButtonSubmit_Click(sender, e);
             }
         }
 
 
 
-        private void ButtonReturn_Click(object sender, RoutedEventArgs e)
+        private void ButtonSubmit_Click(object sender, RoutedEventArgs e)
         {
-            if (ReturnToLoginVM.ReturnButtonClickedCommand.CanExecute(sender))
+            if (ForgotPasswordVM.SubmitButtonClickedCommand.CanExecute(sender))
             {
-                ReturnToLoginVM.ReturnButtonClickedCommand.Execute(sender);
+                ForgotPasswordVM.SubmitButtonClickedCommand.Execute(sender);
+            }
+        }
+
+        private void ReturnToLoginTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ForgotPasswordVM.ReturnToLoginClickedCommand.CanExecute(sender))
+            {
+                ForgotPasswordVM.ReturnToLoginClickedCommand.Execute(sender);
             }
         }
     }

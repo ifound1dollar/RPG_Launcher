@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace RPG_Launcher.ViewModel
+namespace RPG_Launcher.ViewModel.General
 {
     public class HomeViewModel : ViewModelBase
     {

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace RPG_Launcher.ViewModel
+namespace RPG_Launcher.ViewModel.Account
 {
     public class VerificationCodeViewModel : ViewModelBase
     {

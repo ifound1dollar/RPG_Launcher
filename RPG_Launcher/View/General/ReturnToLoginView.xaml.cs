@@ -1,4 +1,4 @@
-﻿using RPG_Launcher.ViewModel;
+﻿using RPG_Launcher.ViewModel.General;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,21 +17,21 @@ using System.Windows.Shapes;
 namespace RPG_Launcher.View
 {
     /// <summary>
-    /// Interaction logic for ForgotPasswordView.xaml
+    /// Interaction logic for ReturnToLoginView.xaml
     /// </summary>
-    public partial class ForgotPasswordView : UserControl
+    public partial class ReturnToLoginView : UserControl
     {
-        private ForgotPasswordViewModel? vmRef;
-        private ForgotPasswordViewModel ForgotPasswordVM
+        private ReturnToLoginViewModel? vmRef;
+        private ReturnToLoginViewModel ReturnToLoginVM
         {
             get
             {
-                vmRef ??= (ForgotPasswordViewModel)DataContext;
+                vmRef ??= (ReturnToLoginViewModel)DataContext;
                 return vmRef;
             }
         }
 
-        public ForgotPasswordView()
+        public ReturnToLoginView()
         {
             InitializeComponent();
         }
@@ -44,25 +44,17 @@ namespace RPG_Launcher.View
                 Keyboard.ClearFocus();
 
                 // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
-                ButtonSubmit_Click(sender, e);
+                ButtonReturn_Click(sender, e);
             }
         }
 
 
 
-        private void ButtonSubmit_Click(object sender, RoutedEventArgs e)
+        private void ButtonReturn_Click(object sender, RoutedEventArgs e)
         {
-            if (ForgotPasswordVM.SubmitButtonClickedCommand.CanExecute(sender))
+            if (ReturnToLoginVM.ReturnButtonClickedCommand.CanExecute(sender))
             {
-                ForgotPasswordVM.SubmitButtonClickedCommand.Execute(sender);
-            }
-        }
-
-        private void ReturnToLoginTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (ForgotPasswordVM.ReturnToLoginClickedCommand.CanExecute(sender))
-            {
-                ForgotPasswordVM.ReturnToLoginClickedCommand.Execute(sender);
+                ReturnToLoginVM.ReturnButtonClickedCommand.Execute(sender);
             }
         }
     }

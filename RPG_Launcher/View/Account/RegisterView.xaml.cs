@@ -1,8 +1,9 @@
-﻿using RPG_Launcher.ViewModel;
+﻿using RPG_Launcher.ViewModel.Account;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,21 +18,21 @@ using System.Windows.Shapes;
 namespace RPG_Launcher.View
 {
     /// <summary>
-    /// Interaction logic for LoginView.xaml
+    /// Interaction logic for RegisterView.xaml
     /// </summary>
-    public partial class LoginView : UserControl
+    public partial class RegisterView : UserControl
     {
-        private LoginViewModel? vmRef;
-        private LoginViewModel LoginVM
+        private RegisterViewModel? vmRef;
+        private RegisterViewModel RegisterVM
         {
             get
             {
-                vmRef ??= (LoginViewModel)DataContext;
+                vmRef ??= (RegisterViewModel)DataContext;
                 return vmRef;
             }
         }
 
-        public LoginView()
+        public RegisterView()
         {
             InitializeComponent();
         }
@@ -44,7 +45,7 @@ namespace RPG_Launcher.View
                 Keyboard.ClearFocus();
 
                 // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
-                ButtonLogin_Click(sender, e);
+                ButtonRegister_Click(sender, e);
             }
         }
 
@@ -57,39 +58,36 @@ namespace RPG_Launcher.View
         private void TextBoxPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
             // Update ViewModel directly when this password box is updated. This includes after Clear() is called.
-            LoginVM.SecurePassword = (TextBoxPassword.SecurePassword);
+            RegisterVM.SecurePassword = (TextBoxPassword.SecurePassword);
         }
 
-        private void ButtonLogin_Click(object sender, RoutedEventArgs e)
+        private void ButtonRegister_Click(object sender, RoutedEventArgs e)
         {
-            // Execute command according to MVVM pattern.
-            if (LoginVM.LoginClickedCommand.CanExecute(sender))
+            // Before calling Command in ViewModel, verify that both PasswordBoxes match. We cannot easily compare
+            //  SecurePasswords in the ViewModel, so we break the MVVM pattern here to compare.
+            if (TextBoxPassword.Password != TextBoxConfirmPassword.Password)
             {
-                LoginVM.LoginClickedCommand.Execute(sender);
-
-                // We should be immediately clearing the PasswordBox when we attempt login, successful or not.
+                // Directly update ErrorMessage in ViewModel, which is weird but necessary here.
+                RegisterVM.ErrorMessage = "Both password fields must match.";
                 ClearPasswords();
+                return;
             }
 
-        }
-
-        private void ForgotPasswordTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (LoginVM.ForgotPasswordClickedCommand.CanExecute(sender))
+            // Directly call ViewModel Command. Always clear passwords immedately on click, regardless of success.
+            if (RegisterVM.RegisterClickedCommand.CanExecute(sender))
             {
-                LoginVM.ForgotPasswordClickedCommand.Execute(sender);
-
+                RegisterVM.RegisterClickedCommand.Execute(sender);
                 ClearPasswords();
             }
         }
 
-        private void NewUserTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void AlreadyHaveTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (LoginVM.NewUserClickedCommand.CanExecute(sender))
+            if (RegisterVM.AlreadyHaveClickedCommand.CanExecute(sender))
             {
-                LoginVM.NewUserClickedCommand.Execute(sender);
+                RegisterVM.AlreadyHaveClickedCommand.Execute(sender);
 
-                // Always immediately clear password box and ViewModel property.
+                // Always immediately clear password boxes and ViewModel property.
                 ClearPasswords();
             }
         }
@@ -100,7 +98,8 @@ namespace RPG_Launcher.View
         {
             // Clear both password boxes and ViewModel property.
             TextBoxPassword.Clear();
-            LoginVM.SecurePassword.Clear();
+            RegisterVM.SecurePassword.Clear();
+            TextBoxConfirmPassword.Clear();
         }
     }
 }

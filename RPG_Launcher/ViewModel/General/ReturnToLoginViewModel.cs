@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace RPG_Launcher.ViewModel
+namespace RPG_Launcher.ViewModel.General
 {
     public class ReturnToLoginViewModel : ViewModelBase
     {

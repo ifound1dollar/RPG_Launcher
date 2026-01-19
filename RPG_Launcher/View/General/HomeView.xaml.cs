@@ -1,4 +1,4 @@
-﻿using RPG_Launcher.ViewModel;
+﻿using RPG_Launcher.ViewModel.General;
 using System;
 using System.Collections.Generic;
 using System.Linq;

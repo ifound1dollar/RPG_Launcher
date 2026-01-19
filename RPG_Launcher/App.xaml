@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:RPG_Launcher.ViewModel"
+             xmlns:vma="clr-namespace:RPG_Launcher.ViewModel.Account"
+             xmlns:vmg="clr-namespace:RPG_Launcher.ViewModel.General"
              xmlns:v="clr-namespace:RPG_Launcher.View"
              xmlns:local="clr-namespace:RPG_Launcher"
              Startup="Application_Startup"
@@ -17,25 +19,25 @@
             then we flip back and forth between view models as necessary using commands
             within the MainViewModel. -->
     <Application.Resources>
-        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+        <DataTemplate DataType="{x:Type vma:LoginViewModel}">
             <v:LoginView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+        <DataTemplate DataType="{x:Type vmg:HomeViewModel}">
             <v:HomeView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:RegisterViewModel}">
+        <DataTemplate DataType="{x:Type vma:RegisterViewModel}">
             <v:RegisterView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:VerificationCodeViewModel}">
+        <DataTemplate DataType="{x:Type vma:VerificationCodeViewModel}">
             <v:VerificationCodeView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ResetPasswordViewModel}">
+        <DataTemplate DataType="{x:Type vma:ResetPasswordViewModel}">
             <v:ResetPasswordView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ReturnToLoginViewModel}">
+        <DataTemplate DataType="{x:Type vmg:ReturnToLoginViewModel}">
             <v:ReturnToLoginView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:ForgotPasswordViewModel}">
+        <DataTemplate DataType="{x:Type vma:ForgotPasswordViewModel}">
             <v:ForgotPasswordView/>
         </DataTemplate>
     </Application.Resources>

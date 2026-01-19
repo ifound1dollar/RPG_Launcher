@@ -1,6 +1,8 @@
 ﻿using RPG_Launcher.Model;
 using RPG_Launcher.Util;
+using RPG_Launcher.ViewModel.Account;
 using RPG_Launcher.ViewModel.Base;
+using RPG_Launcher.ViewModel.General;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
