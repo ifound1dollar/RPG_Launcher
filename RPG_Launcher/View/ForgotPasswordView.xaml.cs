@@ -17,32 +17,33 @@ using System.Windows.Shapes;
 namespace RPG_Launcher.View
 {
     /// <summary>
-    /// Interaction logic for VerificationCodeView.xaml
+    /// Interaction logic for ForgotPasswordView.xaml
     /// </summary>
-    public partial class VerificationCodeView : UserControl
+    public partial class ForgotPasswordView : UserControl
     {
-        private VerificationCodeViewModel? vmRef;
-        private VerificationCodeViewModel VerificationCodeVM
+        private ForgotPasswordViewModel? vmRef;
+        private ForgotPasswordViewModel ForgotPasswordVM
         {
             get
             {
-                vmRef ??= (VerificationCodeViewModel)DataContext;
+                vmRef ??= (ForgotPasswordViewModel)DataContext;
                 return vmRef;
             }
         }
 
-        public VerificationCodeView()
+        public ForgotPasswordView()
         {
             InitializeComponent();
         }
 
         private void Universal_KeyDown(object sender, KeyEventArgs e)
         {
-            // On enter key pressed, fire the same command as the submit button.
+            // On enter key pressed, fire the same command as the login button.
             if (e.Key == Key.Enter)
             {
                 Keyboard.ClearFocus();
 
+                // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
                 ButtonSubmit_Click(sender, e);
             }
         }
@@ -51,25 +52,17 @@ namespace RPG_Launcher.View
 
         private void ButtonSubmit_Click(object sender, RoutedEventArgs e)
         {
-            if (VerificationCodeVM.SubmitButtonClickedCommand.CanExecute(sender))
+            if (ForgotPasswordVM.SubmitButtonClickedCommand.CanExecute(sender))
             {
-                VerificationCodeVM.SubmitButtonClickedCommand.Execute(sender);
-            }
-        }
-
-        private void ResendCodeTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (VerificationCodeVM.ResendCodeButtonClickedCommand.CanExecute(sender))
-            {
-                VerificationCodeVM.ResendCodeButtonClickedCommand.Execute(sender);
+                ForgotPasswordVM.SubmitButtonClickedCommand.Execute(sender);
             }
         }
 
         private void ReturnToLoginTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (VerificationCodeVM.ReturnToLoginClickedCommand.CanExecute(sender))
+            if (ForgotPasswordVM.ReturnToLoginClickedCommand.CanExecute(sender))
             {
-                VerificationCodeVM.ReturnToLoginClickedCommand.Execute(sender);
+                ForgotPasswordVM.ReturnToLoginClickedCommand.Execute(sender);
             }
         }
     }

@@ -21,8 +21,10 @@ namespace RPG_Launcher.ViewModel
 
         private bool isVerificationCodeViewVisible = false;
         private CodeContext context;
+        private DateTime lastSent;
 
         private string verificationCode = string.Empty;
+        private string contextTitle = string.Empty;
         private string targetUser = string.Empty;
         private Brush messageBrush = Brushes.White;
         private string statusMessage = string.Empty;
@@ -31,6 +33,11 @@ namespace RPG_Launcher.ViewModel
         {
             get => verificationCode;
             set { verificationCode = value; OnPropertyChanged(nameof(VerificationCode)); }
+        }
+        public string ContextTitle
+        {
+            get => contextTitle;
+            set { contextTitle = value; OnPropertyChanged(nameof(ContextTitle)); }
         }
         public string TargetUser
         {
@@ -51,28 +58,34 @@ namespace RPG_Launcher.ViewModel
 
 
         // Commands
-        public ICommand SubmitButtonClicked { get; }
-        public ICommand ResendCodeButtonClicked { get; }
+        public ICommand SubmitButtonClickedCommand { get; }
+        public ICommand ResendCodeButtonClickedCommand { get; }
+        public ICommand ReturnToLoginClickedCommand { get; }
 
 
 
         public VerificationCodeViewModel()
         {
-            SubmitButtonClicked = new ViewModelCommand(ExecuteSubmitButtonClicked, CanExecuteSubmitButtonClicked);
-            ResendCodeButtonClicked = new ViewModelCommand(ExecuteResendCodeButtonClicked, CanExecuteResendCodeButtonClicked);
+            SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClicked, CanExecuteSubmitButtonClicked);
+            ResendCodeButtonClickedCommand = new ViewModelCommand(ExecuteResendCodeButtonClicked, CanExecuteResendCodeButtonClicked);
+            ReturnToLoginClickedCommand = new ViewModelCommand(ExecuteReturnToLoginClickedCommand, CanExecuteReturnToLoginClickedCommand);
         }
 
-        public void SetViewContext(CodeContext context, string targetUser)
+        public void SetViewContext(CodeContext context)
         {
             this.context = context;
-            TargetUser = targetUser;
+            ContextTitle = (context == CodeContext.NewAccountConfirmation) ? "Confirm Email" : "Reset Password";
         }
 
         public override void ShowView()
         {
             VerificationCode = string.Empty;
+            ContextTitle = string.Empty;
             TargetUser = string.Empty;
             StatusMessage = string.Empty;
+
+            // Set lastSent to now, as we should be showing immediately after sending.
+            lastSent = DateTime.UtcNow;
 
             isVerificationCodeViewVisible = true;
         }
@@ -115,7 +128,7 @@ namespace RPG_Launcher.ViewModel
                         }
                         else if (resultCode == -1)
                         {
-                            StatusMessage = "Incorrect verification code.";
+                            StatusMessage = "Incorrect confirmation code.";
                             MessageBrush = errorBrush;
                             break;
                         }
@@ -135,6 +148,24 @@ namespace RPG_Launcher.ViewModel
                     }
                 case CodeContext.ResetPassword:
                     {
+                        // We pass the target user instead of refresh token because we might not have a valid refresh token here.
+                        int resultCode = LoginApiService.Instance.RequestPasswordResetTokenFromCode(TargetUser, VerificationCode);
+                        if (resultCode == 1)
+                        {
+                            StatusMessage = "Invalid input state, please try again.";
+                            MessageBrush = errorBrush;
+                            break;
+                        }
+                        else if (resultCode == -1)
+                        {
+                            StatusMessage = "Incorrect confirmation code.";
+                            MessageBrush = errorBrush;
+                            break;
+                        }
+
+                        // After request is successful (code 0), we move on to password reset screen.
+                        MainViewModel.Instance.ShowResetPasswordView(TargetUser);
+
                         break;
                     }
                 // Do nothing for None.
@@ -159,19 +190,17 @@ namespace RPG_Launcher.ViewModel
             VerificationCode = string.Empty;
             StatusMessage = string.Empty;
 
-            int resultCode = LoginApiService.Instance.ResendEmailConfirmationCode();
-            if (resultCode == 1)
-            {
-                StatusMessage = "Invalid input state, please try again.";
-                MessageBrush = errorBrush;
-                return;
-            }
-            else if (resultCode == -1)
+            // Only allow one new code per minute.
+            if ((DateTime.UtcNow - lastSent) < TimeSpan.FromMinutes(1))
             {
                 StatusMessage = "Please wait at least 60 seconds before requesting a new code.";
                 MessageBrush = errorBrush;
                 return;
             }
+
+            // Send new confirmation code, not getting any response for security reasons.
+            LoginApiService.Instance.SendEmailConfirmationCode(targetUser);
+            lastSent = DateTime.UtcNow;
 
             // Else successful, so update status message with success confirmation.
             StatusMessage = "Code successfuly re-sent.";
@@ -179,6 +208,21 @@ namespace RPG_Launcher.ViewModel
         }
 
         private bool CanExecuteResendCodeButtonClicked(object? obj)
+        {
+            return isVerificationCodeViewVisible;
+        }
+
+        #endregion
+
+        #region Private: ReturnToLoginClicked
+
+        private void ExecuteReturnToLoginClickedCommand(object? obj)
+        {
+            // Simply navigates back to login view, ignoring any pending code that exists on the server.
+            MainViewModel.Instance.ShowLoginView();
+        }
+
+        private bool CanExecuteReturnToLoginClickedCommand(object? obj)
         {
             return isVerificationCodeViewVisible;
         }

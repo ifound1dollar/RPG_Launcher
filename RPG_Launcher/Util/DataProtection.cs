@@ -49,7 +49,7 @@ namespace RPG_Launcher.Util
         //  the final value (consider it a 'seed').
         // https://stackoverflow.com/questions/1326001/windows-dpapi-what-to-do-with-entropy
         // https://stackoverflow.com/questions/2585746/securely-storing-optional-entropy-while-using-dpapi
-        private static readonly byte[] entropyBase =
+        private static readonly byte[] seed =
             [ 73, 161, 134, 115,   46, 185, 242, 41,   218, 14, 199, 147,   16, 131, 186, 8 ];
 
         private static readonly string credentialsPath = "credentials.dat";
@@ -144,8 +144,8 @@ namespace RPG_Launcher.Util
             // Here is our logic for using data retrieved from appdata.json (stored in AppData class) and using
             //  it to securely store the user's refresh token.
 
-            byte[] entropy = new byte[entropyBase.Length];
-            Array.Copy(entropyBase, entropy, entropyBase.Length);
+            byte[] entropy = new byte[seed.Length];
+            Array.Copy(seed, entropy, seed.Length);
 
             // TIMESTAMP SCRAMBLING
             byte[] bytes = Encoding.UTF8.GetBytes(AppData.Timestamp);

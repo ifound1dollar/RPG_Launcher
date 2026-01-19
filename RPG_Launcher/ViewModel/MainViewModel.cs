@@ -38,6 +38,9 @@ namespace RPG_Launcher.ViewModel
         private LoginViewModel LoginVM { get; } = new LoginViewModel();
         private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
         private VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
+        private ResetPasswordViewModel ResetPasswordVM { get; } = new ResetPasswordViewModel();
+        private ReturnToLoginViewModel ReturnToLoginVM { get; } = new ReturnToLoginViewModel();
+        private ForgotPasswordViewModel ForgotPasswordVM { get; } = new ForgotPasswordViewModel();
 
         public MainViewModel()
         {
@@ -92,15 +95,53 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = RegisterVM;
         }
 
-        public void ShowEmailConfirmationView(string targetUser)
+        public void ShowVerificationCodeView(bool isForNewAccount, string targetUser)
         {
             HideAllViews();
             VerificationCodeVM.ShowView();
 
-            VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation, targetUser);
+            if (isForNewAccount)
+            {
+                VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
+            }
+            else
+            {
+                VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.ResetPassword);
+            }
+            VerificationCodeVM.TargetUser = targetUser;
 
             CurrentViewModel = VerificationCodeVM;
         }
 
+        public void ShowResetPasswordView(string targetUser)
+        {
+            HideAllViews();
+            ResetPasswordVM.ShowView();
+
+            ResetPasswordVM.TargetUser = targetUser;
+
+            CurrentViewModel = ResetPasswordVM;
+        }
+
+        public void ShowReturnToLoginView(bool isError, string statusMessage)
+        {
+            HideAllViews();
+            ReturnToLoginVM.ShowView();
+
+            ReturnToLoginVM.StatusMessage = statusMessage;
+            ReturnToLoginVM.SetMessageIsError(isError);
+
+            CurrentViewModel = ReturnToLoginVM;
+        }
+
+        public void ShowForgotPasswordView(string targetUser)
+        {
+            HideAllViews();
+            ForgotPasswordVM.ShowView();
+
+            ForgotPasswordVM.Username = targetUser;
+
+            CurrentViewModel = ForgotPasswordVM;
+        }
     }
 }

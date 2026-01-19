@@ -29,14 +29,21 @@
                        Margin="0,25,0,0"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
 
+            <TextBlock Text="{Binding ContextTitle, Mode=TwoWay}"
+                       Foreground="AliceBlue"
+                       FontSize="20"
+                       FontFamily="Segoe UI Semibold"
+                       HorizontalAlignment="Center"
+                       Margin="0,15,0,0"/>
+
             <!-- Target user title. -->
-            <TextBlock Text="Confirmation code sent to email associated with user account: "
+            <TextBlock Text="Verification code sent to email associated with user account: "
                        Foreground="LightBlue"
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
-                       Margin="10,25,10,0"/>
+                       Margin="10,15,10,0"/>
             <TextBlock Text="{Binding TargetUser, Mode=TwoWay}"
                        Foreground="LightBlue"
                        FontSize="16"
@@ -45,26 +52,36 @@
                        HorizontalAlignment="Center"/>
 
             <!-- Verification code header and text box. -->
-            <TextBlock Text="Confirmation Code"
-                       Foreground="LightSlateGray"
-                       FontSize="16"
-                       FontFamily="Segoe UI"
-                       HorizontalAlignment="Center"
-                       Margin="0,25,0,0"/>
-            <TextBox Name="TextBoxVerificationCode"
-                     Text="{Binding VerificationCode, UpdateSourceTrigger=PropertyChanged}"
-                     Height="32"
-                     VerticalContentAlignment="Center"
-                     HorizontalContentAlignment="Center"
-                     Foreground="LightGray"
-                     Background="#33000000"
-                     FontSize="20"
-                     FontFamily="Segoe UI Semibold"
-                     CaretBrush="LightSlateGray"
-                     BorderBrush="SlateGray"
-                     BorderThickness="0,0,0,0"
-                     Margin="50,2,50,0"
-                     Padding="5,2,5,2"/>
+            <Grid Height="32"
+                  Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="160"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Code: "
+                           Foreground="LightSlateGray"
+                           FontSize="16"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Margin="20,0,0,0"/>
+                <TextBox Name="TextBoxVerificationCode"
+                         Text="{Binding VerificationCode, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         Foreground="LightGray"
+                         Background="#33000000"
+                         FontSize="20"
+                         FontFamily="Segoe UI Semibold"
+                         CaretBrush="LightSlateGray"
+                         BorderBrush="SlateGray"
+                         BorderThickness="0,0,0,0"
+                         Margin="2,0,50,0"
+                         Padding="5,2,5,2"
+                         MaxLength="6"
+                         Grid.Column="1"/>
+            </Grid>
 
             <!-- Error message. -->
             <TextBlock Text="{Binding StatusMessage, Mode=TwoWay}"
@@ -82,7 +99,7 @@
                     FontSize="20"
                     Cursor="Hand"
                     Margin="40,10,40,0"
-                    Command="{Binding SubmitButtonClicked}">
+                    Click="ButtonSubmit_Click">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4b4094"/>
@@ -115,8 +132,29 @@
                         FontFamily="Segoe UI"
                         HorizontalAlignment="Center"
                         Cursor="Hand"
-                        Margin="0,20,0,0"
+                        Margin="0,12,0,0"
                         MouseLeftButtonDown="ResendCodeTextBlock_MouseLeftButtonDown">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="LightSlateGray"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Return to login interactable (clickable) text block. -->
+            <TextBlock Name="ReturnToLoginTextBlock"
+                       Text="Return to login"
+                       Background="Transparent"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Cursor="Hand"
+                       Margin="0,20,0,0"
+                       MouseLeftButtonDown="ReturnToLoginTextBlock_MouseLeftButtonDown">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Foreground" Value="LightSlateGray"/>

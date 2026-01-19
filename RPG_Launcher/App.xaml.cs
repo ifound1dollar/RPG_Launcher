@@ -33,12 +33,21 @@ namespace RPG_Launcher
                 mainWindow.MainVM.ShowHomeView();
                 mainWindow.Show();
             }
+            else if (loginCode == 1)
+            {
+                // Code 1 means account email needs confirmation before we can fully log in.
+                mainWindow.MainVM.ShowVerificationCodeView(isForNewAccount: true, AppData.SavedUsername);
+                mainWindow.Show();
+            }
+            else if (loginCode == 2)
+            {
+                // Code 2 means password must be reset for security reasons.
+                mainWindow.MainVM.ShowVerificationCodeView(isForNewAccount: false, AppData.SavedUsername);
+                mainWindow.Show();
+            }
             else
             {
-                // Else we did not fully log in (code 1 or -1), so return to login screen.
-                // NOTE: Our most-recently-logged-in account might have given us a valid refresh token but without
-                //  confirmation. However, we should always return to the login screen even if we already know we
-                //  are awaiting a code. It is jarring to open the app to a confirmation code screen instantly.
+                // Any other code (ex. -1) indicates generic failure, so return to login screen.
                 mainWindow.MainVM.ShowLoginView();
                 mainWindow.Show();
             }

@@ -100,10 +100,16 @@ namespace RPG_Launcher.ViewModel
                 MainViewModel.Instance.ShowHomeView();
                 return;
             }
-            if (loginCode == 1)
+            else if (loginCode == 1)
             {
                 // Code 1 means account is not yet confirmed, so we must move onto confirmation code view.
-                MainViewModel.Instance.ShowEmailConfirmationView(Username);
+                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:true, Username);
+                return;
+            }
+            else if (loginCode == 2)
+            {
+                // Code 2 means account password must be reset for security reasons.
+                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:false, Username);
                 return;
             }
             else
@@ -126,7 +132,8 @@ namespace RPG_Launcher.ViewModel
 
         private void ExecuteForgotPasswordClickedCommand(string username)
         {
-            throw new NotImplementedException();
+            // Show forgot password view, auto-populating username or password field with Username.
+            MainViewModel.Instance.ShowForgotPasswordView(Username);
         }
 
         private bool CanExecuteForgotPasswordClickedCommand(object? obj)

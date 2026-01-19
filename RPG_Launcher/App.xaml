@@ -29,6 +29,15 @@
         <DataTemplate DataType="{x:Type vm:VerificationCodeViewModel}">
             <v:VerificationCodeView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ResetPasswordViewModel}">
+            <v:ResetPasswordView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReturnToLoginViewModel}">
+            <v:ReturnToLoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ForgotPasswordViewModel}">
+            <v:ForgotPasswordView/>
+        </DataTemplate>
     </Application.Resources>
     
 </Application>

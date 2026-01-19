@@ -21,14 +21,16 @@ namespace RPG_Launcher
         private class AccessTokenData
         {
             public string Username { get; private set; }
+            public string Token { get; private set; }
             public Guid ClientGuid { get; private set; }
             public DateTime Expiration { get; private set; }
 
-            public AccessTokenData(string username, Guid clientGuid, double durationMinutes)
+            public AccessTokenData(string username, string token, Guid clientGuid, double durationMinutes)
             {
                 Username = username;
+                Token = token;
                 ClientGuid = clientGuid;
-                Expiration = DateTime.Now.AddMinutes(durationMinutes);
+                Expiration = DateTime.UtcNow.AddMinutes(durationMinutes);
             }
         }
         private class VerificationCodeData
@@ -54,6 +56,7 @@ namespace RPG_Launcher
             public string PasswordHash { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
             public bool IsEmailConfirmed { get; set; } = false;
+            public bool DoesPasswordNeedReset { get; set; } = false;
             public string RefreshToken { get; set; } = string.Empty;
 
             public UserDocumentData()
@@ -78,10 +81,25 @@ namespace RPG_Launcher
                 RefreshToken = refreshToken;
             }
         }
+        private class PasswordResetTokenData
+        {
+            public string Username { get; private set; }
+            public string Token { get; private set; }
+            public DateTime Expiration { get; private set; }
+
+            public PasswordResetTokenData(string username, string token, double durationMinutes)
+            {
+                Username = username;
+                Token = token;
+                Expiration = DateTime.UtcNow.AddMinutes(durationMinutes);
+            }
+        }
 
         private static readonly Dictionary<string, UserDocumentData> testUserAccounts = [];
         private static readonly Dictionary<string, AccessTokenData> testAccessTokens = [];
         private static readonly Dictionary<string, VerificationCodeData> testEmailConfirmationCodes = [];
+        private static readonly Dictionary<string, PasswordResetTokenData> testPasswordResetTokens = [];
+        private static readonly Dictionary<string, List<DateTime>> testFailedLoginAttempts = [];
 
         private static string jwtKey = string.Empty;
 
@@ -104,17 +122,15 @@ namespace RPG_Launcher
 
         #region Public: API Methods
 
-        public static string[]? LoginFromRefreshToken(string refreshTokenString, Guid clientId)
+        public static string[]? LoginFromRefreshToken(string refreshToken, Guid clientId)
         {
             // We use the passed-in client GUID here to ensure that the logging-in machine is the same machine
             //  that the refresh token was originally generated for. Deny if mismatch (indicates security breach).
 
             string[]? tokens = null;
 
-            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
-            if (!TryReadJwtToken(refreshTokenString, out JwtSecurityToken? token)) return null;
-            string? username = ReadUsernameFromJwtToken(token);
-            if (username == null) return null;
+            // Retrieve username from the refreshToken string, returning null if unsuccessful.
+            if (!TryGetDataFromTokenString(refreshToken, out string? username, out var token)) return null;
 
             // TODO: ADD handler.ValidateToken() CALL WITH CUSTOM TokenValidationParameters, FOR ACTUAL SECURITY CHECKS.
 
@@ -145,10 +161,11 @@ namespace RPG_Launcher
                     return null;
                 }
 
-                // EMAIL CONFIRMATION CHECK: Verify email confirmation state, which determines whether we return an access token.
-                if (!userData.IsEmailConfirmed)
+                // ACCOUNT STATE CHECK: Verify email confirmation state and password reset state.
+                ClearFailedLoginAttempts(username);     // Successful login, so clear failed attempts.
+                if (!userData.IsEmailConfirmed || userData.DoesPasswordNeedReset)
                 {
-                    // If unconfirmed, we only return a refresh token to the user.
+                    // If unconfirmed or needs password reset, we only return a refresh token to the user.
                     tokens = new string[1];
                     tokens[0] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
                     userData.RefreshToken = tokens[0];
@@ -164,7 +181,7 @@ namespace RPG_Launcher
                     tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
                     // Add both tokens to containers.
-                    testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
+                    testAccessTokens.Add(username, new AccessTokenData(username, tokens[0], clientId, ACCESS_TOKEN_DURATION_MINUTES));
                     userData.RefreshToken = tokens[1];
                 }
             }
@@ -182,31 +199,46 @@ namespace RPG_Launcher
                 // TODO: GENERATE PASSWORD HASH IN ACTUAL API
 
                 // Compare stored password hash with passed-in password.
-                if (userData.PasswordHash == password)
+                if (userData.PasswordHash != password)
                 {
-                    // If valid password, determine which tokens to return based on email verification state.
-                    if (!userData.IsEmailConfirmed)
-                    {
-                        // If unconfirmed, we only return a refresh token to the user.
-                        tokens = new string[1];
-                        tokens[0] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
-                        userData.RefreshToken = tokens[0];
+                    // If incorrect password, we must increment failed attempts for this account.
+                    DateTime now = DateTime.UtcNow;
+                    AddFailedLoginAttempt(username, now);
 
-                        // Send confirmation code immediately (will automatically show screen on client).
-                        CreateAndSendConfirmationCode(username);
-                    }
-                    else
+                    // Check failed login attempts within last 5 minutes. If at least 3, force password reset.
+                    if (GetFailedLoginAttempts(username, 5, now) >= 3)
                     {
-                        // Else email is confirmed, so fully log in.
-                        tokens = new string[2];
-                        tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
-                        tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
-
-                        // Add both tokens to containers.
-                        testAccessTokens.Add(tokens[0], new AccessTokenData(username, clientId, ACCESS_TOKEN_DURATION_MINUTES));
-                        userData.RefreshToken = tokens[1];
+                        userData.DoesPasswordNeedReset = true;
                     }
 
+                    // Return null because login failed.
+                    return null;
+                }
+
+                // Else passwords match, so clear failed login attempts for account.
+                ClearFailedLoginAttempts(username);
+
+                // Finally, determine whether to fully log in based on account state.
+                if (!userData.IsEmailConfirmed || userData.DoesPasswordNeedReset)
+                {
+                    // If unconfirmed or password needs reset, we only return a refresh token to the user.
+                    tokens = new string[1];
+                    tokens[0] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
+                    userData.RefreshToken = tokens[0];
+
+                    // Send confirmation code immediately (will automatically show screen on client).
+                    CreateAndSendConfirmationCode(username);
+                }
+                else
+                {
+                    // Else email is confirmed, so fully log in.
+                    tokens = new string[2];
+                    tokens[0] = GenerateAccessToken(username, clientId, ACCESS_TOKEN_DURATION_MINUTES);
+                    tokens[1] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
+
+                    // Add both tokens to containers.
+                    testAccessTokens.Add(username, new AccessTokenData(username, tokens[0], clientId, ACCESS_TOKEN_DURATION_MINUTES));
+                    userData.RefreshToken = tokens[1];
                 }
             }
 
@@ -249,7 +281,7 @@ namespace RPG_Launcher
                 tokens[0] = GenerateRefreshToken(username, clientId, REFRESH_TOKEN_DURATION_DAYS);
 
                 // Create new user account and add to database.
-                testUserAccounts.TryAdd(username, new UserDocumentData(username, password, email));
+                testUserAccounts.TryAdd(username, new UserDocumentData(username, password, email, tokens[0]));
 
                 // Generate a confirmation code for this user and await user confirmation.
                 CreateAndSendConfirmationCode(username);
@@ -261,36 +293,83 @@ namespace RPG_Launcher
             return tokens;
         }
 
-        public static bool ResendEmailConfirmationCode(string refreshToken)
+        public static void Logout(string refreshToken)
         {
-            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
-            if (!TryReadJwtToken(refreshToken, out JwtSecurityToken? token)) return false;
-            string? username = ReadUsernameFromJwtToken(token);
-            if (username == null) return false;
+            // If we cannot find token token in our container of access tokens, then the accessToken is already completely
+            //  invalidated and we can consider the user already logged out.
+            // HOWEVER, we should also attempt to find the username from the access token to also invalidate any refresh token
+            //  associated with the user (if applicable). Since the client machine should be the only entity other than us that
+            //  has access to a refresh token, we can assume that a valid client is actually trying to log out of their account.
+            //  Any existing refresh token should be immediately invalidated.
+
+            // Retrieve username from the refreshToken string, returning if unsuccessful.
+            if (!TryGetDataFromTokenString(refreshToken, out string? username, out var token)) return;
+
+            // Always remove the access token directly first.
+            testAccessTokens.Remove(username);
+
+            // Remove an existing refresh token associated with the logging-out account. 
+            if (testUserAccounts.TryGetValue(username, out UserDocumentData? userData))
+            {
+                userData.RefreshToken = string.Empty;
+            }
+
+            // TEMP: Write changes in token containers to file anytime they are changed.
+            WriteUserDocumentsToFile();
+        }
+
+
+
+
+
+        public static bool IsAccountEmailConfirmed(string refreshToken)
+        {
+            // Retrieve username from the refreshToken string, returning false if unsuccessful.
+            if (!TryGetDataFromTokenString(refreshToken, out string? username, out var token)) return false;
 
             // Ensure that the account we are searching for actually exists.
             if (testUserAccounts.TryGetValue(username, out var document))
             {
-                // Verify that the refresh token is the current, valid refresh token AND that the account is not already confirmed.
-                if (document.RefreshToken != refreshToken || document.IsEmailConfirmed)
+                // Verify that the passed-in refresh token is the current, valid token.
+                if (document.RefreshToken != refreshToken || DateTime.UtcNow > token.ValidTo)
                 {
-                    return false; 
-                }
-                
-                // If token and account state are valid, check if we have an existing code for this account.
-                if (testEmailConfirmationCodes.TryGetValue(username, out var codeData))
-                {
-                    // Only allow a new code to be created at most once per minute. Old code remains valid.
-                    if ((DateTime.UtcNow - codeData.Created) < TimeSpan.FromMinutes(1)) return false;
+                    return false;
                 }
 
-                // Else no existing code or existing code is from more than one minute ago, so generate new.
-                CreateAndSendConfirmationCode(username);
-                return true;
+                // Else we simply return whether the account is validated.
+                return document.IsEmailConfirmed;
             }
 
             // Return false if account does not exist.
             return false;
+        }
+
+        public static void SendEmailVerificationCode(string usernameOrEmail)
+        {
+            // THIS METHOD IS USED FOR BOTH EMAIL CONFIRMATION AND PASSWORD RESETTING.
+
+            // Try to find an account matching the username.
+            if (!testUserAccounts.TryGetValue(usernameOrEmail, out var document))
+            {
+                // If not found by username, try to find by email.
+                document = FindDocumentByEmail(usernameOrEmail);
+
+                // If document is still null at this point, then we found no match, so return (doing nothing).
+                if (document == null)
+                {
+                    return;
+                }
+            }
+
+            // Else we found document by either username or email, so verify that new code not within 60 seconds.
+            if (testEmailConfirmationCodes.TryGetValue(document.Username, out var codeData))
+            {
+                // Only allow a new code to be created at most once per minute. Old code remains valid.
+                if ((DateTime.UtcNow - codeData.Created) < TimeSpan.FromMinutes(1)) return;
+            }
+
+            // Either previous code does not exist or is past past expiration, so replace with new.
+            CreateAndSendConfirmationCode(document.Username);
         }
 
         public static bool ConfirmAccountEmail(string refreshToken, string verificationCode)
@@ -299,10 +378,8 @@ namespace RPG_Launcher
             // We receive a refresh token on any successful login even if not confirmed, so using this
             //  refresh token ensures a logged-in account is making the confirmation.
 
-            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
-            if (!TryReadJwtToken(refreshToken, out JwtSecurityToken? token)) return false;
-            string? username = ReadUsernameFromJwtToken(token);
-            if (username == null) return false;
+            // Retrieve username from the refreshToken string, returning false if unsuccessful.
+            if (!TryGetDataFromTokenString(refreshToken, out string? username, out var token)) return false;
 
             // Retrieve database entry for this email, then compare verification code.
             if (testUserAccounts.TryGetValue(username, out var document))
@@ -347,31 +424,100 @@ namespace RPG_Launcher
             return false;
         }
 
-        public static void Logout(string refreshToken)
+        public static string? RequestPasswordResetTokenFromCode(string usernameOrEmail, string verificationCode)
         {
-            // If we cannot find token token in our container of access tokens, then the accessToken is already completely
-            //  invalidated and we can consider the user already logged out.
-            // HOWEVER, we should also attempt to find the username from the access token to also invalidate any refresh token
-            //  associated with the user (if applicable). Since the client machine should be the only entity other than us that
-            //  has access to a refresh token, we can assume that a valid client is actually trying to log out of their account.
-            //  Any existing refresh token should be immediately invalidated.
-
-            // Retrieve the token and username from the refreshToken string, returning null if either is invalid.
-            if (!TryReadJwtToken(refreshToken, out JwtSecurityToken? token)) return;
-            string? username = ReadUsernameFromJwtToken(token);
-            if (username == null) return;
-
-            // Always remove the access token directly first.
-            testAccessTokens.Remove(username);
-
-            // Remove an existing refresh token associated with the logging-out account. 
-            if (testUserAccounts.TryGetValue(username, out UserDocumentData? userData))
+            // Try to find an account matching the username.
+            if (!testUserAccounts.TryGetValue(usernameOrEmail, out var document))
             {
-                userData.RefreshToken = string.Empty;
+                // If not found by username, try to find by email.
+                document = FindDocumentByEmail(usernameOrEmail);
+
+                // If document is still null at this point, then we found no match, so return (doing nothing).
+                if (document == null)
+                {
+                    return null;
+                }
             }
 
-            // TEMP: Write changes in token containers to file anytime they are changed.
-            WriteUserDocumentsToFile();
+            // Else we found a valid user document by username or email, so compare codes.
+            if (testEmailConfirmationCodes.TryGetValue(document.Username, out var verificationCodeData))
+            {
+                if (verificationCodeData.Code != verificationCode)
+                {
+                    // If mismatch, increment counter and remove entire code if greater than threshold.
+                    if ((verificationCodeData.AttemptCounter++) >= 3)       // Invalidate on 3rd failure.
+                    {
+                        testEmailConfirmationCodes.Remove(document.Username);
+                    }
+                }
+                else
+                {
+                    // If codes match, consume the confirmation code.
+                    testEmailConfirmationCodes.Remove(document.Username);
+
+                    // Create reset token and add to map. Do not set 'reset required' flag, as this is optional reset.
+                    string resetToken = GenerateResetToken(document.Username, minutes: 5);
+                    testPasswordResetTokens[document.Username] = new PasswordResetTokenData(document.Username, resetToken, durationMinutes: 5);
+
+                    // TEMP: Write changes in token containers to file anytime they are changed.
+                    WriteUserDocumentsToFile();
+
+                    return resetToken;
+                }
+            }            
+
+            // Return null if code not found or code found but not matching.
+            return null;
+        }
+
+        public static void CancelPasswordReset(string resetToken)
+        {
+            // Fire-and-forget API call to cancel the current reset token attempt. Simply invalidates token.
+
+            // Retrieve username from the resetToken string, returning false if unsuccessful.
+            if (!TryGetDataFromTokenString(resetToken, out string? username, out var token)) return;
+
+            // Actually remove token.
+            testPasswordResetTokens.Remove(username);
+        }
+
+        public static int ResetPasswordFromToken(string resetToken, string password)
+        {
+            // Retrieve username from the resetToken string, returning false if unsuccessful.
+            if (!TryGetDataFromTokenString(resetToken, out string? username, out var token)) return -1;
+
+            // Only if account exists.
+            if (testUserAccounts.TryGetValue(username, out var document))
+            {
+                // Retrieve reset token from container.
+                if (!testPasswordResetTokens.TryGetValue(username, out var resetTokenData)) return -1;
+                if (resetTokenData.Expiration < DateTime.UtcNow || resetTokenData.Token != resetToken)
+                {
+                    // If token is expired or the tokens are mismatched, invalidate and return.
+                    testPasswordResetTokens.Remove(username);
+                    return -1;
+                }
+
+                // TODO: MAKE PASSWORD HASH, NOT RAW PASSWORD
+
+                // Ensure new password does not match old password.
+                if (document.PasswordHash == password)
+                {
+                    return 2;           // 2 denotes same password
+                }
+
+                // Else token is valid, so allow the password reset.
+                document.PasswordHash = password;
+                document.DoesPasswordNeedReset = false;
+
+                // After password reset, we must invalidate refresh token for this user. Force re-login with new password.
+                document.RefreshToken = string.Empty;
+
+                return 0;               // 0 denoes success
+            }
+
+            // Return false if account does not exist.
+            return -1;                  // -1 denotes generic failure
         }
 
         #endregion
@@ -390,6 +536,12 @@ namespace RPG_Launcher
         {
             string refreshToken = GenerateToken(username, clientGuid, DateTime.UtcNow.AddDays(days));
             return refreshToken;
+        }
+
+        private static string GenerateResetToken(string username, double minutes)
+        {
+            string resetToken = GenerateToken(username, new Guid(), DateTime.UtcNow.AddMinutes(minutes));
+            return resetToken;
         }
 
         private static string GenerateToken(string username, Guid clientGuid, DateTime expiration)
@@ -589,6 +741,17 @@ namespace RPG_Launcher
             return username;    // May be null.
         }
 
+        private static bool TryGetDataFromTokenString(string refreshToken, [NotNullWhen(true)] out string? username, [NotNullWhen(true)] out JwtSecurityToken? token)
+        {
+            username = null;
+            token = null;
+
+            if (!TryReadJwtToken(refreshToken, out token)) return false;
+            username = ReadUsernameFromJwtToken(token);
+            
+            return username != null;
+        }
+
         private static Guid? ReadGuidFromJwtToken(JwtSecurityToken token)
         {
             // Retrieve GUID from token. Uses custom claim type string.
@@ -605,6 +768,50 @@ namespace RPG_Launcher
             }
 
             return null;
+        }
+
+        #endregion
+
+        #region Private: Login Attempt Tracking Utility
+
+        private static void AddFailedLoginAttempt(string username, DateTime timestamp)
+        {
+            // Add new entry if already existing, but NOT removing expired attempts (will remove later).
+            if (testFailedLoginAttempts.TryGetValue(username, out var attempts))
+            {
+                attempts.Add(timestamp);    // Will automatically add in chronological order.
+                return;
+            }
+
+            // If not existing, create new for this user.
+            testFailedLoginAttempts.TryAdd(username, new List<DateTime> { timestamp });
+        }
+
+        private static int GetFailedLoginAttempts(string username, double minutes, DateTime nowTime)
+        {
+            int counter = 0;
+
+            if (testFailedLoginAttempts.TryGetValue(username, out var attempts))
+            {
+                // Iterate over all attempts, counting number that occurred within time period.
+                TimeSpan timeFrame = TimeSpan.FromMinutes(minutes);
+
+                foreach (DateTime attemptTime in attempts)
+                {
+                    // All elements after the first element within duration will be within duration.
+                    // Should just count Length - [firstIndex] and return that instead.
+                    if (nowTime - attemptTime < timeFrame) counter++;
+                }
+            }
+
+            // Return 0 if no entry in map.
+            return counter;
+        }
+
+        private static void ClearFailedLoginAttempts(string username)
+        {
+            // We can just remove the entry for this user completely (frees memory).
+            testFailedLoginAttempts.Remove(username);
         }
 
         #endregion

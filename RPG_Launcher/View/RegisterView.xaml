@@ -25,10 +25,29 @@
                 </LinearGradientBrush>
             </StackPanel.Background>
 
-            <Image Source="/Images/logo.png"
-                   Width="80" Height="80"
-                   Margin="0,25,0,0"
-                   RenderOptions.BitmapScalingMode="HighQuality"/>
+            <!-- Verification code header and text box. -->
+            <Grid Height="80"
+                  Margin="0,25,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Register"
+                           Foreground="AliceBlue"
+                           FontSize="20"
+                           FontFamily="Segoe UI Semibold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="20,0,0,0"/>
+                <Image Source="/Images/logo.png"
+                       Width="80" Height="80"
+                       Margin="0,0,20,0"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Grid.Column="1"/>
+            </Grid>
+
+            
 
             <!-- Email header and text box. -->
             <TextBlock Text="Email"
@@ -94,7 +113,7 @@
                          PasswordChanged="TextBoxPassword_PasswordChanged">
             </PasswordBox>
 
-            <!-- Password header and text box. Breaks MVVM pattern for security. -->
+            <!-- Confirm password header and text box. Breaks MVVM pattern for security. -->
             <TextBlock Text="Confirm Password"
                        Foreground="LightSlateGray"
                        FontSize="14"
