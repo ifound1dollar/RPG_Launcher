@@ -13,7 +13,7 @@ namespace RPG_Launcher
     /// </summary>
     public partial class App : Application
     {
-        private void Application_Startup(object sender, StartupEventArgs e)
+        private async void Application_Startup(object sender, StartupEventArgs e)
         {
             // Initialize in-memory application state data. This will load any secure data into memory (ex. refresh token).
             AppData.Initialize();
@@ -25,8 +25,8 @@ namespace RPG_Launcher
             var mainWindow = new MainWindow();
             mainWindow.MainVM.WindowTitle = ("VERSION " + AppData.Version);
 
-            // First, try to login with existing securely-stored login token (retrieved on Initialize() above).
-            int loginCode = LoginApiService.Instance.TryLoginFromRefreshToken();
+            // First, try to login with existing securely-stored refresh token (retrieved on Initialize() above).
+            int loginCode = await LoginApiService.Instance.TryLoginFromRefreshToken();
             if (loginCode == 0)
             {
                 // Code 0 means existing token is valid, so move on to home screen, then show entire window.

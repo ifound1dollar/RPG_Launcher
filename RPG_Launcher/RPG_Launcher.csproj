@@ -9,15 +9,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\background.png" />
     <None Remove="Images\logo.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+    <Content Include="Images\background.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Images\logo.png" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
   </ItemGroup>
 
 </Project>

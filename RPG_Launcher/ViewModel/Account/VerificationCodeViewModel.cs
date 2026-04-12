@@ -29,6 +29,8 @@ namespace RPG_Launcher.ViewModel.Account
         private Brush messageBrush = Brushes.White;
         private string statusMessage = string.Empty;
 
+        private bool isSubmitButtonEnabled = true;
+
         public string VerificationCode
         {
             get => verificationCode;
@@ -53,6 +55,11 @@ namespace RPG_Launcher.ViewModel.Account
         {
             get => statusMessage;
             set { statusMessage = value; OnPropertyChanged(nameof(StatusMessage)); }
+        }
+        public bool IsSubmitButtonEnabled
+        {
+            get => isSubmitButtonEnabled;
+            set { isSubmitButtonEnabled = value; OnPropertyChanged(nameof(IsSubmitButtonEnabled)); }
         }
 
 
@@ -83,6 +90,7 @@ namespace RPG_Launcher.ViewModel.Account
             ContextTitle = string.Empty;
             TargetUser = string.Empty;
             StatusMessage = string.Empty;
+            IsSubmitButtonEnabled = true;
 
             // Set lastSent to now, as we should be showing immediately after sending.
             lastSent = DateTime.UtcNow;
@@ -97,20 +105,23 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        #region Private: SubmitButtonClicked
+        #region Private: SubmitButtonClicked (async)
 
-        private void ExecuteSubmitButtonClicked(object? obj)
+        private async Task ExecuteSubmitButtonClicked(object? obj)
         {
             StatusMessage = string.Empty;
 
             // Validate input, enforcing specific-length code.
-            if (VerificationCode.Length != 6)
+            if (VerificationCode.Length != 8)
             {
-                StatusMessage = "Verification code must be length 6.";
+                StatusMessage = "Verification code must be length 8.";
                 MessageBrush = errorBrush;
                 VerificationCode = string.Empty;
                 return;
             }
+
+            // Disable submit button before awaiting to prevent button spam.
+            IsSubmitButtonEnabled = false;
 
             // Switch on context - if reset password, validate with correct API endpoint and move on to
             //  password reset screen. If email verification, confirm account in database via API endpoint
@@ -119,22 +130,25 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        int resultCode = LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
+                        int resultCode = await LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
                         if (resultCode == 1)
                         {
                             StatusMessage = "Invalid input state, please try again.";
                             MessageBrush = errorBrush;
+                            IsSubmitButtonEnabled = true;
                             break;
                         }
                         else if (resultCode == -1)
                         {
                             StatusMessage = "Incorrect confirmation code.";
                             MessageBrush = errorBrush;
+                            IsSubmitButtonEnabled = true;
                             break;
                         }
 
                         // After account confirmation is successful, we must re-login using the saved refresh token.
-                        if (LoginApiService.Instance.TryLoginFromRefreshToken() == 0)
+                        int loginAttemptResult = await LoginApiService.Instance.TryLoginFromRefreshToken();
+                        if (loginAttemptResult == 0)
                         {
                             MainViewModel.Instance.ShowHomeView();
                         }
@@ -149,17 +163,19 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ResetPassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        int resultCode = LoginApiService.Instance.RequestPasswordResetTokenFromCode(TargetUser, VerificationCode);
+                        int resultCode = await LoginApiService.Instance.RequestPasswordResetTokenFromCode(TargetUser, VerificationCode);
                         if (resultCode == 1)
                         {
                             StatusMessage = "Invalid input state, please try again.";
                             MessageBrush = errorBrush;
+                            IsSubmitButtonEnabled = true;
                             break;
                         }
                         else if (resultCode == -1)
                         {
                             StatusMessage = "Incorrect confirmation code.";
                             MessageBrush = errorBrush;
+                            IsSubmitButtonEnabled = true;
                             break;
                         }
 
@@ -182,9 +198,9 @@ namespace RPG_Launcher.ViewModel.Account
 
         #endregion
 
-        #region Private: ResendCodeButtonClicked
+        #region Private: ResendCodeButtonClicked (async)
 
-        private void ExecuteResendCodeButtonClicked(object? obj)
+        private async Task ExecuteResendCodeButtonClicked(object? obj)
         {
             // Always clear all fields right as button Command is executed.
             VerificationCode = string.Empty;
@@ -199,7 +215,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Send new confirmation code, not getting any response for security reasons.
-            LoginApiService.Instance.SendEmailConfirmationCode(targetUser);
+            await LoginApiService.Instance.SendEmailConfirmationCode(targetUser);
             lastSent = DateTime.UtcNow;
 
             // Else successful, so update status message with success confirmation.

@@ -3,9 +3,11 @@ using RPG_Launcher.Util;
 using RPG_Launcher.ViewModel.Base;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +22,8 @@ namespace RPG_Launcher.ViewModel.Account
         private string username = string.Empty;
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
+
+        private bool isLoginButtonEnabled = true;
 
         public string Username
         {
@@ -46,6 +50,11 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
+        public bool IsLoginButtonEnabled
+        {
+            get => isLoginButtonEnabled;
+            set { isLoginButtonEnabled = value; OnPropertyChanged(nameof(IsLoginButtonEnabled)); }
+        }
 
 
 
@@ -69,6 +78,7 @@ namespace RPG_Launcher.ViewModel.Account
             Username = AppData.SavedUsername;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
+            IsLoginButtonEnabled = true;
 
             isLoginViewVisible = true;
         }
@@ -80,9 +90,9 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        #region Private: LoginClickedCommand
+        #region Private: LoginClickedCommand (async)
 
-        private void ExecuteLoginClickedCommand(object? obj)
+        private async Task ExecuteLoginClickedCommand(object? obj)
         {
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
@@ -92,8 +102,12 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
+            // Disable login button before awaiting to prevent button spam.
+            IsLoginButtonEnabled = false;
+
             // Call API service login method with Username and Password.
-            int loginCode = LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
+            int loginCode = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
+
             if (loginCode == 0)
             {
                 // Code 0 means full login success, so show home view.
@@ -116,6 +130,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 // Code -1 (any other code) means generic login failure, so display login error message.
                 ErrorMessage = "Login failed, please try again.";
+                IsLoginButtonEnabled = true;
                 return;
             }
         }

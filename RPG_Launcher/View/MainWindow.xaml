@@ -43,14 +43,11 @@
             <!-- This actually generates the background. Must be above columns. -->
             <Rectangle Grid.RowSpan="2">
                 <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="1,0" EndPoint="0,1">
-                        <GradientStop Color="#1b1448" Offset="0"/>
-                        <GradientStop Color="#1b1424" Offset="1.1"/>
-                    </LinearGradientBrush>
+                    <ImageBrush ImageSource="/Images/background.png"/>
                 </Rectangle.Fill>
             </Rectangle>
             <!-- Create a slightly darker title bar. -->
-            <Rectangle Grid.Row="0" Fill="#50000000"/>
+            <Rectangle Grid.Row="0" Fill="#AA000000"/>
 
             <!-- Sub-grid for title bar column definitions. -->
             <Grid Name="ColumnGrid">
@@ -130,7 +127,7 @@
                                     Background="{TemplateBinding Background}">
                                 <ContentPresenter VerticalAlignment="Top"
                                                   HorizontalAlignment="Center"
-                                                  Margin="0,0,1,0"/>
+                                                  Margin="0,-1,1,0"/>
                             </Border>
                         </ControlTemplate>
                     </Button.Template>

@@ -16,6 +16,8 @@ namespace RPG_Launcher.ViewModel.Account
         private string username = string.Empty;
         private string errorMessage = string.Empty;
 
+        private bool isResetButtonEnabled = true;
+
         public string Username
         {
             get => username;
@@ -25,6 +27,11 @@ namespace RPG_Launcher.ViewModel.Account
         {
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
+        }
+        public bool IsResetButtonEnabled
+        {
+            get => isResetButtonEnabled;
+            set { isResetButtonEnabled = value; OnPropertyChanged(nameof(IsResetButtonEnabled)); }
         }
 
 
@@ -45,6 +52,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             Username = string.Empty;
             ErrorMessage = string.Empty;
+            IsResetButtonEnabled = true;
 
             isForgotPasswordViewVisible = true;
         }
@@ -56,9 +64,9 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        #region Private: SubmitButtonClicked
+        #region Private: SubmitButtonClicked (async)
 
-        private void ExecuteSubmitButtonClickedCommand(object? obj)
+        private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
@@ -68,8 +76,11 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
+            // Disable reset button before awaiting to prevent button spam.
+            IsResetButtonEnabled = false;
+
             // Request a password reset code, not knowing whether successful for security reasons.
-            LoginApiService.Instance.SendEmailConfirmationCode(Username);
+            await LoginApiService.Instance.SendEmailConfirmationCode(Username);
 
             // Show verification code view with password reset context.
             MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, Username);

@@ -20,6 +20,8 @@ namespace RPG_Launcher.ViewModel.General
         private string statusMessage = string.Empty;
         private Brush messageBrush = Brushes.White;
 
+        private bool isReturnButtonEnabled = true;
+
         public string StatusMessage
         {
             get => statusMessage;
@@ -29,6 +31,11 @@ namespace RPG_Launcher.ViewModel.General
         {
             get => messageBrush;
             set { messageBrush = value; OnPropertyChanged(nameof(MessageBrush)); }
+        }
+        public bool IsReturnButtonEnabled
+        {
+            get => isReturnButtonEnabled;
+            set { isReturnButtonEnabled = value; OnPropertyChanged(nameof(IsReturnButtonEnabled)); }
         }
 
 
@@ -50,6 +57,7 @@ namespace RPG_Launcher.ViewModel.General
         public override void ShowView()
         {
             StatusMessage = string.Empty;
+            IsReturnButtonEnabled = true;
 
             isReturnToLoginViewVisible = true;
         }
@@ -61,12 +69,15 @@ namespace RPG_Launcher.ViewModel.General
 
 
 
-        #region Private: ReturnButtonClicked
+        #region Private: ReturnButtonClicked (async)
 
-        private void ExecuteReturnButtonClickedCommand(object? obj)
+        private async Task ExecuteReturnButtonClickedCommand(object? obj)
         {
+            // Disable return button before awaiting to prevent button spam.
+            IsReturnButtonEnabled = false;
+
             // We may have already logged out, but log out again just to be sure.
-            LoginApiService.Instance.Logout();
+            await LoginApiService.Instance.Logout();
 
             MainViewModel.Instance.ShowLoginView();
         }

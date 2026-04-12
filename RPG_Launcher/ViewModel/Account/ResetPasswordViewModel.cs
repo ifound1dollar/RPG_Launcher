@@ -21,6 +21,8 @@ namespace RPG_Launcher.ViewModel.Account
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
+        private bool isSubmitButtonEnabled = true;
+
         public string TargetUser
         {
             get => targetUser;
@@ -46,6 +48,11 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
+        public bool IsSubmitButtonEnabled
+        {
+            get => isSubmitButtonEnabled;
+            set { isSubmitButtonEnabled = value; OnPropertyChanged(nameof(IsSubmitButtonEnabled)); }
+        }
 
 
 
@@ -66,6 +73,7 @@ namespace RPG_Launcher.ViewModel.Account
             TargetUser = string.Empty;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
+            IsSubmitButtonEnabled = true;
 
             isResetPasswordViewVisible = true;
         }
@@ -77,9 +85,9 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        #region Private: SubmitButtonClicked
+        #region Private: SubmitButtonClicked (async)
 
-        private void ExecuteSubmitButtonClickedCommand(object? obj)
+        private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
             NetworkCredential credential = new(TargetUser, SecurePassword); // TargetUser will always be valid username here.
 
@@ -93,8 +101,11 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
+            // Disable submit button before awaiting to prevent button spam.
+            IsSubmitButtonEnabled = false;
+
             // After validating password, we can make actual API request to reset our password.
-            int resetCode = LoginApiService.Instance.ResetPasswordFromToken(credential);    // Pulls reset token from AppData automatically.
+            int resetCode = await LoginApiService.Instance.ResetPasswordFromToken(credential);  // Pulls reset token from AppData automatically.
             if (resetCode == 0)
             {
                 // Code 0 indicates success, password has been reset and we must now log in again.
@@ -107,11 +118,13 @@ namespace RPG_Launcher.ViewModel.Account
             else if (resetCode == 1)
             {
                 ErrorMessage = "Invalid input state, please try again.";
+                IsSubmitButtonEnabled = true;
                 return;
             }
             else if (resetCode == 2)
             {
                 ErrorMessage = "New password cannot be the same as old password.";
+                IsSubmitButtonEnabled = true;
                 return;
             }
             else

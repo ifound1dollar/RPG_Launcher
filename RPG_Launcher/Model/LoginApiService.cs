@@ -48,7 +48,7 @@ namespace RPG_Launcher.Model
         ///  endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
         /// <returns> A status code describing the request result. 0 for success, 1 for email not confirmed, 2 for password needs reset, -1 for generic failure. </returns>
-        public int TryLoginFromRefreshToken()
+        public async Task<int> TryLoginFromRefreshToken()
         {
             // Ensure refreshToken is not empty.
             if (string.IsNullOrEmpty(AppData.RefreshToken)) return -1;
@@ -89,8 +89,11 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure. </returns>
-        public int Login(NetworkCredential credential)
+        public async Task<int> Login(NetworkCredential credential)
         {
+            // TEMP
+            await Task.Delay(1000);
+
             // Ensure credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)) return -1;
 
@@ -134,7 +137,7 @@ namespace RPG_Launcher.Model
         /// <param name="email"> The email associated with the account attempting to be registered. </param>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for generic failure. </returns>
-        public int Register(string email, NetworkCredential credential)
+        public async Task<int> Register(string email, NetworkCredential credential)
         {
             // Ensure email and credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
@@ -162,7 +165,7 @@ namespace RPG_Launcher.Model
         /// Logs out of the API. Makes an HTTPS request to the API endpoint. Logout is always successful, even
         ///  if no acknowledgement is received from the server. Automatically invalidates any stored tokens.
         /// </summary>
-        public void Logout()
+        public async Task Logout()
         {
             // Call the API logout endpoint, passing it our access token so it can find us (logout requires valid access token).
             // This method will not need to return anything. If we call this logout endpoint with an access token that the
@@ -204,7 +207,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
         /// <returns> 0 for successful request, 1 for invalid input state. </returns>
-        public int SendEmailConfirmationCode(string targetUser)
+        public async Task<int> SendEmailConfirmationCode(string targetUser)
         {
             if (string.IsNullOrEmpty(targetUser))
             {
@@ -224,7 +227,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="verificationCode"> The user-supplied verification code, which should have been received via email. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for generic failure. </returns>
-        public int ConfirmAccountEmail(string verificationCode)
+        public async Task<int> ConfirmAccountEmail(string verificationCode)
         {
             if (string.IsNullOrEmpty(AppData.RefreshToken) || string.IsNullOrEmpty(verificationCode))
             {
@@ -249,7 +252,7 @@ namespace RPG_Launcher.Model
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being requested for. </param>
         /// <param name="verificationCode"> The one-time verification code received by the user via email. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for request denied. </returns>
-        public int RequestPasswordResetTokenFromCode(string usernameOrEmail, string verificationCode)
+        public async Task<int> RequestPasswordResetTokenFromCode(string usernameOrEmail, string verificationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(verificationCode))
             {
@@ -284,7 +287,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, 2 for same password as old, -1 for generic failure. </returns>
-        public int ResetPasswordFromToken(NetworkCredential credential)
+        public async Task<int> ResetPasswordFromToken(NetworkCredential credential)
         {
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)

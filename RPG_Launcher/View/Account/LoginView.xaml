@@ -11,7 +11,7 @@
              KeyDown="Universal_KeyDown"
              d:DataContext="{d:DesignInstance Type=vm:LoginViewModel}">
     <!-- DesignHeight is 690 and not 720 because we have a 30px header. -->
-
+    
     <Grid Name="LoginSubgrid">
 
         <StackPanel Width="250px"
@@ -20,8 +20,9 @@
                         Grid.Row="1">
             <StackPanel.Background>
                 <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                    <GradientStop Color="#001b1448" Offset="-0.5"/>
-                    <GradientStop Color="#1b1424" Offset="1"/>
+                    <GradientStop Color="#0016141f" Offset="-0.5"/>
+                    <GradientStop Color="#D016141f" Offset="0.25"/>
+                    <GradientStop Color="#DD16141f" Offset="1"/>
                 </LinearGradientBrush>
             </StackPanel.Background>
 
@@ -90,13 +91,14 @@
 
             <!-- Login button. Manually calls ViewModel command, necessary for PasswordBox security. -->
             <Button Name="ButtonLogin"
-                            Height="40"
-                            Foreground="LightGray"
-                            Content="LOG IN"
-                            FontSize="20"
-                            Cursor="Hand"
-                            Margin="40,10,40,0"
-                            Click="ButtonLogin_Click">
+                    Height="40"
+                    Foreground="LightGray"
+                    Content="LOG IN"
+                    FontSize="20"
+                    Cursor="Hand"
+                    Margin="40,10,40,0"
+                    Click="ButtonLogin_Click"
+                    IsEnabled="{Binding IsLoginButtonEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4b4094"/>
@@ -106,6 +108,10 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#5a4cb5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#bb444444"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>

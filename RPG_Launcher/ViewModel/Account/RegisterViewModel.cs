@@ -21,6 +21,8 @@ namespace RPG_Launcher.ViewModel.Account
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
+        private bool isRegisterButtonEnabled = true;
+
         public string Email
         {
             get => email;
@@ -51,6 +53,11 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
+        public bool IsRegisterButtonEnabled
+        {
+            get => isRegisterButtonEnabled;
+            set { isRegisterButtonEnabled = value; OnPropertyChanged(nameof(IsRegisterButtonEnabled)); }
+        }
 
 
 
@@ -73,6 +80,7 @@ namespace RPG_Launcher.ViewModel.Account
             Username = string.Empty;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
+            IsRegisterButtonEnabled = true;
 
             isRegisterViewVisible = true;
         }
@@ -83,9 +91,9 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        #region Private: RegisterClickedCommand
+        #region Private: RegisterClickedCommand (async)
 
-        private void ExecuteRegisterClickedCommand(object? obj)
+        private async Task ExecuteRegisterClickedCommand(object? obj)
         {
             // NOTE: We have to compare Password and Confirm Password fields within the View, not here.
             //  It is not trivial to compare SecureStrings, so we compare the PasswordBoxes in RegisterView.
@@ -122,8 +130,12 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
+            // Disable register button before awaiting to prevent button spam.
+            IsRegisterButtonEnabled = false;
+
             // Call API service login method with Username and Password.
-            int registerReturnCode = LoginApiService.Instance.Register(Email, credential);
+            int registerReturnCode = await LoginApiService.Instance.Register(Email, credential);
+
             if (registerReturnCode == 0)
             {
                 // If no errors, we move onto the email verification view.
@@ -133,12 +145,14 @@ namespace RPG_Launcher.ViewModel.Account
             if (registerReturnCode == 1)
             {
                 ErrorMessage = "Invalid input, please try again.";
+                IsRegisterButtonEnabled = true;
                 return;
             }
             else
             {
                 // Code -1 means generic registration failure, which is typically unavailable email or username.
                 ErrorMessage = "Unavailable email or username.";
+                IsRegisterButtonEnabled = true;
                 return;
             }
 
