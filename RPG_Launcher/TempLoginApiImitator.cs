@@ -571,7 +571,7 @@ namespace RPG_Launcher
         private static void CreateAndSendConfirmationCode(string username)
         {
             // TEMP HARD-CODED CONFIRMATION CODE
-            string code = "000000";
+            string code = "00000000";
 
             // Replace if existing.
             testEmailConfirmationCodes[username] = new VerificationCodeData(code, durationMinutes: 5);

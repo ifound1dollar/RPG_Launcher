@@ -16,7 +16,7 @@ namespace RPG_Launcher.ViewModel.Account
         private string username = string.Empty;
         private string errorMessage = string.Empty;
 
-        private bool isResetButtonEnabled = true;
+        private bool isSendCodeButtonEnabled = true;
 
         public string Username
         {
@@ -28,10 +28,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
-        public bool IsResetButtonEnabled
+        public bool IsSendCodeButtonEnabled
         {
-            get => isResetButtonEnabled;
-            set { isResetButtonEnabled = value; OnPropertyChanged(nameof(IsResetButtonEnabled)); }
+            get => isSendCodeButtonEnabled;
+            set { isSendCodeButtonEnabled = value; OnPropertyChanged(nameof(IsSendCodeButtonEnabled)); }
         }
 
 
@@ -52,7 +52,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             Username = string.Empty;
             ErrorMessage = string.Empty;
-            IsResetButtonEnabled = true;
+            IsSendCodeButtonEnabled = true;
 
             isForgotPasswordViewVisible = true;
         }
@@ -76,8 +76,8 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
-            // Disable reset button before awaiting to prevent button spam.
-            IsResetButtonEnabled = false;
+            // Disable send code button before awaiting to prevent button spam.
+            IsSendCodeButtonEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
             await LoginApiService.Instance.SendEmailConfirmationCode(Username);
