@@ -18,39 +18,13 @@ namespace RPG_Launcher
             // Initialize in-memory application state data. This will load any secure data into memory (ex. refresh token).
             AppData.Initialize();
 
-            // TEMP: INITIALIZE TempLoginApiImitator
-            TempLoginApiImitator.Initialize();
-
             // Create MainWindow, but do not show anything yet. Also set window title from application version.
             var mainWindow = new MainWindow();
             mainWindow.MainVM.WindowTitle = ("VERSION " + AppData.Version);
 
-            // First, try to login with existing securely-stored refresh token (retrieved on Initialize() above).
-            int loginCode = await LoginApiService.Instance.TryLoginFromRefreshToken();
-            if (loginCode == 0)
-            {
-                // Code 0 means existing token is valid, so move on to home screen, then show entire window.
-                mainWindow.MainVM.ShowHomeView();
-                mainWindow.Show();
-            }
-            else if (loginCode == 1)
-            {
-                // Code 1 means account email needs confirmation before we can fully log in.
-                mainWindow.MainVM.ShowVerificationCodeView(isForNewAccount: true, AppData.SavedUsername);
-                mainWindow.Show();
-            }
-            else if (loginCode == 2)
-            {
-                // Code 2 means password must be reset for security reasons.
-                mainWindow.MainVM.ShowVerificationCodeView(isForNewAccount: false, AppData.SavedUsername);
-                mainWindow.Show();
-            }
-            else
-            {
-                // Any other code (ex. -1) indicates generic failure, so return to login screen.
-                mainWindow.MainVM.ShowLoginView();
-                mainWindow.Show();
-            }
+            // Load and display the entry view, which pings the server and handles entry logic.
+            mainWindow.MainVM.ShowEntryView();
+            mainWindow.Show();                      // Actually shows the application window.
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)

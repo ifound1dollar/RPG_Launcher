@@ -107,7 +107,6 @@ namespace RPG_Launcher.ViewModel.Account
 
             // Call API service login method with Username and Password.
             int loginCode = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
-
             if (loginCode == 0)
             {
                 // Code 0 means full login success, so show home view.
@@ -153,7 +152,8 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteForgotPasswordClickedCommand(object? obj)
         {
-            return isLoginViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isLoginViewVisible && isLoginButtonEnabled;
         }
 
         #endregion
@@ -167,7 +167,8 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteNewUserClickedCommand(object? obj)
         {
-            return isLoginViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isLoginViewVisible && isLoginButtonEnabled;
         }
 
         #endregion

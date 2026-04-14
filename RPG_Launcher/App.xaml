@@ -19,11 +19,14 @@
             then we flip back and forth between view models as necessary using commands
             within the MainViewModel. -->
     <Application.Resources>
-        <DataTemplate DataType="{x:Type vma:LoginViewModel}">
-            <v:LoginView/>
+        <DataTemplate DataType="{x:Type vmg:EntryViewModel}">
+            <v:EntryView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vmg:HomeViewModel}">
             <v:HomeView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:LoginViewModel}">
+            <v:LoginView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vma:RegisterViewModel}">
             <v:RegisterView/>

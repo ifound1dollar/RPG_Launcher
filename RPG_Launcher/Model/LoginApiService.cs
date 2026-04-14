@@ -1,5 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using RPG_Launcher.Model.Data;
+using RPG_Launcher.Model.Responses;
 using RPG_Launcher.Util;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace RPG_Launcher.Model
@@ -41,7 +46,37 @@ namespace RPG_Launcher.Model
 
         #endregion
 
+        HttpClient _httpClient = new()
+        {
+            BaseAddress = new Uri("https://localhost:7127/api/")
+        };
 
+
+
+        /// <summary>
+        /// Pings the API to determine whether the server is online. Returns a status code describing the success or
+        ///  failure of the ping.
+        /// </summary>
+        /// <returns> A status code describing the request result. 0 for success, 1 for server offline, -1 for other exception. </returns>
+        public async Task<int> PingServer()
+        {
+            try
+            {
+                // The HTTP request will throw an HttpRequestException if the server is offline. Thus, we can directly return 0.
+                using HttpResponseMessage response = await _httpClient.GetAsync("ping");
+                return 0;
+            }
+            catch (HttpRequestException ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return -1;
+            }
+        }
 
         /// <summary>
         /// Attempts to log in to the API using an existing refresh token. Makes an HTTPS request to the API
@@ -53,34 +88,47 @@ namespace RPG_Launcher.Model
             // Ensure refreshToken is not empty.
             if (string.IsNullOrEmpty(AppData.RefreshToken)) return -1;
 
-            string[]? tokens = TempLoginApiImitator.LoginFromRefreshToken(AppData.RefreshToken, AppData.ClientGuid);
-            if (tokens != null && tokens.Length == 1)
+            try
             {
-                // If length 1, then we only received refresh token which means accout state needs updating.
-                AppData.RefreshToken = tokens[0];
+                // Make request to API and check response code.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/login-refresh")
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { RefreshToken = AppData.RefreshToken }),
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    Trace.WriteLine($"bad status code (code: {rawResponse.StatusCode})");
 
-                // If account is not yet confirmed, then email confirmation is needed.
-                if (!IsAccountEmailConfirmed())
-                {
-                    return 1;
+                    // If not success status code, then there was some error, so remove refresh token and return -1.
+                    AppData.RefreshToken = string.Empty;
+                    return -1;
                 }
-                // Else, password needs updating for security reasons.
-                else
+
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
                 {
-                    return 2;
+                    Trace.WriteLine("cannot parse into LoginResponseModel");
+
+                    // If somehow we encounter a response model error, clear refresh token and return -1.
+                    AppData.RefreshToken = string.Empty;
+                    return -1;
                 }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                return responseModel.LoginStatusCode;                
             }
-            else if (tokens != null && tokens.Length == 2)
+            catch (Exception ex)
             {
-                // If length 2, then we are fully logged in and received an access token and a new refresh token.
-                AppData.AccessToken = tokens[0];
-                AppData.RefreshToken = tokens[1];
-                return 0;
+                Trace.WriteLine(ex.Message);
+                return -1;
             }
-
-            // Else if tokens remains null or unexpected size, return -1 for error.
-            AppData.RefreshToken = string.Empty;
-            return -1;
         }
 
         /// <summary>
@@ -91,42 +139,49 @@ namespace RPG_Launcher.Model
         /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure. </returns>
         public async Task<int> Login(NetworkCredential credential)
         {
-            // TEMP
-            await Task.Delay(1000);
-
             // Ensure credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)) return -1;
 
-            // Actual login API endpoint will take username and password strings, and returns two token strings.
-            string[]? tokens = TempLoginApiImitator.Login(credential.UserName, credential.Password, AppData.ClientGuid);
-            if (tokens != null && tokens.Length == 1)
+            try
             {
-                // If length 1, then we only received refresh token which means accout state needs updating.
-                AppData.SavedUsername = credential.UserName;
-                AppData.RefreshToken = tokens[0];
+                // Make request to API and check response code.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/login")
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { Username = credential.UserName, Password = credential.Password }),
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    Trace.WriteLine($"bad status code (code: {rawResponse.StatusCode})");
 
-                // If account is not yet confirmed, then email confirmation is needed.
-                if (!IsAccountEmailConfirmed())
-                {
-                    return 1;
+                    // If not success status code, then there was some error, so return -1.
+                    return -1;
                 }
-                // Else, password needs updating for security reasons.
-                else
+
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
                 {
-                    return 2;
+                    Trace.WriteLine("cannot parse into LoginResponseModel");
+
+                    // If somehow we encounter a response model error, return -1.
+                    return -1;
                 }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = credential.UserName;        // Save currently-logged-in username on success.
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                return responseModel.LoginStatusCode;
             }
-            else if (tokens != null && tokens.Length == 2)
+            catch (Exception ex)
             {
-                // If length 2, then we are fully logged in and received an access token and a new refresh token.
-                AppData.SavedUsername = credential.UserName;
-                AppData.AccessToken = tokens[0];
-                AppData.RefreshToken = tokens[1];
-                return 0;
+                Trace.WriteLine(ex.Message);
+                return -1;
             }
-
-            // Else if tokens remains null or unexpected size, return -1 for error.
-            return -1;
         }
 
         /// <summary>
@@ -143,22 +198,45 @@ namespace RPG_Launcher.Model
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
                 || string.IsNullOrEmpty(email))
             {
-                return 1;      // 1 for invalid input
+                return -1;
             }
 
-            // Actual register API endpoint will take email, username, and string, then returns both tokens.
-            var tokens = TempLoginApiImitator.Register(email, credential.UserName, credential.Password, AppData.ClientGuid);
-            if (tokens != null && tokens.Length == 1)
+            try
             {
-                // Store saved username after successful login (must be done before refresh token is written).
-                AppData.SavedUsername = credential.UserName;
-                
-                // Pull refresh token from API request (will be JSON in the future). Will check for response status code.
-                AppData.RefreshToken = tokens[0];
-                return 0;       // 0 for success
-            }
+                // Make request to API and check response code.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/register")
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { Username = credential.UserName, Email = email, Password = credential.Password }),
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return -1.
+                    return -1;
+                }
 
-            return -1;           // -1 for generic registration failure (email or username unavailable)
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return -1;
+                }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = credential.UserName;        // Save currently-logged-in username on success.
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                return responseModel.LoginStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return -1;
+            }
         }
 
         /// <summary>
@@ -173,11 +251,21 @@ namespace RPG_Launcher.Model
             //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
             //  should log the user out of everything).
 
-            if (string.IsNullOrEmpty(AppData.RefreshToken)) return;
+            if (string.IsNullOrEmpty(AppData.AccessToken) && string.IsNullOrEmpty(AppData.RefreshToken)) return;
 
-            TempLoginApiImitator.Logout(AppData.RefreshToken);
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/logout");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
 
-            // After logout, reset access and refresh tokens to empty.
+            // Clear all tokens after logout, regardless of whether error was thrown. Fully log out client-side.
             AppData.AccessToken = string.Empty;
             AppData.RefreshToken = string.Empty;
         }
@@ -187,37 +275,33 @@ namespace RPG_Launcher.Model
 
 
         /// <summary>
-        /// Gets whether the current account's email is confirmed via an login API request. Returns a simple
-        ///  boolean.
-        /// </summary>
-        /// <returns> True if the account email is confirmed, false if unconfirmed. </returns>
-        public bool IsAccountEmailConfirmed()
-        {
-            if (string.IsNullOrEmpty(AppData.RefreshToken))
-            {
-                return false;
-            }
-
-            return TempLoginApiImitator.IsAccountEmailConfirmed(AppData.RefreshToken);
-        }
-
-        /// <summary>
-        /// Requests a new email confirmation code from the login API. Does not return any usable status code
+        /// Requests a new confirmation code from the login API. Does not return any usable status code
         ///  for security reasons, but checks here for valid input state.
         /// </summary>
         /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
-        /// <returns> 0 for successful request, 1 for invalid input state. </returns>
-        public async Task<int> SendEmailConfirmationCode(string targetUser)
+        public async Task SendConfirmationCode(string targetUser)
         {
-            if (string.IsNullOrEmpty(targetUser))
-            {
-                return 1;       // 1 for invalid input state
-            }
+            if (string.IsNullOrEmpty(targetUser)) return;
 
-            // We do not know whether the request was successful; sharing information like username/password not
-            //  found is a security vulnerability, so we make API request and return success.
-            TempLoginApiImitator.SendEmailVerificationCode(targetUser);
-            return 0;
+            try
+            {
+                // Make request to API, no response or content AND no access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/confirmation-code")
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { UsernameOrEmail = targetUser }),
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+
+                // We do not know whether the request was successful; sharing information like username/password not
+                //  found is a security vulnerability, so we make API request and return success.
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
         }
 
         /// <summary>
@@ -227,20 +311,49 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="verificationCode"> The user-supplied verification code, which should have been received via email. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for generic failure. </returns>
-        public async Task<int> ConfirmAccountEmail(string verificationCode)
+        public async Task<int> VerifyAccountEmail(string verificationCode)
         {
             if (string.IsNullOrEmpty(AppData.RefreshToken) || string.IsNullOrEmpty(verificationCode))
             {
-                return 1;       // 1 for invalid input state
+                return -1;
             }
 
-            // Actually make API call and attempt confirmation.
-            if (TempLoginApiImitator.ConfirmAccountEmail(AppData.RefreshToken, verificationCode))
+            try
             {
-                return 0;
-            }
+                // Make request to API, requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/verify-email")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { Code = verificationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return -1.
+                    return -1;
+                }
 
-            return -1;          // -1 for generic confirmation failure
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return -1;
+                }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                return responseModel.LoginStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return -1;
+            }
         }
 
         /// <summary>
@@ -252,32 +365,47 @@ namespace RPG_Launcher.Model
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being requested for. </param>
         /// <param name="verificationCode"> The one-time verification code received by the user via email. </param>
         /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for request denied. </returns>
-        public async Task<int> RequestPasswordResetTokenFromCode(string usernameOrEmail, string verificationCode)
+        public async Task<int> RequestPasswordReset(string usernameOrEmail, string verificationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(verificationCode))
             {
-                return 1;       // 1 for invalid input state
+                return -1;
             }
 
-            string? resetToken = TempLoginApiImitator.RequestPasswordResetTokenFromCode(usernameOrEmail, verificationCode);
-            if (resetToken != null)
+            try
             {
-                // If valid token, then we have a reset token so set AppData field and return 0.
-                AppData.PasswordResetToken = resetToken;
+                // Make request to API with content and parse response.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-password-reset")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { UsernameOrEmail = usernameOrEmail, Code = verificationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return -1.
+                    return -1;
+                }
+
+                // Parse raw response into response model.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<PasswordResetTokenResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return -1;
+                }
+
+                // Store reset token, then return 0 for success.
+                AppData.PasswordResetToken = responseModel.ResetToken;
                 return 0;
             }
-
-            return -1;          // -1 for generic failure
-        }
-
-        /// <summary>
-        /// Makes a simple request to the login API to invalidate the current reset token. Does not expect
-        ///  any response information. Also removes reset token from AppData.
-        /// </summary>
-        public void CancelPasswordReset()
-        {
-            TempLoginApiImitator.CancelPasswordReset(AppData.PasswordResetToken);
-            AppData.PasswordResetToken = string.Empty;
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return -1;
+            }
         }
 
         /// <summary>
@@ -293,25 +421,51 @@ namespace RPG_Launcher.Model
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
                 || string.IsNullOrEmpty(AppData.PasswordResetToken))
             {
-                return 1;      // 1 for invalid input
+                return -1;
             }
 
-            int resultCode = TempLoginApiImitator.ResetPasswordFromToken(AppData.PasswordResetToken, credential.Password);
-            if (resultCode == 0)
+            try
             {
-                // If successful, we clear reset token AND refresh token (log out after reset), then return 0.
+                // Make request to API, requiring content and access token (with reset Role).
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/reset-password")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { NewPassword = credential.Password }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.PasswordResetToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return -1.
+                    return -1;
+                }
+
+                // Parse raw response into response model.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<ResetPasswordCompleteResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return -1;
+                }
+
+                // If unsuccessful, then old password matched new password (return 1 for same password).
+                if (!responseModel.Success)
+                {
+                    return 1;
+                }
+
+                // Else successful, so immediately log out and return 0 for success.
+                await Logout();
                 AppData.PasswordResetToken = string.Empty;
-                AppData.RefreshToken = string.Empty;
                 return 0;
             }
-            else if (resultCode == 2)
+            catch (Exception ex)
             {
-                // Code 2 indicates that the new password matches old password.
-                return 2;
+                Trace.WriteLine(ex.Message);
+                return -1;
             }
-
-            // Else any other code denotes generic failure, so return -1.
-            return -1;
         }
     }
 }

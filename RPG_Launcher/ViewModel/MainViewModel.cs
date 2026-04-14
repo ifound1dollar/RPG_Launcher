@@ -36,6 +36,7 @@ namespace RPG_Launcher.ViewModel
         }
 
         // Sub-viewmodels (read-only)
+        private EntryViewModel EntryVM { get; } = new EntryViewModel();
         private HomeViewModel HomeVM { get; } = new HomeViewModel();
         private LoginViewModel LoginVM { get; } = new LoginViewModel();
         private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
@@ -49,7 +50,7 @@ namespace RPG_Launcher.ViewModel
             Instance = this;
 
             windowTitle = string.Empty;     // Make window title empty, but is set in App.xaml.cs.
-            currentViewModel = HomeVM;      // Default to HomeViewModel, but don't show yet. Set local property (no event).
+            currentViewModel = EntryVM;     // Default to HomeViewModel, but don't show yet. Set local property (no event).
         }
 
         public override void HideView()
@@ -65,13 +66,28 @@ namespace RPG_Launcher.ViewModel
         private void HideAllViews()
         {
             // Hide all views here so we don't have to update every method each time a new VM is added.
+            EntryVM.HideView();
             HomeVM.HideView();
             LoginVM.HideView();
             RegisterVM.HideView();
             VerificationCodeVM.HideView();
+            ResetPasswordVM.HideView();
+            ReturnToLoginVM.HideView();
+            ForgotPasswordVM.HideView();
         }
 
 
+
+        public void ShowEntryView()
+        {
+            HideAllViews();
+            EntryVM.ShowView();
+
+            // Call method in entry VM to ping the server (does not take user input, so must be done here).
+            EntryVM.PingServerCommand.Execute(this);
+
+            CurrentViewModel = EntryVM;
+        }
 
         public void ShowHomeView()
         {

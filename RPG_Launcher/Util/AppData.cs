@@ -69,7 +69,7 @@ namespace RPG_Launcher.Util
 
 
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.4.0";
+        private static readonly string version = "0.5.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataPath = "appdata.json";
         // Default path to executable.

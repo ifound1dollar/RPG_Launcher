@@ -57,6 +57,7 @@ namespace RPG_Launcher.ViewModel.General
         public override void ShowView()
         {
             StatusMessage = string.Empty;
+            MessageBrush = Brushes.White;
             IsReturnButtonEnabled = true;
 
             isReturnToLoginViewVisible = true;

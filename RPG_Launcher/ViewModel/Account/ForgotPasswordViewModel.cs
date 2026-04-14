@@ -80,7 +80,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsSendCodeButtonEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
-            await LoginApiService.Instance.SendEmailConfirmationCode(Username);
+            await LoginApiService.Instance.SendConfirmationCode(Username);
 
             // Show verification code view with password reset context.
             MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, Username);
@@ -102,7 +102,8 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteReturnToLoginClickedCommand(object? obj)
         {
-            return isForgotPasswordViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isForgotPasswordViewVisible && isSendCodeButtonEnabled;
         }
 
         #endregion

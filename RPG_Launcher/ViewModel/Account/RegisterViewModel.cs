@@ -123,7 +123,7 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
             // Verify password is valid. Supported characters are in the final [] section.
-            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$";
+            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#@$!%*?&]).{8,}$";
             if (!Regex.IsMatch(credential.Password, pattern))
             {
                 ErrorMessage = "Password must be minimum 8 characters and include at least one uppercase letter, lowercase letter, number, and symbol.";
@@ -135,27 +135,15 @@ namespace RPG_Launcher.ViewModel.Account
 
             // Call API service login method with Username and Password.
             int registerReturnCode = await LoginApiService.Instance.Register(Email, credential);
-
-            if (registerReturnCode == 0)
+            if (registerReturnCode == -1)
             {
-                // If no errors, we move onto the email verification view.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, Email);
-                return;
-            }
-            if (registerReturnCode == 1)
-            {
-                ErrorMessage = "Invalid input, please try again.";
-                IsRegisterButtonEnabled = true;
-                return;
-            }
-            else
-            {
-                // Code -1 means generic registration failure, which is typically unavailable email or username.
-                ErrorMessage = "Unavailable email or username.";
+                ErrorMessage = "Registration failed, please try again.";
                 IsRegisterButtonEnabled = true;
                 return;
             }
 
+            // If no errors, we move onto the email verification view.
+            MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, Email);
         }
 
         private bool CanExecuteRegisterClickedCommand(object? obj)
@@ -175,7 +163,8 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteAlreadyHaveClickedCommand(object? obj)
         {
-            return isRegisterViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isRegisterViewVisible && isRegisterButtonEnabled;
         }
 
         #endregion

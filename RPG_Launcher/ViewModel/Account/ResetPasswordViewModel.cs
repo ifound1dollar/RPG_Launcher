@@ -94,7 +94,7 @@ namespace RPG_Launcher.ViewModel.Account
             // NOTE: We already ensure that both password fields match within the code-behind.
 
             // Ensure password field follows standard password regex.
-            string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$";
+            string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#@$!%*?&]).{8,}$";
             if (!Regex.IsMatch(credential.Password, pattern))
             {
                 ErrorMessage = "Password must be minimum 8 characters and include at least one uppercase letter, lowercase letter, number, and symbol.";
@@ -117,19 +117,13 @@ namespace RPG_Launcher.ViewModel.Account
             }
             else if (resetCode == 1)
             {
-                ErrorMessage = "Invalid input state, please try again.";
-                IsSubmitButtonEnabled = true;
-                return;
-            }
-            else if (resetCode == 2)
-            {
                 ErrorMessage = "New password cannot be the same as old password.";
                 IsSubmitButtonEnabled = true;
                 return;
             }
             else
             {
-                // Reset failure (code -1) indicates expired reset token, so force return to login view.
+                // Reset failure (code -1) indicates generic error, so force return to login screen.
                 MainViewModel.Instance.ShowReturnToLoginView(isError: true, "Password reset failed, please try again.");
                 return;
             }
@@ -150,13 +144,16 @@ namespace RPG_Launcher.ViewModel.Account
             // Cancel button can be clicked at any time to cancel the current reset process and return
             //  to login. Note that an enforced password reset (flag set in database) will bring the
             //  user back to the reset password screen every time.
-            LoginApiService.Instance.CancelPasswordReset();
+
+            AppData.PasswordResetToken = string.Empty;
+            
             MainViewModel.Instance.ShowLoginView();
         }
 
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
-            return isResetPasswordViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isResetPasswordViewVisible && isSubmitButtonEnabled;
         }
 
 

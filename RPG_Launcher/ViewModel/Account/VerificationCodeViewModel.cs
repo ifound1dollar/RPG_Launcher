@@ -130,23 +130,16 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        int resultCode = await LoginApiService.Instance.ConfirmAccountEmail(VerificationCode);
-                        if (resultCode == 1)
+                        int resultCode = await LoginApiService.Instance.VerifyAccountEmail(VerificationCode);
+                        if (resultCode == -1)
                         {
-                            StatusMessage = "Invalid input state, please try again.";
-                            MessageBrush = errorBrush;
-                            IsSubmitButtonEnabled = true;
-                            break;
-                        }
-                        else if (resultCode == -1)
-                        {
-                            StatusMessage = "Incorrect confirmation code.";
+                            StatusMessage = "Email verification failed, please try again.";
                             MessageBrush = errorBrush;
                             IsSubmitButtonEnabled = true;
                             break;
                         }
 
-                        // After account confirmation is successful, we must re-login using the saved refresh token.
+                        // After email verification is successful, we must re-login using the saved refresh token.
                         int loginAttemptResult = await LoginApiService.Instance.TryLoginFromRefreshToken();
                         if (loginAttemptResult == 0)
                         {
@@ -155,6 +148,8 @@ namespace RPG_Launcher.ViewModel.Account
                         else
                         {
                             // Return to main login screen if somehow unsuccessful login via refresh (should never happen).
+                            // NOTE: Login code will never be 1 (just verified email) or 2 (resetting password will implicitly
+                            //  confirm email, so if password DID need reset earlier, then email has already been verified).
                             MainViewModel.Instance.ShowLoginView();
                         }
 
@@ -163,17 +158,10 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ResetPassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        int resultCode = await LoginApiService.Instance.RequestPasswordResetTokenFromCode(TargetUser, VerificationCode);
-                        if (resultCode == 1)
+                        int resultCode = await LoginApiService.Instance.RequestPasswordReset(TargetUser, VerificationCode);
+                        if (resultCode == -1)
                         {
-                            StatusMessage = "Invalid input state, please try again.";
-                            MessageBrush = errorBrush;
-                            IsSubmitButtonEnabled = true;
-                            break;
-                        }
-                        else if (resultCode == -1)
-                        {
-                            StatusMessage = "Incorrect confirmation code.";
+                            StatusMessage = "Reset password request failed, please try again.";
                             MessageBrush = errorBrush;
                             IsSubmitButtonEnabled = true;
                             break;
@@ -215,7 +203,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Send new confirmation code, not getting any response for security reasons.
-            await LoginApiService.Instance.SendEmailConfirmationCode(targetUser);
+            await LoginApiService.Instance.SendConfirmationCode(targetUser);
             lastSent = DateTime.UtcNow;
 
             // Else successful, so update status message with success confirmation.
@@ -225,22 +213,28 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteResendCodeButtonClicked(object? obj)
         {
-            return isVerificationCodeViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isVerificationCodeViewVisible && isSubmitButtonEnabled;
         }
 
         #endregion
 
         #region Private: ReturnToLoginClicked
 
-        private void ExecuteReturnToLoginClickedCommand(object? obj)
+        private async Task ExecuteReturnToLoginClickedCommand(object? obj)
         {
-            // Simply navigates back to login view, ignoring any pending code that exists on the server.
+            isSubmitButtonEnabled = false;
+
+            // Upon returning to login, fully logout to clear access and refresh token, then show login view.
+            await LoginApiService.Instance.Logout();
+
             MainViewModel.Instance.ShowLoginView();
         }
 
         private bool CanExecuteReturnToLoginClickedCommand(object? obj)
         {
-            return isVerificationCodeViewVisible;
+            // Disallow click if main button is not enabled (means awaiting API response).
+            return isVerificationCodeViewVisible && isSubmitButtonEnabled;
         }
 
         #endregion
