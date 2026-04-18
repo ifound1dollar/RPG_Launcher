@@ -1,5 +1,4 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using RPG_Launcher.Model.Data;
 using RPG_Launcher.Model.Responses;
 using RPG_Launcher.Util;
 using System;
@@ -94,7 +93,7 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/login-refresh")
                 {
                     Content = new StringContent(
-                        JsonSerializer.Serialize(new { RefreshToken = AppData.RefreshToken }),
+                        JsonSerializer.Serialize(new { RefreshToken = AppData.RefreshToken, ClientGuid = AppData.ClientGuid }),
                         Encoding.UTF8,
                         "application/json")
                 };

@@ -139,20 +139,8 @@ namespace RPG_Launcher.ViewModel.Account
                             break;
                         }
 
-                        // After email verification is successful, we must re-login using the saved refresh token.
-                        int loginAttemptResult = await LoginApiService.Instance.TryLoginFromRefreshToken();
-                        if (loginAttemptResult == 0)
-                        {
-                            MainViewModel.Instance.ShowHomeView();
-                        }
-                        else
-                        {
-                            // Return to main login screen if somehow unsuccessful login via refresh (should never happen).
-                            // NOTE: Login code will never be 1 (just verified email) or 2 (resetting password will implicitly
-                            //  confirm email, so if password DID need reset earlier, then email has already been verified).
-                            MainViewModel.Instance.ShowLoginView();
-                        }
-
+                        // If result code is NOT -1, then email verification fully logged us in already, so move onto home view.
+                        MainViewModel.Instance.ShowHomeView();
                         break;
                     }
                 case CodeContext.ResetPassword:
