@@ -39,7 +39,7 @@
                        Margin="0,15,0,0"/>
             
             <!-- Username header and text box. -->
-            <TextBlock Text="Username"
+            <TextBlock Text="Username or email"
                            Foreground="LightSlateGray"
                            FontSize="16"
                            FontFamily="Segoe UI"

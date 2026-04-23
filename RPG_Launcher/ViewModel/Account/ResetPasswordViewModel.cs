@@ -104,27 +104,22 @@ namespace RPG_Launcher.ViewModel.Account
             // Disable submit button before awaiting to prevent button spam.
             IsSubmitButtonEnabled = false;
 
-            // After validating password, we can make actual API request to reset our password.
-            int resetCode = await LoginApiService.Instance.ResetPasswordFromToken(credential);  // Pulls reset token from AppData automatically.
-            if (resetCode == 0)
+            // After validating password, we can make actual API request to reset our password. Pulls reset token from AppData automatically.
+            var (StatusCode, Message) = await LoginApiService.Instance.ResetPasswordFromToken(credential);
+            if (StatusCode == 0)
             {
                 // Code 0 indicates success, password has been reset and we must now log in again.
-                MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Password reset successfully.");
+                MainViewModel.Instance.ShowReturnToLoginView(isError: false, Message);
 
                 // Also updated saved username to the newly-reset account's username.
                 AppData.SavedUsername = TargetUser;
                 return;
             }
-            else if (resetCode == 1)
-            {
-                ErrorMessage = "New password cannot be the same as old password.";
-                IsSubmitButtonEnabled = true;
-                return;
-            }
             else
             {
-                // Reset failure (code -1) indicates generic error, so force return to login screen.
-                MainViewModel.Instance.ShowReturnToLoginView(isError: true, "Password reset failed, please try again.");
+                // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                ErrorMessage = Message;
+                IsSubmitButtonEnabled = true;
                 return;
             }
 

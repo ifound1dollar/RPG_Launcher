@@ -134,16 +134,20 @@ namespace RPG_Launcher.ViewModel.Account
             IsRegisterButtonEnabled = false;
 
             // Call API service login method with Username and Password.
-            int registerReturnCode = await LoginApiService.Instance.Register(Email, credential);
-            if (registerReturnCode == -1)
+            var (StatusCode, Message) = await LoginApiService.Instance.Register(Email, credential);
+            if (StatusCode == 0)
             {
-                ErrorMessage = "Registration failed, please try again.";
+                // If status code is good, immediately move onto confirmation code view so the user can verify their email.
+                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, Email);
+                return;
+            }
+            else
+            {
+                // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                ErrorMessage = Message;
                 IsRegisterButtonEnabled = true;
                 return;
             }
-
-            // If no errors, we move onto the email verification view.
-            MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, Email);
         }
 
         private bool CanExecuteRegisterClickedCommand(object? obj)

@@ -130,35 +130,40 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        int resultCode = await LoginApiService.Instance.VerifyAccountEmail(VerificationCode);
-                        if (resultCode == -1)
+                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyAccountEmail(VerificationCode);
+                        if (StatusCode == 0)
                         {
-                            StatusMessage = "Email verification failed, please try again.";
+                            // If status code is good, then email verification fully logged us in already, so move onto home view.
+                            MainViewModel.Instance.ShowHomeView();
+                            break;
+                        }
+                        else
+                        {
+                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            StatusMessage = Message;
                             MessageBrush = errorBrush;
                             IsSubmitButtonEnabled = true;
                             break;
-                        }
-
-                        // If result code is NOT -1, then email verification fully logged us in already, so move onto home view.
-                        MainViewModel.Instance.ShowHomeView();
-                        break;
+                        }                        
                     }
                 case CodeContext.ResetPassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        int resultCode = await LoginApiService.Instance.RequestPasswordReset(TargetUser, VerificationCode);
-                        if (resultCode == -1)
+                        var (StatusCode, Message) = await LoginApiService.Instance.RequestPasswordReset(TargetUser, VerificationCode);
+                        if (StatusCode == 0)
                         {
-                            StatusMessage = "Reset password request failed, please try again.";
+                            // After request is successful (code 0), we move on to password reset screen.
+                            MainViewModel.Instance.ShowResetPasswordView(TargetUser);
+                            break;
+                        }
+                        else
+                        {
+                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            StatusMessage = Message;
                             MessageBrush = errorBrush;
                             IsSubmitButtonEnabled = true;
                             break;
                         }
-
-                        // After request is successful (code 0), we move on to password reset screen.
-                        MainViewModel.Instance.ShowResetPasswordView(TargetUser);
-
-                        break;
                     }
                 // Do nothing for None.
             }
@@ -191,10 +196,16 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Send new confirmation code, not getting any response for security reasons.
-            await LoginApiService.Instance.SendConfirmationCode(targetUser);
-            lastSent = DateTime.UtcNow;
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(targetUser);
+            if (responseCode == -1)
+            {
+                StatusMessage = "Failed to perform API request, please try again.";
+                MessageBrush = errorBrush;
+                return;
+            }
 
             // Else successful, so update status message with success confirmation.
+            lastSent = DateTime.UtcNow;
             StatusMessage = "Code successfuly re-sent.";
             MessageBrush = infoBrush;
         }
@@ -209,12 +220,13 @@ namespace RPG_Launcher.ViewModel.Account
 
         #region Private: ReturnToLoginClicked
 
-        private async Task ExecuteReturnToLoginClickedCommand(object? obj)
+        private void ExecuteReturnToLoginClickedCommand(object? obj)
         {
             isSubmitButtonEnabled = false;
 
             // Upon returning to login, fully logout to clear access and refresh token, then show login view.
-            await LoginApiService.Instance.Logout();
+            // NOTE: Do not await logout (fire-and-forget).
+            _ = LoginApiService.Instance.Logout();
 
             MainViewModel.Instance.ShowLoginView();
         }

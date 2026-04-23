@@ -81,11 +81,12 @@ namespace RPG_Launcher.Model
         /// Attempts to log in to the API using an existing refresh token. Makes an HTTPS request to the API
         ///  endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
-        /// <returns> A status code describing the request result. 0 for success, 1 for email not confirmed, 2 for password needs reset, -1 for generic failure. </returns>
-        public async Task<int> TryLoginFromRefreshToken()
+        /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure,
+        ///  HTTP status code otherwise. </returns>
+        public async Task<(int, string)> TryLoginFromRefreshToken()
         {
             // Ensure refreshToken is not empty.
-            if (string.IsNullOrEmpty(AppData.RefreshToken)) return -1;
+            if (string.IsNullOrEmpty(AppData.RefreshToken)) return (-1, "Refresh login failed: no local refresh token found");
 
             try
             {
@@ -100,33 +101,33 @@ namespace RPG_Launcher.Model
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    Trace.WriteLine($"bad status code (code: {rawResponse.StatusCode})");
-
-                    // If not success status code, then there was some error, so remove refresh token and return -1.
+                    // If not success status code, then there was some error, so remove refresh token and return status code.
                     AppData.RefreshToken = string.Empty;
-                    return -1;
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Parse raw response into LoginResponseModel.
                 var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
                 if (responseModel == null)
                 {
-                    Trace.WriteLine("cannot parse into LoginResponseModel");
-
                     // If somehow we encounter a response model error, clear refresh token and return -1.
                     AppData.RefreshToken = string.Empty;
-                    return -1;
+                    return (-1, "Refresh login failed: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
-                AppData.AccessToken = responseModel.AccessToken;
+                AppData.SavedUsername = responseModel.Username;
                 AppData.RefreshToken = responseModel.RefreshToken;
-                return responseModel.LoginStatusCode;                
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Refresh login successful with login status code {responseModel.LoginStatusCode}");                
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Refresh login failed: an unexpected error occurred during API request");
             }
         }
 
@@ -135,11 +136,15 @@ namespace RPG_Launcher.Model
         ///  the API endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure. </returns>
-        public async Task<int> Login(NetworkCredential credential)
+        /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure,
+        ///  HTTP status code otherwise. </returns>
+        public async Task<(int, string)> Login(NetworkCredential credential)
         {
             // Ensure credentials are not empty.
-            if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)) return -1;
+            if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password))
+            {
+                return (-1, "Login failed: all input fields must be set");
+            }
 
             try
             {
@@ -147,39 +152,38 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/login")
                 {
                     Content = new StringContent(
-                        JsonSerializer.Serialize(new { Username = credential.UserName, Password = credential.Password }),
+                        JsonSerializer.Serialize(new { UsernameOrEmail = credential.UserName, Password = credential.Password }),
                         Encoding.UTF8,
                         "application/json")
                 };
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    Trace.WriteLine($"bad status code (code: {rawResponse.StatusCode})");
-
-                    // If not success status code, then there was some error, so return -1.
-                    return -1;
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Parse raw response into LoginResponseModel.
                 var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
                 if (responseModel == null)
                 {
-                    Trace.WriteLine("cannot parse into LoginResponseModel");
-
                     // If somehow we encounter a response model error, return -1.
-                    return -1;
+                    return (-1, "Login failed: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
-                AppData.SavedUsername = credential.UserName;        // Save currently-logged-in username on success.
-                AppData.AccessToken = responseModel.AccessToken;
+                AppData.SavedUsername = responseModel.Username;
                 AppData.RefreshToken = responseModel.RefreshToken;
-                return responseModel.LoginStatusCode;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Login successful with login status code {responseModel.LoginStatusCode}");
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Login failed: an unexpected error occurred during API request");
             }
         }
 
@@ -190,14 +194,14 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="email"> The email associated with the account attempting to be registered. </param>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for generic failure. </returns>
-        public async Task<int> Register(string email, NetworkCredential credential)
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> Register(string email, NetworkCredential credential)
         {
             // Ensure email and credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
                 || string.IsNullOrEmpty(email))
             {
-                return -1;
+                return (-1, "Registration failed: all input fields must be set");
             }
 
             try
@@ -213,28 +217,31 @@ namespace RPG_Launcher.Model
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    // If not success status code, then there was some error, so return -1.
-                    return -1;
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Parse raw response into LoginResponseModel.
                 var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
                 if (responseModel == null)
                 {
-                    // If somehow we encounter a response model error, return -1.
-                    return -1;
+                    // If somehow we encounter a response model error, return -1. NOTE: REGISTRATION WAS SUCCESSFUL, but we have no login model.
+                    return (-1, "Registration successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
-                AppData.SavedUsername = credential.UserName;        // Save currently-logged-in username on success.
-                AppData.AccessToken = responseModel.AccessToken;
+                AppData.SavedUsername = responseModel.Username;
                 AppData.RefreshToken = responseModel.RefreshToken;
-                return responseModel.LoginStatusCode;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Registration successful for new user");
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Registration failed: an unexpected error occurred during API request");
             }
         }
 
@@ -278,9 +285,11 @@ namespace RPG_Launcher.Model
         ///  for security reasons, but checks here for valid input state.
         /// </summary>
         /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
-        public async Task SendConfirmationCode(string targetUser)
+        /// <returns> A non-HTTP status code (custom) describing success or failure. Returns 0 if successful, -1 if HTTP request error.
+        ///  NOTE: Does not return an HTTP status code for security reasons (vulnerable to username/email lookup attack). </returns>
+        public async Task<int> SendConfirmationCode(string targetUser)
         {
-            if (string.IsNullOrEmpty(targetUser)) return;
+            if (string.IsNullOrEmpty(targetUser)) return -1;
 
             try
             {
@@ -296,10 +305,12 @@ namespace RPG_Launcher.Model
 
                 // We do not know whether the request was successful; sharing information like username/password not
                 //  found is a security vulnerability, so we make API request and return success.
+                return 0;
             }
             catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
+                return -1;
             }
         }
 
@@ -309,12 +320,12 @@ namespace RPG_Launcher.Model
         ///  email. Returns a status code describing the success or failure of the request.
         /// </summary>
         /// <param name="verificationCode"> The user-supplied verification code, which should have been received via email. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for generic failure. </returns>
-        public async Task<int> VerifyAccountEmail(string verificationCode)
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> VerifyAccountEmail(string verificationCode)
         {
-            if (string.IsNullOrEmpty(AppData.RefreshToken) || string.IsNullOrEmpty(verificationCode))
+            if (string.IsNullOrEmpty(AppData.AccessToken) || string.IsNullOrEmpty(verificationCode))
             {
-                return -1;
+                return (-1, "Email verification failed: local access token not found or confirmation code field empty");
             }
 
             try
@@ -331,27 +342,31 @@ namespace RPG_Launcher.Model
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    // If not success status code, then there was some error, so return -1.
-                    return -1;
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Parse raw response into LoginResponseModel.
                 var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
                 if (responseModel == null)
                 {
-                    // If somehow we encounter a response model error, return -1.
-                    return -1;
+                    // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
+                    return (-1, "Email verification successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
-                AppData.AccessToken = responseModel.AccessToken;
+                AppData.SavedUsername = responseModel.Username;
                 AppData.RefreshToken = responseModel.RefreshToken;
-                return responseModel.LoginStatusCode;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Email verification successful");
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Email verification failed: an unexpected error occurred during API request");
             }
         }
 
@@ -363,12 +378,12 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being requested for. </param>
         /// <param name="verificationCode"> The one-time verification code received by the user via email. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, -1 for request denied. </returns>
-        public async Task<int> RequestPasswordReset(string usernameOrEmail, string verificationCode)
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> RequestPasswordReset(string usernameOrEmail, string verificationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(verificationCode))
             {
-                return -1;
+                return (-1, "Request password reset failed: both input fields must be set");
             }
 
             try
@@ -384,8 +399,9 @@ namespace RPG_Launcher.Model
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    // If not success status code, then there was some error, so return -1.
-                    return -1;
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Parse raw response into response model.
@@ -393,17 +409,18 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return -1;
+                    return (-1, "Request password reset failed: could not parse API response into usable object model");
                 }
 
                 // Store reset token, then return 0 for success.
                 AppData.PasswordResetToken = responseModel.ResetToken;
-                return 0;
+                return (0, "Request password reset successful");
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Request password reset failed: an unexpected error occurred during API request");
             }
         }
 
@@ -413,14 +430,13 @@ namespace RPG_Launcher.Model
         ///  status code describing whether the password reset was successful.
         /// </summary>
         /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for invalid input, 2 for same password as old, -1 for generic failure. </returns>
-        public async Task<int> ResetPasswordFromToken(NetworkCredential credential)
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> ResetPasswordFromToken(NetworkCredential credential)
         {
             // Ensure credentials and reset token are not empty.
-            if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
-                || string.IsNullOrEmpty(AppData.PasswordResetToken))
+            if (string.IsNullOrEmpty(credential.Password) || string.IsNullOrEmpty(AppData.PasswordResetToken))
             {
-                return -1;
+                return (-1, "Password reset failed: local password reset token missing or missing new password input");
             }
 
             try
@@ -437,33 +453,21 @@ namespace RPG_Launcher.Model
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
-                    // If not success status code, then there was some error, so return -1.
-                    return -1;
-                }
-
-                // Parse raw response into response model.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<ResetPasswordCompleteResponseModel>();
-                if (responseModel == null)
-                {
-                    // If somehow we encounter a response model error, return -1.
-                    return -1;
-                }
-
-                // If unsuccessful, then old password matched new password (return 1 for same password).
-                if (!responseModel.Success)
-                {
-                    return 1;
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
                 // Else successful, so immediately log out and return 0 for success.
-                await Logout();
                 AppData.PasswordResetToken = string.Empty;
-                return 0;
+                await Logout();
+                return (0, "Password reset successful, user must re-login");
             }
             catch (Exception ex)
             {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Password reset failed: an unexpected error occurred during API request");
             }
         }
     }

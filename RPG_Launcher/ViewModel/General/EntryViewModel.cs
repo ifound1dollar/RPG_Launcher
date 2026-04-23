@@ -101,30 +101,30 @@ namespace RPG_Launcher.ViewModel.General
             // If no error, display success message for two seconds then move onto login logic.
             MessageBrush = infoBrush;
             StatusMessage = "Connected to login API!";
-            await Task.Delay(2000);
+            await Task.Delay(1500);
 
             // Then, try to login with existing securely-stored refresh token (retrieved on Initialize() above).
-            int loginCode = await LoginApiService.Instance.TryLoginFromRefreshToken();
-            if (loginCode == 0)
+            var (StatusCode, Message) = await LoginApiService.Instance.TryLoginFromRefreshToken();
+            if (StatusCode == 0)
             {
-                // Code 0 means existing token is valid, so move on to home screen.
+                // Code 0 means successful login with full access, to move onto home screen.
                 MainViewModel.Instance.ShowHomeView();
             }
             // IMPORTANT: WE PRIORITIZE PASSWORD RESET BECAUSE A SUCCESSFUL PASSWORD RESET REQUIRES A VALID EMAIL.
             // IF THE USER SUCCESSFULLY RESETS THEIR PASSWORD, IT WILL IMPLICITLY CONFIRM THE ACCOUNT EMAIL.
-            else if (loginCode == 2)
+            else if (StatusCode == 2)
             {
                 // Code 2 means password must be reset for security reasons.
                 MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, AppData.SavedUsername);
             }
-            else if (loginCode == 1)
+            else if (StatusCode == 1)
             {
                 // Code 1 means account email needs confirmation before we can fully log in.
                 MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, AppData.SavedUsername);
             }
             else
             {
-                // Any other code (ex. -1) indicates generic failure, so return to login screen.
+                // Any other code (ex. -1 or 400/500 status code) indicates generic failure, so return to login screen.
                 MainViewModel.Instance.ShowLoginView();
             }
         }

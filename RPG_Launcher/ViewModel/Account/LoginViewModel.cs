@@ -106,20 +106,20 @@ namespace RPG_Launcher.ViewModel.Account
             IsLoginButtonEnabled = false;
 
             // Call API service login method with Username and Password.
-            int loginCode = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
-            if (loginCode == 0)
+            var (StatusCode, Message) = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
+            if (StatusCode == 0)
             {
                 // Code 0 means full login success, so show home view.
                 MainViewModel.Instance.ShowHomeView();
                 return;
             }
-            else if (loginCode == 1)
+            else if (StatusCode == 1)
             {
                 // Code 1 means account is not yet confirmed, so we must move onto confirmation code view.
                 MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:true, Username);
                 return;
             }
-            else if (loginCode == 2)
+            else if (StatusCode == 2)
             {
                 // Code 2 means account password must be reset for security reasons.
                 MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:false, Username);
@@ -128,7 +128,7 @@ namespace RPG_Launcher.ViewModel.Account
             else
             {
                 // Code -1 (any other code) means generic login failure, so display login error message.
-                ErrorMessage = "Login failed, please try again.";
+                ErrorMessage = Message;
                 IsLoginButtonEnabled = true;
                 return;
             }
@@ -144,7 +144,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         #region Private: ForgotPasswordClickedCommand
 
-        private void ExecuteForgotPasswordClickedCommand(string username)
+        private void ExecuteForgotPasswordClickedCommand(object? obj)
         {
             // Show forgot password view, auto-populating username or password field with Username.
             MainViewModel.Instance.ShowForgotPasswordView(Username);

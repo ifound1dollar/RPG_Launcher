@@ -69,7 +69,7 @@ namespace RPG_Launcher.Util
 
 
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.5.1";
+        private static readonly string version = "0.6.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataPath = "appdata.json";
         // Default path to executable.
@@ -139,6 +139,7 @@ namespace RPG_Launcher.Util
         // Access token is short-lived and is never stored outside of memory. A new access token is received
         //  upon login, and one must be received each time the application is run.
         public static string AccessToken { get; set; } = string.Empty;
+        public static DateTime AccessTokenExpiration { get; set; }
 
         // Like access token, PasswordResetToken is short-lived and only ever exists in memory. This token is
         //  populated once the client (this launcher) successfully verifies itself and requests a password

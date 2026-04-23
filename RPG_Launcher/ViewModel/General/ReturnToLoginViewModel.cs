@@ -70,15 +70,16 @@ namespace RPG_Launcher.ViewModel.General
 
 
 
-        #region Private: ReturnButtonClicked (async)
+        #region Private: ReturnButtonClicked
 
-        private async Task ExecuteReturnButtonClickedCommand(object? obj)
+        private void ExecuteReturnButtonClickedCommand(object? obj)
         {
             // Disable return button before awaiting to prevent button spam.
             IsReturnButtonEnabled = false;
 
-            // We may have already logged out, but log out again just to be sure.
-            await LoginApiService.Instance.Logout();
+            // We may have already logged out, but log out again just to be sure. 
+            // NOTE: We do not await logout (fire-and-forget).
+            _ = LoginApiService.Instance.Logout();
 
             MainViewModel.Instance.ShowLoginView();
         }

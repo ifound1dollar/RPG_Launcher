@@ -80,9 +80,14 @@ namespace RPG_Launcher.ViewModel.Account
             IsSendCodeButtonEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
-            await LoginApiService.Instance.SendConfirmationCode(Username);
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(Username);
+            if (responseCode == -1)
+            {
+                ErrorMessage = "Failed to perform API request, please try again.";
+                return;
+            }
 
-            // Show verification code view with password reset context.
+            // Else, status code was good so show verification code view with password reset context.
             MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, Username);
         }
 
