@@ -51,6 +51,19 @@ namespace RPG_Launcher.ViewModel
 
             windowTitle = string.Empty;     // Make window title empty, but is set in App.xaml.cs.
             currentViewModel = EntryVM;     // Default to HomeViewModel, but don't show yet. Set local property (no event).
+
+            // Set timer to automatically call the API PingInLauncher method to notify it that we are open and logged in.
+            System.Timers.Timer timer = new(60000);     // Once per minute.
+            timer.Elapsed += (sender, e) =>
+            {
+                // If access token is empty or expired, do not ping in launcher.
+                if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration < DateTime.UtcNow) return;
+
+                // Else we have valid access token, so call API method.
+                _ = LoginApiService.Instance.PingInLauncher();
+            };
+            timer.AutoReset = true;
+            timer.Start();
         }
 
         public override void HideView()

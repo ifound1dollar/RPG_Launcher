@@ -27,13 +27,16 @@ namespace RPG_Launcher
             mainWindow.Show();                      // Actually shows the application window.
         }
 
-        private void Application_Exit(object sender, ExitEventArgs e)
+        private async void Application_Exit(object sender, ExitEventArgs e)
         {
             // De-initialize in-memory application state data on exit (ex. to securely write refresh token to file).
             // NOTE: This will not be called if the application closes unexpectedly (ex. crash, power outage, force
             //  closed with TaskManager, etc.). If the application does not close gracefully, the refresh token
             //  in the file will be expired and the user will need to explicitly log in the next time that the
             //  application is opened.
+
+            // We do not need to await this, and should not because we want to allow the launcher to exit immediately.
+            _ = LoginApiService.Instance.NotifyLauncherExit();
 
             //AppData.Deinitialize();
         }

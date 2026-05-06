@@ -257,7 +257,8 @@ namespace RPG_Launcher.Model
             //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
             //  should log the user out of everything).
 
-            if (string.IsNullOrEmpty(AppData.AccessToken) && string.IsNullOrEmpty(AppData.RefreshToken)) return;
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken) return;
 
             try
             {
@@ -274,6 +275,50 @@ namespace RPG_Launcher.Model
             // Clear all tokens after logout, regardless of whether error was thrown. Fully log out client-side.
             AppData.AccessToken = string.Empty;
             AppData.RefreshToken = string.Empty;
+        }
+
+        /// <summary>
+        /// Pings the API to notify it that we are still in the launcher (used to maintain account state). Does not
+        ///  return any data because it is a simple GET request with our access token.
+        /// </summary>
+        public async Task PingInLauncher()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken) return;
+
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Get, "users/ping-in-launcher");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Notifies the API that the launcher has been closed. This should be automatically invoked on application exit
+        ///  so that the API is aware of launcher exit status. Does not return any data.
+        /// </summary>
+        public async Task NotifyLauncherExit()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken) return;
+
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Get, "users/notify-launcher-exit");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
         }
 
 
@@ -319,14 +364,15 @@ namespace RPG_Launcher.Model
         ///  to the API along with the passed-in verification code that will have been sent to the user's
         ///  email. Returns a status code describing the success or failure of the request.
         /// </summary>
-        /// <param name="verificationCode"> The user-supplied verification code, which should have been received via email. </param>
+        /// <param name="confirmationCode"> The user-supplied verification code, which should have been received via email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> VerifyAccountEmail(string verificationCode)
+        public async Task<(int, string)> VerifyAccountEmail(string confirmationCode)
         {
-            if (string.IsNullOrEmpty(AppData.AccessToken) || string.IsNullOrEmpty(verificationCode))
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(confirmationCode))
             {
-                return (-1, "Email verification failed: local access token not found or confirmation code field empty");
-            }
+                return (-1, "Email verification failed: invalid local access token or confirmation code field empty");
+            }    
 
             try
             {
@@ -334,7 +380,7 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/verify-email")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { Code = verificationCode }),
+                            JsonSerializer.Serialize(new { Code = confirmationCode }),
                             Encoding.UTF8,
                             "application/json")
                 };
@@ -470,5 +516,88 @@ namespace RPG_Launcher.Model
                 return (-1, "Password reset failed: an unexpected error occurred during API request");
             }
         }
+
+        /// <summary>
+        /// Attempts to reset the current account's password via a login API call. Passes the username and password
+        ///  form a NetworkCredential and requires a valid in-memory password reset token to be successful. Returns a
+        ///  status code describing whether the password reset was successful.
+        /// </summary>
+        /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> ChangeUsername(string newUsername)
+        {
+            // Ensure new username and access token are not empty.
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(newUsername))
+            {
+                return (-1, "Change username failed: local access token missing or missing new username input");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and access token (with reset Role).
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/change-username")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { NewUsername = newUsername }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
+                    return (-1, "Change username successful, but API response error: could not parse API response into usable object model");
+                }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = responseModel.Username;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Change username successful");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Change username failed: an unexpected error occurred during API request");
+            }
+        }
+
+
+
+        #region Private: Access Token checking
+
+        /// <summary>
+        /// Ensures there is a valid access token stored, checking whether missing, expiring within 1 minute, or already
+        ///  expired. Attempts to retrieve a new access token if the current access token is missing or invalid.
+        /// </summary>
+        /// <returns> True if a valid access token exists or has been retrieved, false if no valid token. </returns>
+        private async Task<bool> EnsureAccessTokenIsValid()
+        {
+            // If no current access token OR access token is expiring within 1 minute (or already expired), try to get a new one.
+            if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration - DateTime.UtcNow < TimeSpan.FromMinutes(1))
+            {
+                // Try to login via refresh token, returning false if return code is != 0 (anything other than 0 does not allow access).
+                var (Code, Message) = await TryLoginFromRefreshToken();
+                if (Code != 0) return false;
+            }
+
+            // Else access token is good OR we got new valid token, so return true.
+            return true;
+        }
+
+        #endregion
     }
 }
