@@ -86,7 +86,7 @@ namespace RPG_Launcher.Model
         public async Task<(int, string)> TryLoginFromRefreshToken()
         {
             // Ensure refreshToken is not empty.
-            if (string.IsNullOrEmpty(AppData.RefreshToken)) return (-1, "Refresh login failed: no local refresh token found");
+            if (string.IsNullOrEmpty(AppData.RefreshToken)) return (-2, "Refresh login failed: no local refresh token found");
 
             try
             {

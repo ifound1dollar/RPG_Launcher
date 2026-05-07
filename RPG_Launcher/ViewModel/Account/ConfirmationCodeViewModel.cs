@@ -114,7 +114,7 @@ namespace RPG_Launcher.ViewModel.Account
             // Validate input, enforcing specific-length code.
             if (VerificationCode.Length != 8)
             {
-                StatusMessage = "Verification code must be length 8.";
+                StatusMessage = "Confirmation code must be length 8.";
                 MessageBrush = errorBrush;
                 VerificationCode = string.Empty;
                 return;

@@ -123,10 +123,15 @@ namespace RPG_Launcher.ViewModel.General
                 // Code 1 means account email needs confirmation before we can fully log in.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, AppData.SavedUsername);
             }
+            else if (StatusCode == -2)
+            {
+                // SPECIAL CASE: -2 means we don't have a local refresh token stored, so skip the error message and go directly to login view.
+                MainViewModel.Instance.ShowLoginView();
+            }
             else
             {
                 // Any other code (ex. -1 or 400/500 status code) indicates generic failure, so return to login screen.
-                MainViewModel.Instance.ShowLoginView();
+                MainViewModel.Instance.ShowReturnToLoginView(true, Message);
             }
         }
 
