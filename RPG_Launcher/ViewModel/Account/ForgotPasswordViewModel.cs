@@ -21,7 +21,12 @@ namespace RPG_Launcher.ViewModel.Account
         public string UsernameOrEmail
         {
             get => usernameOrEmail;
-            set { usernameOrEmail = value; OnPropertyChanged(nameof(UsernameOrEmail)); }
+            set
+            {
+                usernameOrEmail = value;
+                OnPropertyChanged(nameof(UsernameOrEmail));
+                ErrorMessage = string.Empty;
+            }
         }
         public string ErrorMessage
         {

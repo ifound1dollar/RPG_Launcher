@@ -34,7 +34,12 @@ namespace RPG_Launcher.ViewModel.Account
         public string VerificationCode
         {
             get => verificationCode;
-            set { verificationCode = value; OnPropertyChanged(nameof(VerificationCode)); }
+            set
+            {
+                verificationCode = value;
+                OnPropertyChanged(nameof(VerificationCode));
+                StatusMessage = string.Empty;
+            }
         }
         public string ContextTitle
         {

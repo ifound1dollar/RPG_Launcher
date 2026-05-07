@@ -26,12 +26,22 @@ namespace RPG_Launcher.ViewModel.Account
         public string ExistingUsername
         {
             get => existingUsername;
-            set { existingUsername = value; OnPropertyChanged(nameof(ExistingUsername)); }
+            set
+            {
+                existingUsername = value;
+                OnPropertyChanged(nameof(ExistingUsername));
+                ErrorMessage = string.Empty;
+            }
         }
         public string NewUsername
         {
             get => newUsername;
-            set { newUsername = value; OnPropertyChanged(nameof(NewUsername)); }
+            set
+            {
+                newUsername = value;
+                OnPropertyChanged(nameof(NewUsername));
+                ErrorMessage = string.Empty;
+            }
         }
         public string ErrorMessage
         {

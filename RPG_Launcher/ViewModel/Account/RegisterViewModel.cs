@@ -26,12 +26,22 @@ namespace RPG_Launcher.ViewModel.Account
         public string Email
         {
             get => email;
-            set { email = value; OnPropertyChanged(nameof(Email)); }
+            set
+            {
+                email = value;
+                OnPropertyChanged(nameof(Email));
+                ErrorMessage = string.Empty;
+            }
         }
         public string Username
         {
             get => username;
-            set { username = value; OnPropertyChanged(nameof(Username)); }
+            set
+            {
+                username = value;
+                OnPropertyChanged(nameof(Username));
+                ErrorMessage = string.Empty;
+            }
         }
         public SecureString SecurePassword
         {
@@ -46,7 +56,12 @@ namespace RPG_Launcher.ViewModel.Account
             //  responsibility in this case and directly controls what this value reads, rather than the
             //  other way around.
             get => securePassword;
-            set { securePassword = value; OnPropertyChanged(nameof(SecurePassword)); }
+            set
+            {
+                securePassword = value;
+                OnPropertyChanged(nameof(SecurePassword));
+                ErrorMessage = string.Empty;
+            }
         }
         public string ErrorMessage
         {
