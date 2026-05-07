@@ -18,13 +18,13 @@ namespace RPG_Launcher.ViewModel.General
 
 
         // Commands
-        public ICommand LogoutClickedCommand { get; }
+        public ICommand AccountClickedCommand { get; }
 
 
 
         public HomeViewModel()
         {
-            LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
+            AccountClickedCommand = new ViewModelCommand(ExecuteAccountClickedCommand, CanExecuteAccountClickedCommand);
         }
 
         public override void ShowView()
@@ -39,20 +39,15 @@ namespace RPG_Launcher.ViewModel.General
 
 
 
-        #region Private: LogoutClickedCommand
+        #region Private: AccountClickedCommand
 
-        private async Task ExecuteLogoutClickedCommand(object? obj)
+        private void ExecuteAccountClickedCommand(object? obj)
         {
-            // Call API service logout method, which will always successfully log us out.
-            await LoginApiService.Instance.Logout();
-
-            // After logout, we must return to the login screen (show login window and hide main).
-            MainViewModel.Instance.ShowLoginView();
+            MainViewModel.Instance.ShowAccountView();
         }
 
-        private bool CanExecuteLogoutClickedCommand(object? obj)
+        private bool CanExecuteAccountClickedCommand(object? obj)
         {
-            // Can only logout if main subgrid is visible (already logged in).
             return isHomeViewVisible;
         }
 

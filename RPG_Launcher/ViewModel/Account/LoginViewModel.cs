@@ -116,13 +116,13 @@ namespace RPG_Launcher.ViewModel.Account
             else if (StatusCode == 1)
             {
                 // Code 1 means account is not yet confirmed, so we must move onto confirmation code view.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:true, Username);
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, Username);
                 return;
             }
             else if (StatusCode == 2)
             {
                 // Code 2 means account password must be reset for security reasons.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount:false, Username);
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, Username);
                 return;
             }
             else

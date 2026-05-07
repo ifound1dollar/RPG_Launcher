@@ -1,5 +1,6 @@
 ﻿using RPG_Launcher.Model;
 using RPG_Launcher.Util;
+using RPG_Launcher.ViewModel.Account;
 using RPG_Launcher.ViewModel.Base;
 using System;
 using System.Collections.Generic;
@@ -115,12 +116,12 @@ namespace RPG_Launcher.ViewModel.General
             else if (StatusCode == 2)
             {
                 // Code 2 means password must be reset for security reasons.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, AppData.SavedUsername);
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, AppData.SavedUsername);
             }
             else if (StatusCode == 1)
             {
                 // Code 1 means account email needs confirmation before we can fully log in.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, AppData.SavedUsername);
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, AppData.SavedUsername);
             }
             else
             {

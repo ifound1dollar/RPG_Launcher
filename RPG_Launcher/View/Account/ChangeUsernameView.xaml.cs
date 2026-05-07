@@ -14,35 +14,36 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace RPG_Launcher.View
+namespace RPG_Launcher.View.Account
 {
     /// <summary>
-    /// Interaction logic for VerificationCodeView.xaml
+    /// Interaction logic for ChangeUsernameView.xaml
     /// </summary>
-    public partial class VerificationCodeView : UserControl
+    public partial class ChangeUsernameView : UserControl
     {
-        private ConfirmationCodeViewModel? vmRef;
-        private ConfirmationCodeViewModel VerificationCodeVM
+        private ChangeUsernameViewModel? vmRef;
+        private ChangeUsernameViewModel ChangeUsernameVM
         {
             get
             {
-                vmRef ??= (ConfirmationCodeViewModel)DataContext;
+                vmRef ??= (ChangeUsernameViewModel)DataContext;
                 return vmRef;
             }
         }
 
-        public VerificationCodeView()
+        public ChangeUsernameView()
         {
             InitializeComponent();
         }
 
         private void Universal_KeyDown(object sender, KeyEventArgs e)
         {
-            // On enter key pressed, fire the same command as the submit button.
+            // On enter key pressed, fire the same command as the login button.
             if (e.Key == Key.Enter)
             {
                 Keyboard.ClearFocus();
 
+                // Call Click method, which is necessary for PasswordBox behavior (calls ViewModel command in method).
                 ButtonSubmit_Click(sender, e);
             }
         }
@@ -51,25 +52,18 @@ namespace RPG_Launcher.View
 
         private void ButtonSubmit_Click(object sender, RoutedEventArgs e)
         {
-            if (VerificationCodeVM.SubmitButtonClickedCommand.CanExecute(sender))
+            // Directly call ViewModel Command. Always clear passwords immedately on click, regardless of success.
+            if (ChangeUsernameVM.SubmitButtonClickedCommand.CanExecute(sender))
             {
-                VerificationCodeVM.SubmitButtonClickedCommand.Execute(sender);
-            }
-        }
-
-        private void ResendCodeTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (VerificationCodeVM.ResendCodeButtonClickedCommand.CanExecute(sender))
-            {
-                VerificationCodeVM.ResendCodeButtonClickedCommand.Execute(sender);
+                ChangeUsernameVM.SubmitButtonClickedCommand.Execute(sender);
             }
         }
 
         private void CancelTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (VerificationCodeVM.CancelButtonClickedCommand.CanExecute(sender))
+            if (ChangeUsernameVM.CancelButtonClickedCommand.CanExecute(sender))
             {
-                VerificationCodeVM.CancelButtonClickedCommand.Execute(sender);
+                ChangeUsernameVM.CancelButtonClickedCommand.Execute(sender);
             }
         }
     }

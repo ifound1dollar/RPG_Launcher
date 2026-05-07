@@ -9,9 +9,9 @@
              mc:Ignorable="d" 
              d:DesignHeight="690" d:DesignWidth="1280"
              KeyDown="Universal_KeyDown"
-             d:DataContext="{d:DesignInstance Type=vm:VerificationCodeViewModel}">
+             d:DataContext="{d:DesignInstance Type=vm:ConfirmationCodeViewModel}">
 
-    <Grid Name="VerificationCodeSubgrid">
+    <Grid Name="ConfirmationCodeSubgrid">
 
         <StackPanel Width="250px"
                     Orientation="Vertical"
@@ -38,7 +38,7 @@
                        Margin="0,15,0,0"/>
 
             <!-- Target user title. -->
-            <TextBlock Text="Verification code sent to email associated with user account: "
+            <TextBlock Text="Confirmation code sent to email associated with user account: "
                        Foreground="LightBlue"
                        FontSize="14"
                        FontFamily="Segoe UI"
@@ -101,7 +101,7 @@
                     Cursor="Hand"
                     Margin="40,10,40,0"
                     Click="ButtonSubmit_Click"
-                    IsEnabled="{Binding IsSubmitButtonEnabled}">
+                    IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4b4094"/>
@@ -152,15 +152,15 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <!-- Return to login interactable (clickable) text block. -->
-            <TextBlock Name="ReturnToLoginTextBlock"
-                       Text="Return to login"
+            <!-- Cancel interactable (clickable) text block. -->
+            <TextBlock Name="CancelTextBlock"
+                       Text="Cancel"
                        Background="Transparent"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Center"
                        Cursor="Hand"
                        Margin="0,20,0,0"
-                       MouseLeftButtonDown="ReturnToLoginTextBlock_MouseLeftButtonDown">
+                       MouseLeftButtonDown="CancelTextBlock_MouseLeftButtonDown">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Foreground" Value="LightSlateGray"/>

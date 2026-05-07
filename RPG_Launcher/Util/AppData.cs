@@ -30,14 +30,16 @@ namespace RPG_Launcher.Util
             public string Timestamp { get; private set; }
             public string ClientGuid { get; private set; }
             public string SavedUsername { get; private set; }
+            public string SavedEmail { get; private set; }
             public string PathToExecutable { get; private set; }
 
-            public AppDataJson(string version, string timestamp, string clientGuid, string savedUsername, string pathToExecutable)
+            public AppDataJson(string version, string timestamp, string clientGuid, string savedUsername, string savedEmail, string pathToExecutable)
             {
                 Version = version;
                 Timestamp = timestamp;
                 ClientGuid = clientGuid;
                 SavedUsername = savedUsername;
+                SavedEmail = savedEmail;
                 PathToExecutable = pathToExecutable;
             }
 
@@ -45,12 +47,12 @@ namespace RPG_Launcher.Util
 
             public static AppDataJson CreateNew()
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty, defaultPathToExecutable);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty, string.Empty, defaultPathToExecutable);
             }
 
             public static AppDataJson CreateNewWithUsername(string username)
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username, defaultPathToExecutable);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username, string.Empty, defaultPathToExecutable);
             }
 
             public static AppDataJson UpdateExistingVersion(AppDataJson appData, string version)
@@ -69,7 +71,7 @@ namespace RPG_Launcher.Util
 
 
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.6.1";
+        private static readonly string version = "0.7.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataPath = "appdata.json";
         // Default path to executable.
@@ -103,7 +105,21 @@ namespace RPG_Launcher.Util
             set
             {
                 savedUsername = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, PathToExecutable));
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, PathToExecutable));
+            }
+        }
+
+        // Saved email is the email of the user this application most recently logged in with. It is used
+        //  for displaying the email of the currrently-logged-in user. Whenever SavedEmail is updated, we
+        //  immediately write the change to appdata.json.
+        private static string savedEmail = string.Empty;
+        public static string SavedEmail
+        {
+            get => savedEmail;
+            set
+            {
+                savedEmail = value;
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, PathToExecutable));
             }
         }
 
@@ -115,7 +131,7 @@ namespace RPG_Launcher.Util
             set
             {
                 pathToExecutable = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, pathToExecutable));
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, pathToExecutable));
             }
         }
 
@@ -223,6 +239,7 @@ namespace RPG_Launcher.Util
                     Timestamp = appData.Timestamp;
                     ClientGuid = Guid.Parse(appData.ClientGuid);
                     SavedUsername = appData.SavedUsername;
+                    SavedEmail = appData.SavedEmail;
                     PathToExecutable = appData.PathToExecutable;
                 }
             }

@@ -12,56 +12,50 @@
     <!-- DesignHeight is 690 and not 720 because we have a 30px header. -->
 
     <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                <GradientStop Color="#7216141f" Offset="0"/>
+                <GradientStop Color="#7216141f" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
 
-        <StackPanel Orientation="Vertical"
-                        Margin="0,0,0,0"
-                        Grid.Row="1">
-            <StackPanel.Background>
-                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                    <GradientStop Color="#7216141f" Offset="0"/>
-                    <GradientStop Color="#7216141f" Offset="1"/>
-                </LinearGradientBrush>
-            </StackPanel.Background>
+        <Grid.RowDefinitions>
+            <RowDefinition Name="SubHeaderBar" Height="75"/>
+            <RowDefinition Name="Body" Height="615"/>
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="Successfully Logged In!"
-                           Foreground="SlateGray"
-                           FontSize="40"
-                           FontFamily="Segoe UI"
-                           TextAlignment="Center"
-                           Margin="0,250,0,0"/>
-
-            <Button Name="ButtonLogout"
-                            Command="{Binding LogoutClickedCommand}"
-                            Height="40"
-                            Foreground="LightGray"
-                            Content="LOG OUT"
-                            FontSize="20"
-                            Cursor="Hand"
-                            Margin="525,50,525,0">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Background" Value="#ab3a3a"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="IndianRed"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#bc4b4b"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
+        <StackPanel Orientation="Horizontal"
+                    Grid.Row="0">
+            <Button Name="AccountSettings"
+                    Command="{Binding AccountClickedCommand}"
+                    Width="150"
+                    Foreground="LightGray"
+                    Background="DarkSlateBlue"
+                    Content="ACCOUNT"
+                    FontSize="20"
+                    Cursor="Hand"
+                    Margin="10,10,0,0">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="5"
-                                        Background="{TemplateBinding Background}">
+                        <Border CornerRadius="10"
+                Background="{TemplateBinding Background}">
                             <ContentPresenter VerticalAlignment="Center"
-                                                      HorizontalAlignment="Center"
-                                                      Margin="0,0,0,2"/>
+                              HorizontalAlignment="Center"
+                              Margin="0,0,0,2"/>
                         </Border>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
+
         </StackPanel>
+
+        <TextBlock Grid.Row="1"
+                    Text="HOME SCREEN"
+                    Foreground="GhostWhite"
+                    FontSize="50"
+                    FontFamily="Segoe UI"
+                    TextAlignment="Center"
+                    Margin="0,200,0,0"/>
+
     </Grid>
 </UserControl>

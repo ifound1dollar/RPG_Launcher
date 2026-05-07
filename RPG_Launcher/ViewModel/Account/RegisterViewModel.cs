@@ -138,7 +138,7 @@ namespace RPG_Launcher.ViewModel.Account
             if (StatusCode == 0)
             {
                 // If status code is good, immediately move onto confirmation code view so the user can verify their email.
-                MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: true, Email);
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, Email);
                 return;
             }
             else

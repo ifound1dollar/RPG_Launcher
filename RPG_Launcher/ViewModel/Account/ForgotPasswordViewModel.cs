@@ -13,15 +13,15 @@ namespace RPG_Launcher.ViewModel.Account
     {
         private bool isForgotPasswordViewVisible = false;
 
-        private string username = string.Empty;
+        private string usernameOrEmail = string.Empty;
         private string errorMessage = string.Empty;
 
         private bool isSendCodeButtonEnabled = true;
 
-        public string Username
+        public string UsernameOrEmail
         {
-            get => username;
-            set { username = value; OnPropertyChanged(nameof(Username)); }
+            get => usernameOrEmail;
+            set { usernameOrEmail = value; OnPropertyChanged(nameof(UsernameOrEmail)); }
         }
         public string ErrorMessage
         {
@@ -50,7 +50,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         public override void ShowView()
         {
-            Username = string.Empty;
+            UsernameOrEmail = string.Empty;
             ErrorMessage = string.Empty;
             IsSendCodeButtonEnabled = true;
 
@@ -70,7 +70,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
-            if (Username.Length == 0)
+            if (UsernameOrEmail.Length == 0)
             {
                 ErrorMessage = "Please enter a valid username or email.";
                 return;
@@ -80,7 +80,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsSendCodeButtonEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(Username);
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(UsernameOrEmail);
             if (responseCode == -1)
             {
                 ErrorMessage = "Failed to perform API request, please try again.";
@@ -88,7 +88,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Else, status code was good so show verification code view with password reset context.
-            MainViewModel.Instance.ShowVerificationCodeView(isForNewAccount: false, Username);
+            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, UsernameOrEmail);
         }
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)

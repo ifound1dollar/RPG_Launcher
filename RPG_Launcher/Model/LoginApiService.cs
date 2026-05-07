@@ -118,6 +118,7 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -174,6 +175,7 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -232,6 +234,7 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -403,6 +406,7 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -562,6 +566,7 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;

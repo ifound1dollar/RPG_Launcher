@@ -12,9 +12,9 @@ using System.Windows.Media;
 
 namespace RPG_Launcher.ViewModel.Account
 {
-    public class VerificationCodeViewModel : ViewModelBase
+    public class ConfirmationCodeViewModel : ViewModelBase
     {
-        public enum CodeContext { None, NewAccountConfirmation, ResetPassword }
+        public enum CodeContext { None, NewAccountConfirmation, ForgotPassword, ManualChangePassword }
 
         private readonly Brush infoBrush = Brushes.CornflowerBlue;
         private readonly Brush errorBrush = Brushes.IndianRed;
@@ -29,7 +29,7 @@ namespace RPG_Launcher.ViewModel.Account
         private Brush messageBrush = Brushes.White;
         private string statusMessage = string.Empty;
 
-        private bool isSubmitButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string VerificationCode
         {
@@ -56,10 +56,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => statusMessage;
             set { statusMessage = value; OnPropertyChanged(nameof(StatusMessage)); }
         }
-        public bool IsSubmitButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isSubmitButtonEnabled;
-            set { isSubmitButtonEnabled = value; OnPropertyChanged(nameof(IsSubmitButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -67,15 +67,15 @@ namespace RPG_Launcher.ViewModel.Account
         // Commands
         public ICommand SubmitButtonClickedCommand { get; }
         public ICommand ResendCodeButtonClickedCommand { get; }
-        public ICommand ReturnToLoginClickedCommand { get; }
+        public ICommand CancelButtonClickedCommand { get; }
 
 
 
-        public VerificationCodeViewModel()
+        public ConfirmationCodeViewModel()
         {
             SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClicked, CanExecuteSubmitButtonClicked);
             ResendCodeButtonClickedCommand = new ViewModelCommand(ExecuteResendCodeButtonClicked, CanExecuteResendCodeButtonClicked);
-            ReturnToLoginClickedCommand = new ViewModelCommand(ExecuteReturnToLoginClickedCommand, CanExecuteReturnToLoginClickedCommand);
+            CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
         }
 
         public void SetViewContext(CodeContext context)
@@ -90,7 +90,7 @@ namespace RPG_Launcher.ViewModel.Account
             ContextTitle = string.Empty;
             TargetUser = string.Empty;
             StatusMessage = string.Empty;
-            IsSubmitButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             // Set lastSent to now, as we should be showing immediately after sending.
             lastSent = DateTime.UtcNow;
@@ -121,7 +121,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Disable submit button before awaiting to prevent button spam.
-            IsSubmitButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // Switch on context - if reset password, validate with correct API endpoint and move on to
             //  password reset screen. If email verification, confirm account in database via API endpoint
@@ -142,18 +142,19 @@ namespace RPG_Launcher.ViewModel.Account
                             // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
                             StatusMessage = Message;
                             MessageBrush = errorBrush;
-                            IsSubmitButtonEnabled = true;
+                            IsButtonInputEnabled = true;
                             break;
                         }                        
                     }
-                case CodeContext.ResetPassword:
+                case CodeContext.ForgotPassword:
+                case CodeContext.ManualChangePassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
                         var (StatusCode, Message) = await LoginApiService.Instance.RequestPasswordReset(TargetUser, VerificationCode);
                         if (StatusCode == 0)
                         {
                             // After request is successful (code 0), we move on to password reset screen.
-                            MainViewModel.Instance.ShowResetPasswordView(TargetUser);
+                            MainViewModel.Instance.ShowResetPasswordView(isForgotPasswordContext: (context == CodeContext.ForgotPassword), TargetUser);
                             break;
                         }
                         else
@@ -161,7 +162,7 @@ namespace RPG_Launcher.ViewModel.Account
                             // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
                             StatusMessage = Message;
                             MessageBrush = errorBrush;
-                            IsSubmitButtonEnabled = true;
+                            IsButtonInputEnabled = true;
                             break;
                         }
                     }
@@ -174,7 +175,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteSubmitButtonClicked(object? obj)
         {
-            return isVerificationCodeViewVisible;
+            return isVerificationCodeViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -213,28 +214,44 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteResendCodeButtonClicked(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isVerificationCodeViewVisible && isSubmitButtonEnabled;
+            return isVerificationCodeViewVisible && isButtonInputEnabled;
         }
 
         #endregion
 
-        #region Private: ReturnToLoginClicked
+        #region Private: CancelButtonClicked
 
-        private void ExecuteReturnToLoginClickedCommand(object? obj)
+        private void ExecuteCancelButtonClickedCommand(object? obj)
         {
-            isSubmitButtonEnabled = false;
+            isButtonInputEnabled = false;
 
-            // Upon returning to login, fully logout to clear access and refresh token, then show login view.
-            // NOTE: Do not await logout (fire-and-forget).
-            _ = LoginApiService.Instance.Logout();
+            switch(context)
+            {
+                case CodeContext.NewAccountConfirmation:
+                case CodeContext.ForgotPassword:
+                    {
+                        // Cancelling new account confirmation or forgot password should return to login.
+                        // Upon returning to login, fully logout to clear access and refresh token, then show login view.
+                        // NOTE: Do not await logout (fire-and-forget).
+                        _ = LoginApiService.Instance.Logout();
 
-            MainViewModel.Instance.ShowLoginView();
+                        MainViewModel.Instance.ShowLoginView();
+                        break;
+                    }
+                case CodeContext.ManualChangePassword:
+                    {
+                        // If manually changing password, return to account view.
+                        MainViewModel.Instance.ShowAccountView();
+                        break;
+                    }
+            }
+
         }
 
-        private bool CanExecuteReturnToLoginClickedCommand(object? obj)
+        private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isVerificationCodeViewVisible && isSubmitButtonEnabled;
+            return isVerificationCodeViewVisible && isButtonInputEnabled;
         }
 
         #endregion

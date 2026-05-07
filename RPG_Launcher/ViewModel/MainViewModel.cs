@@ -38,10 +38,12 @@ namespace RPG_Launcher.ViewModel
         // Sub-viewmodels (read-only)
         private EntryViewModel EntryVM { get; } = new EntryViewModel();
         private HomeViewModel HomeVM { get; } = new HomeViewModel();
+        private AccountViewModel AccountVM { get; } = new AccountViewModel();
         private LoginViewModel LoginVM { get; } = new LoginViewModel();
         private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
-        private VerificationCodeViewModel VerificationCodeVM { get; } = new VerificationCodeViewModel();
+        private ConfirmationCodeViewModel ConfirmationCodeVM { get; } = new ConfirmationCodeViewModel();
         private ResetPasswordViewModel ResetPasswordVM { get; } = new ResetPasswordViewModel();
+        private ChangeUsernameViewModel ChangeUsernameVM { get; } = new ChangeUsernameViewModel();
         private ReturnToLoginViewModel ReturnToLoginVM { get; } = new ReturnToLoginViewModel();
         private ForgotPasswordViewModel ForgotPasswordVM { get; } = new ForgotPasswordViewModel();
 
@@ -81,9 +83,10 @@ namespace RPG_Launcher.ViewModel
             // Hide all views here so we don't have to update every method each time a new VM is added.
             EntryVM.HideView();
             HomeVM.HideView();
+            AccountVM.HideView();
             LoginVM.HideView();
             RegisterVM.HideView();
-            VerificationCodeVM.HideView();
+            ConfirmationCodeVM.HideView();
             ResetPasswordVM.HideView();
             ReturnToLoginVM.HideView();
             ForgotPasswordVM.HideView();
@@ -110,6 +113,14 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = HomeVM;
         }
 
+        public void ShowAccountView()
+        {
+            HideAllViews();
+            AccountVM.ShowView();
+
+            CurrentViewModel = AccountVM;
+        }
+
         public void ShowLoginView()
         {
             HideAllViews();
@@ -126,32 +137,34 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = RegisterVM;
         }
 
-        public void ShowVerificationCodeView(bool isForNewAccount, string targetUser)
+        public void ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext codeContext, string targetUser)
         {
             HideAllViews();
-            VerificationCodeVM.ShowView();
+            ConfirmationCodeVM.ShowView();
 
-            if (isForNewAccount)
-            {
-                VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.NewAccountConfirmation);
-            }
-            else
-            {
-                VerificationCodeVM.SetViewContext(VerificationCodeViewModel.CodeContext.ResetPassword);
-            }
-            VerificationCodeVM.TargetUser = targetUser;
+            ConfirmationCodeVM.SetViewContext(codeContext);
+            ConfirmationCodeVM.TargetUser = targetUser;
 
-            CurrentViewModel = VerificationCodeVM;
+            CurrentViewModel = ConfirmationCodeVM;
         }
 
-        public void ShowResetPasswordView(string targetUser)
+        public void ShowResetPasswordView(bool isForgotPasswordContext, string targetUser)
         {
             HideAllViews();
             ResetPasswordVM.ShowView();
 
+            ResetPasswordVM.SetViewContext(isForgotPasswordContext);
             ResetPasswordVM.TargetUser = targetUser;
 
             CurrentViewModel = ResetPasswordVM;
+        }
+
+        public void ShowChangeUsernameView()
+        {
+            HideAllViews();
+            ChangeUsernameVM.ShowView();
+
+            CurrentViewModel = ChangeUsernameVM;
         }
 
         public void ShowReturnToLoginView(bool isError, string statusMessage)
@@ -170,7 +183,7 @@ namespace RPG_Launcher.ViewModel
             HideAllViews();
             ForgotPasswordVM.ShowView();
 
-            ForgotPasswordVM.Username = targetUser;
+            ForgotPasswordVM.UsernameOrEmail = targetUser;
 
             CurrentViewModel = ForgotPasswordVM;
         }

@@ -5,6 +5,7 @@
              xmlns:vma="clr-namespace:RPG_Launcher.ViewModel.Account"
              xmlns:vmg="clr-namespace:RPG_Launcher.ViewModel.General"
              xmlns:v="clr-namespace:RPG_Launcher.View"
+             xmlns:va="clr-namespace:RPG_Launcher.View.Account"
              xmlns:local="clr-namespace:RPG_Launcher"
              Startup="Application_Startup"
              Exit="Application_Exit">
@@ -25,17 +26,23 @@
         <DataTemplate DataType="{x:Type vmg:HomeViewModel}">
             <v:HomeView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:AccountViewModel}">
+            <va:AccountView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vma:LoginViewModel}">
             <v:LoginView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vma:RegisterViewModel}">
             <v:RegisterView/>
         </DataTemplate>
-        <DataTemplate DataType="{x:Type vma:VerificationCodeViewModel}">
+        <DataTemplate DataType="{x:Type vma:ConfirmationCodeViewModel}">
             <v:VerificationCodeView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vma:ResetPasswordViewModel}">
             <v:ResetPasswordView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:ChangeUsernameViewModel}">
+            <va:ChangeUsernameView/>
         </DataTemplate>
         <DataTemplate DataType="{x:Type vmg:ReturnToLoginViewModel}">
             <v:ReturnToLoginView/>

@@ -1,0 +1,261 @@
+﻿<UserControl x:Class="RPG_Launcher.View.Account.AccountView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:RPG_Launcher.ViewModel.Account"
+             xmlns:v="clr-namespace:RPG_Launcher.View"
+             xmlns:local="clr-namespace:RPG_Launcher.View.Account"
+             mc:Ignorable="d" 
+             d:DesignHeight="690" d:DesignWidth="1280"
+             d:DataContext="{d:DesignInstance Type=vm:AccountViewModel}">
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                <GradientStop Color="#7216141f" Offset="0"/>
+                <GradientStop Color="#7216141f" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        
+        <StackPanel Orientation="Vertical"
+                    Margin="250,0,250,0"
+                    Grid.Row="0"
+                    Background="#D026242f">
+
+            <TextBlock Text="ACCOUNT SETTINGS"
+                       Foreground="SlateGray"
+                       FontSize="40"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Center"
+                       Margin="0,50,0,0"/>
+
+            <StackPanel Name="UsernameRow"
+                        Orientation="Horizontal"
+                        Background="#A016141f"
+                        Height="40"
+                        Margin="120,50,120,0">
+                <TextBlock Text="Username:"
+                         Width="100"
+                         Foreground="SlateGray"
+                         Background="Transparent"
+                         FontSize="20"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="15,0,0,2"/>
+                <TextBlock Text="{Binding AccountUsername}"
+                         Width="300"
+                         Foreground="LightGray"
+                         Background="Transparent"
+                         FontSize="20"
+                         FontFamily="Segoe UI Semibold"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="25,0,0,2"/>
+                <Button Name="ButtonChangeUsername"
+                        Command="{Binding ChangeUsernameClickedCommand}"
+                        Width="80"
+                        Height="30"
+                        Foreground="LightGray"
+                        Content="CHANGE"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="15,0,0,0"
+                    IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+
+            <StackPanel Name="EmailRow"
+                        Orientation="Horizontal"
+                        Background="#A016141f"
+                        Height="40"
+                        Margin="120,20,120,0">
+                <TextBlock Text="Email:"
+                         Width="100"
+                         Foreground="SlateGray"
+                         Background="Transparent"
+                         FontSize="20"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="15,0,0,2"/>
+                <TextBlock Text="{Binding AccountEmail}"
+                         Width="300"
+                         Foreground="LightGray"
+                         Background="Transparent"
+                         FontSize="20"
+                         FontFamily="Segoe UI Semibold"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="25,0,0,2"/>
+            </StackPanel>
+
+            <StackPanel Name="PasswordRow"
+                        Orientation="Horizontal"
+                        Background="#A016141f"
+                        Height="40"
+                        Margin="120,20,120,0">
+                <TextBlock Text="Password:"
+                         Width="100"
+                         Foreground="SlateGray"
+                         Background="Transparent"
+                         FontSize="20"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="15,0,0,2"/>
+                <TextBlock Text="hidden for security reasons"
+                         Width="300"
+                         Foreground="Gray"
+                         Background="Transparent"
+                         FontSize="20"
+                         FontFamily="Segoe UI"
+                         FontStyle="Italic"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center"
+                         Margin="25,0,0,2"/>
+                <Button Name="ButtonChangePassword"
+                        Command="{Binding ChangePasswordClickedCommand}"
+                        Width="80"
+                        Height="30"
+                        Foreground="LightGray"
+                        Content="CHANGE"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="15,0,0,0"
+                        IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+
+            <!-- Error message. -->
+            <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
+                        Foreground="IndianRed"
+                        FontSize="12"
+                        FontFamily="Segoe UI"
+                        TextWrapping="Wrap"
+                        Margin="200,20,200,0"/>
+
+            <Button Name="ButtonLogout"
+                    Command="{Binding LogoutClickedCommand}"
+                    Height="40"
+                    Foreground="LightGray"
+                    Content="LOG OUT"
+                    FontSize="20"
+                    Cursor="Hand"
+                    Margin="300,20,300,0"
+                    IsEnabled="{Binding IsButtonInputEnabled}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#ab3a3a"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="IndianRed"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#bc4b4b"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="5"
+                                Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="Center"
+                                              Margin="0,0,0,2"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <Button Name="ButtonBackToHome"
+                    Command="{Binding BackToHomeClickedCommand}"
+                    Height="40"
+                    Foreground="White"
+                    Content="BACK TO HOME"
+                    FontSize="20"
+                    Cursor="Hand"
+                    Margin="300,190,300,0"
+                    IsEnabled="{Binding IsButtonInputEnabled}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="DarkGray"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="Gray"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="5"
+                    Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,0,0,2"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -17,6 +17,8 @@ namespace RPG_Launcher.ViewModel.Account
     {
         private bool isResetPasswordViewVisible = false;
 
+        private bool isForgotPasswordContext = false;
+
         private string targetUser = string.Empty;
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
@@ -66,6 +68,11 @@ namespace RPG_Launcher.ViewModel.Account
         {
             SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClickedCommand, CanExecuteSubmitButtonClickedCommand);
             CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
+        }
+
+        public void SetViewContext(bool isForgotPassword)
+        {
+            isForgotPasswordContext = isForgotPassword;
         }
 
         public override void ShowView()
@@ -142,7 +149,15 @@ namespace RPG_Launcher.ViewModel.Account
 
             AppData.PasswordResetToken = string.Empty;
             
-            MainViewModel.Instance.ShowLoginView();
+            // If for manual password change, return to account view if currenly logged in.
+            if (!isForgotPasswordContext && !string.IsNullOrEmpty(AppData.RefreshToken))
+            {
+                MainViewModel.Instance.ShowAccountView();
+            }
+            else
+            {
+                MainViewModel.Instance.ShowLoginView();
+            }
         }
 
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
