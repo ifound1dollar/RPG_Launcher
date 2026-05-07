@@ -72,16 +72,12 @@ namespace RPG_Launcher.ViewModel.Base
         {
             if (executeAction != null)
             {
-                Trace.WriteLine("executing normally");
-
                 executeAction.Invoke(parameter);
                 return;
             }
             
             if (executeFunctionAsync != null)
             {
-                Trace.WriteLine("executing async");
-
                 isWorking = true;
                 await executeFunctionAsync.Invoke(parameter);
                 isWorking = false;

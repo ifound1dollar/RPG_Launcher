@@ -12,7 +12,8 @@
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         AllowsTransparency="True"
-        MouseLeftButtonDown="Universal_MouseLeftButtonDown">
+        MouseLeftButtonDown="Universal_MouseLeftButtonDown"
+        Icon="/Images/logo.ico">
 
     <!-- We can also set the DataContext in the codebehind. The DataContext
         is used to directly access fields and properties within the bound
