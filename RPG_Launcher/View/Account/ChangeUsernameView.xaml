@@ -8,6 +8,7 @@
              xmlns:local="clr-namespace:RPG_Launcher.View.Account"
              mc:Ignorable="d" 
              d:DesignHeight="690" d:DesignWidth="1280"
+             KeyDown="Universal_KeyDown"
              d:DataContext="{d:DesignInstance Type=vm:ChangeUsernameViewModel}">
     <Grid>
         <StackPanel Width="250px"

@@ -26,7 +26,7 @@ namespace RPG_Launcher.ViewModel.Account
         public string Email
         {
             get => email;
-            set {  email = value; OnPropertyChanged(nameof(Email)); }
+            set { email = value; OnPropertyChanged(nameof(Email)); }
         }
         public string Username
         {
@@ -109,7 +109,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Verify that email is legitimate using simple regex.
-            string pattern = @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$";
+            string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
             if (!Regex.IsMatch(Email, pattern))
             {
                 ErrorMessage = "Please enter a valid email.";
@@ -135,7 +135,7 @@ namespace RPG_Launcher.ViewModel.Account
 
             // Call API service login method with Username and Password.
             var (StatusCode, Message) = await LoginApiService.Instance.Register(Email, credential);
-            if (StatusCode == 0)
+            if (StatusCode == 1)    // Will always need email confirmation.
             {
                 // If status code is good, immediately move onto confirmation code view so the user can verify their email.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, Email);
