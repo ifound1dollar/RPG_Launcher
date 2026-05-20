@@ -137,11 +137,11 @@ namespace RPG_Launcher.ViewModel.Account
                 ErrorMessage = "Username must be length 5-20 and include only letters, numbers, and underscores.";
                 return;
             }
-            // Verify password is valid. Supported characters are in the final [] section.
-            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#@$!%*?&]).{8,}$";
+            // Verify password is valid.
+            pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,64}$";      // 8-64 chars, 1+ upper lower digit special (all specials)
             if (!Regex.IsMatch(credential.Password, pattern))
             {
-                ErrorMessage = "Password must be minimum 8 characters and include at least one uppercase letter, lowercase letter, number, and symbol.";
+                ErrorMessage = "Password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and special character.";
                 return;
             }
 

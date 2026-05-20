@@ -106,10 +106,10 @@ namespace RPG_Launcher.ViewModel.Account
             // NOTE: We already ensure that both password fields match within the code-behind.
 
             // Ensure password field follows standard password regex.
-            string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#@$!%*?&]).{8,}$";
+            string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,64}$";   // 8-64 chars, 1+ upper lower digit special (all specials)
             if (!Regex.IsMatch(credential.Password, pattern))
             {
-                ErrorMessage = "Password must be minimum 8 characters and include at least one uppercase letter, lowercase letter, number, and symbol.";
+                ErrorMessage = "Password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and special character.";
                 return;
             }
 
