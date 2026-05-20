@@ -46,7 +46,28 @@
                            HorizontalAlignment="Left"
                            Margin="12,15,0,0"/>
             <TextBox Name="TextBoxUsername"
-                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                     Height="28"
+                     VerticalContentAlignment="Center"
+                     Foreground="LightGray"
+                     Background="#33000000"
+                     FontSize="16"
+                     FontFamily="Segoe UI Semibold"
+                     CaretBrush="LightSlateGray"
+                     BorderBrush="SlateGray"
+                     BorderThickness="0,0,0,0"
+                     Margin="10,2,10,0"
+                     Padding="5,2,5,2"
+                     GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
+
+            <!-- Password header and text box. Breaks MVVM pattern for security. -->
+            <TextBlock Text="Password"
+                           Foreground="LightSlateGray"
+                           FontSize="16"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Left"
+                           Margin="12,10,0,0"/>
+            <PasswordBox Name="TextBoxPassword"
                          Height="28"
                          VerticalContentAlignment="Center"
                          Foreground="LightGray"
@@ -57,28 +78,9 @@
                          BorderBrush="SlateGray"
                          BorderThickness="0,0,0,0"
                          Margin="10,2,10,0"
-                         Padding="5,2,5,2"/>
-
-            <!-- Password header and text box. Breaks MVVM pattern for security. -->
-            <TextBlock Text="Password"
-                           Foreground="LightSlateGray"
-                           FontSize="16"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Left"
-                           Margin="12,10,0,0"/>
-            <PasswordBox Name="TextBoxPassword"
-                                 Height="28"
-                                 VerticalContentAlignment="Center"
-                                 Foreground="LightGray"
-                                 Background="#33000000"
-                                 FontSize="16"
-                                 FontFamily="Segoe UI Semibold"
-                                 CaretBrush="LightSlateGray"
-                                 BorderBrush="SlateGray"
-                                 BorderThickness="0,0,0,0"
-                                 Margin="10,2,10,0"
-                                 Padding="5,2,5,2"
-                                 PasswordChanged="TextBoxPassword_PasswordChanged">
+                         Padding="5,2,5,2"
+                         PasswordChanged="TextBoxPassword_PasswordChanged"
+                         GotKeyboardFocus="PasswordBox_GotKeyboardFocus">
             </PasswordBox>
 
             <!-- Login error message. -->

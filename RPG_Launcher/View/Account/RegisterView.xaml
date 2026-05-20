@@ -48,28 +48,7 @@
                        Grid.Column="1"/>
             </Grid>
 
-            
 
-            <!-- Email header and text box. -->
-            <TextBlock Text="Email"
-                       Foreground="LightSlateGray"
-                       FontSize="14"
-                       FontFamily="Segoe UI"
-                       HorizontalAlignment="Left"
-                       Margin="17,10,0,0"/>
-            <TextBox Name="TextBoxEmail"
-                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
-                     Height="24"
-                     VerticalContentAlignment="Center"
-                     Foreground="LightGray"
-                     Background="#33000000"
-                     FontSize="14"
-                     FontFamily="Segoe UI Semibold"
-                     CaretBrush="LightSlateGray"
-                     BorderBrush="SlateGray"
-                     BorderThickness="0,0,0,0"
-                     Margin="15,2,15,0"
-                     Padding="5,2,5,2"/>
 
             <!-- Username header and text box. -->
             <TextBlock Text="Username"
@@ -77,7 +56,7 @@
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Left"
-                       Margin="17,5,0,0"/>
+                       Margin="17,10,0,0"/>
             <TextBox Name="TextBoxUsername"
                      Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                      Height="24"
@@ -90,7 +69,30 @@
                      BorderBrush="SlateGray"
                      BorderThickness="0,0,0,0"
                      Margin="15,2,15,0"
-                     Padding="5,2,5,2"/>
+                     Padding="5,2,5,2"
+                     GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
+
+            <!-- Email header and text box. -->
+            <TextBlock Text="Email"
+                       Foreground="LightSlateGray"
+                       FontSize="14"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Left"
+                       Margin="17,5,0,0"/>
+            <TextBox Name="TextBoxEmail"
+                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
+                     Height="24"
+                     VerticalContentAlignment="Center"
+                     Foreground="LightGray"
+                     Background="#33000000"
+                     FontSize="14"
+                     FontFamily="Segoe UI Semibold"
+                     CaretBrush="LightSlateGray"
+                     BorderBrush="SlateGray"
+                     BorderThickness="0,0,0,0"
+                     Margin="15,2,15,0"
+                     Padding="5,2,5,2"
+                     GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
 
             <!-- Password header and text box. Breaks MVVM pattern for security. -->
             <TextBlock Text="Password"
@@ -111,7 +113,8 @@
                          BorderThickness="0,0,0,0"
                          Margin="15,2,15,0"
                          Padding="5,2,5,2"
-                         PasswordChanged="TextBoxPassword_PasswordChanged">
+                         PasswordChanged="TextBoxPassword_PasswordChanged"
+                         GotKeyboardFocus="PasswordBox_GotKeyboardFocus">
             </PasswordBox>
 
             <!-- Confirm password header and text box. Breaks MVVM pattern for security. -->
@@ -132,7 +135,9 @@
                          BorderBrush="SlateGray"
                          BorderThickness="0,0,0,0"
                          Margin="15,2,15,0"
-                         Padding="5,2,5,2">
+                         Padding="5,2,5,2"
+                         PasswordChanged="TextBoxConfirmPassword_PasswordChanged"
+                         GotKeyboardFocus="PasswordBox_GotKeyboardFocus">
             </PasswordBox>
 
             <!-- Register error message. -->

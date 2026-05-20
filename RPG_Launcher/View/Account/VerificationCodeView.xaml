@@ -81,7 +81,8 @@
                          Margin="2,0,50,0"
                          Padding="5,2,5,2"
                          MaxLength="8"
-                         Grid.Column="1"/>
+                         Grid.Column="1"
+                         GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
             </Grid>
 
             <!-- Error message. -->

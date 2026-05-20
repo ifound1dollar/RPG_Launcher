@@ -48,7 +48,16 @@ namespace RPG_Launcher.View
             }
         }
 
+        private void TextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            // This will generically select all text in the box when it gets keyboard focus.
+            ((TextBox)sender).Dispatcher.BeginInvoke(new Action(() => ((TextBox)sender).SelectAll()));
+        }
 
+        private void PasswordBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            ((PasswordBox)sender).Dispatcher.BeginInvoke(new Action(() => ((PasswordBox)sender).SelectAll()));
+        }
 
 
 

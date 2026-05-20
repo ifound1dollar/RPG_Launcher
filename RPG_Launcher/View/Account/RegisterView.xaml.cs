@@ -49,6 +49,16 @@ namespace RPG_Launcher.View
             }
         }
 
+        private void TextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            // This will generically select all text in the box when it gets keyboard focus.
+            ((TextBox)sender).Dispatcher.BeginInvoke(new Action(() => ((TextBox)sender).SelectAll()));
+        }
+
+        private void PasswordBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            ((PasswordBox)sender).Dispatcher.BeginInvoke(new Action(() => ((PasswordBox)sender).SelectAll()));
+        }
 
 
 
@@ -59,6 +69,23 @@ namespace RPG_Launcher.View
         {
             // Update ViewModel directly when this password box is updated. This includes after Clear() is called.
             RegisterVM.SecurePassword = (TextBoxPassword.SecurePassword);
+
+            // Clear the error message whenever the text box updates UNLESS it has just been cleared. This must be
+            //  done here instead of in the ViewModel because when we clear the password box, automatically clearing
+            //  error message in the ViewModel will hide an error message before the user can read it.
+            if (TextBoxPassword.Password.Length > 0)
+            {
+                RegisterVM.ErrorMessage = string.Empty;
+            }
+        }
+
+        private void TextBoxConfirmPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            // Clear the error message whenever the confirm password box updates. Same reasoning as above.
+            if (TextBoxConfirmPassword.Password.Length > 0)
+            {
+                RegisterVM.ErrorMessage = string.Empty;
+            }
         }
 
         private void ButtonRegister_Click(object sender, RoutedEventArgs e)
@@ -68,12 +95,12 @@ namespace RPG_Launcher.View
             if (TextBoxPassword.Password != TextBoxConfirmPassword.Password)
             {
                 // Directly update ErrorMessage in ViewModel, which is weird but necessary here.
+                TextBoxConfirmPassword.Clear();
                 RegisterVM.ErrorMessage = "Both password fields must match.";
-                ClearPasswords();
                 return;
             }
 
-            // Directly call ViewModel Command. Always clear passwords immedately on click, regardless of success.
+            // Directly call ViewModel Command. Always clear passwords on click, regardless of success.
             if (RegisterVM.RegisterClickedCommand.CanExecute(sender))
             {
                 RegisterVM.RegisterClickedCommand.Execute(sender);
@@ -85,10 +112,8 @@ namespace RPG_Launcher.View
         {
             if (RegisterVM.AlreadyHaveClickedCommand.CanExecute(sender))
             {
-                RegisterVM.AlreadyHaveClickedCommand.Execute(sender);
-
-                // Always immediately clear password boxes and ViewModel property.
                 ClearPasswords();
+                RegisterVM.AlreadyHaveClickedCommand.Execute(sender);
             }
         }
 
@@ -96,9 +121,8 @@ namespace RPG_Launcher.View
 
         private void ClearPasswords()
         {
-            // Clear both password boxes and ViewModel property.
+            // Clear both password boxes.
             TextBoxPassword.Clear();
-            RegisterVM.SecurePassword.Clear();
             TextBoxConfirmPassword.Clear();
         }
     }

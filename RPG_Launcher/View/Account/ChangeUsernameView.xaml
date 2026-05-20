@@ -59,17 +59,18 @@
                         Margin="20,19,0,0"/>
             <TextBox Name="TextBoxUsername"
                      Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}"
-                    Height="24"
-                    VerticalContentAlignment="Center"
-                    Foreground="LightGray"
-                    Background="#33000000"
-                    FontSize="16"
-                    FontFamily="Segoe UI Semibold"
-                    CaretBrush="LightSlateGray"
-                    BorderBrush="SlateGray"
-                    BorderThickness="0,0,0,0"
-                    Margin="18,2,18,0"
-                    Padding="5,2,5,2">
+                     Height="24"
+                     VerticalContentAlignment="Center"
+                     Foreground="LightGray"
+                     Background="#33000000"
+                     FontSize="16"
+                     FontFamily="Segoe UI Semibold"
+                     CaretBrush="LightSlateGray"
+                     BorderBrush="SlateGray"
+                     BorderThickness="0,0,0,0"
+                     Margin="18,2,18,0"
+                     Padding="5,2,5,2"
+                     GotKeyboardFocus="TextBox_GotKeyboardFocus">
             </TextBox>
 
             <!-- Error message. -->

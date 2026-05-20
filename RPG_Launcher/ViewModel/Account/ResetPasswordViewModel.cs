@@ -47,7 +47,11 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 securePassword = value;
                 OnPropertyChanged(nameof(SecurePassword));
-                ErrorMessage = string.Empty;
+
+                // Do not clear error message here, instead clear it manually from the View code-behind. Clearing
+                //  it here has the unintended side effect of clearing the error message immediately when the view
+                //  clears the password box, disallowing the user to read the error.
+                //ErrorMessage = string.Empty;
             }
         }
         public string ErrorMessage
@@ -109,7 +113,8 @@ namespace RPG_Launcher.ViewModel.Account
             string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,64}$";   // 8-64 chars, 1+ upper lower digit special (all specials)
             if (!Regex.IsMatch(credential.Password, pattern))
             {
-                ErrorMessage = "Password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and special character.";
+                SecurePassword.Clear();
+                ErrorMessage = "Password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and symbol.";
                 return;
             }
 
@@ -120,6 +125,8 @@ namespace RPG_Launcher.ViewModel.Account
             var (StatusCode, Message) = await LoginApiService.Instance.ResetPasswordFromToken(credential);
             if (StatusCode == 0)
             {
+                SecurePassword.Clear();
+
                 // Code 0 indicates success, password has been reset and we must now log in again.
                 MainViewModel.Instance.ShowReturnToLoginView(isError: false, Message);
 
@@ -130,6 +137,7 @@ namespace RPG_Launcher.ViewModel.Account
             else
             {
                 // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                SecurePassword.Clear();
                 ErrorMessage = Message;
                 IsSubmitButtonEnabled = true;
                 return;
