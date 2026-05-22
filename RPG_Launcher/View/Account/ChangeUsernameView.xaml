@@ -36,7 +36,7 @@
                Margin="0,15,0,0"/>
 
             <!-- Target user title. -->
-            <TextBlock Text="Change username for user: "
+            <TextBlock Text="Current username: "
                Foreground="LightBlue"
                FontSize="14"
                FontFamily="Segoe UI"

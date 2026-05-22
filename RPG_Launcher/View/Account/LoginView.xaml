@@ -100,7 +100,7 @@
                     Cursor="Hand"
                     Margin="40,10,40,0"
                     Click="ButtonLogin_Click"
-                    IsEnabled="{Binding IsLoginButtonEnabled}">
+                    IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4b4094"/>

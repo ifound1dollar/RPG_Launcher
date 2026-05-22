@@ -50,6 +50,9 @@
         <DataTemplate DataType="{x:Type vma:ForgotPasswordViewModel}">
             <v:ForgotPasswordView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:SubmitNewEmailViewModel}">
+            <va:SubmitNewEmailView/>
+        </DataTemplate>
     </Application.Resources>
     
 </Application>

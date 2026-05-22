@@ -16,7 +16,7 @@ namespace RPG_Launcher.ViewModel.Account
         private string usernameOrEmail = string.Empty;
         private string errorMessage = string.Empty;
 
-        private bool isSendCodeButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string UsernameOrEmail
         {
@@ -33,10 +33,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
-        public bool IsSendCodeButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isSendCodeButtonEnabled;
-            set { isSendCodeButtonEnabled = value; OnPropertyChanged(nameof(IsSendCodeButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -57,7 +57,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             UsernameOrEmail = string.Empty;
             ErrorMessage = string.Empty;
-            IsSendCodeButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             isForgotPasswordViewVisible = true;
         }
@@ -82,7 +82,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Disable send code button before awaiting to prevent button spam.
-            IsSendCodeButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
             int responseCode = await LoginApiService.Instance.SendConfirmationCode(UsernameOrEmail);
@@ -98,7 +98,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)
         {
-            return isForgotPasswordViewVisible;
+            return isForgotPasswordViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -113,7 +113,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteReturnToLoginClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isForgotPasswordViewVisible && isSendCodeButtonEnabled;
+            return isForgotPasswordViewVisible && isButtonInputEnabled;
         }
 
         #endregion

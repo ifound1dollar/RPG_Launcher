@@ -1,18 +1,16 @@
-﻿<UserControl x:Class="RPG_Launcher.View.VerificationCodeView"
+﻿<UserControl x:Class="RPG_Launcher.View.Account.SubmitNewEmailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:RPG_Launcher.ViewModel.Account"
              xmlns:v="clr-namespace:RPG_Launcher.View"
-             xmlns:local="clr-namespace:RPG_Launcher.View"
+             xmlns:local="clr-namespace:RPG_Launcher.View.Account"
              mc:Ignorable="d" 
              d:DesignHeight="690" d:DesignWidth="1280"
              KeyDown="Universal_KeyDown"
-             d:DataContext="{d:DesignInstance Type=vm:ConfirmationCodeViewModel}">
-
-    <Grid Name="ConfirmationCodeSubgrid">
-
+             d:DataContext="{d:DesignInstance Type=vm:SubmitNewEmailViewModel}">
+    <Grid>
         <StackPanel Width="250px"
                     Orientation="Vertical"
                     Margin="0,120,0,130"
@@ -26,11 +24,11 @@
             </StackPanel.Background>
 
             <Image Source="/Images/logo.png"
-                       Width="80" Height="80"
-                       Margin="0,25,0,0"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                   Width="80" Height="80"
+                   Margin="0,25,0,0"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
 
-            <TextBlock Text="{Binding ContextTitle, Mode=TwoWay}"
+            <TextBlock Text="Submit New Email"
                        Foreground="AliceBlue"
                        FontSize="20"
                        FontFamily="Segoe UI Semibold"
@@ -38,62 +36,52 @@
                        Margin="0,15,0,0"/>
 
             <!-- Target user title. -->
-            <TextBlock Text="Confirmation code sent to email associated with user account: "
+            <TextBlock Text="Current email: "
                        Foreground="LightBlue"
                        FontSize="14"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="10,15,10,0"/>
-            <TextBlock Text="{Binding TargetEmail, Mode=TwoWay}"
+            <TextBlock Text="{Binding ExistingEmail, Mode=TwoWay}"
                        Foreground="LightBlue"
                        FontSize="16"
                        FontFamily="Segoe UI Black"
                        Margin="10,0,10,0"
                        HorizontalAlignment="Center"/>
 
-            <!-- Verification code header and text box. -->
-            <Grid Height="32"
-                  Margin="0,20,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="160"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Text="Code: "
-                           Foreground="LightSlateGray"
-                           FontSize="16"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Right"
-                           VerticalAlignment="Center"
-                           Margin="20,0,0,0"/>
-                <TextBox Name="TextBoxVerificationCode"
-                         Text="{Binding ConfirmationCode, UpdateSourceTrigger=PropertyChanged}"
-                         VerticalContentAlignment="Center"
-                         HorizontalContentAlignment="Center"
-                         Foreground="LightGray"
-                         Background="#33000000"
-                         FontSize="20"
-                         FontFamily="Segoe UI Semibold"
-                         CaretBrush="LightSlateGray"
-                         BorderBrush="SlateGray"
-                         BorderThickness="0,0,0,0"
-                         Margin="2,0,50,0"
-                         Padding="5,2,5,2"
-                         MaxLength="8"
-                         Grid.Column="1"
-                         GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
-            </Grid>
+            <!-- Password header and text box. Breaks MVVM pattern for security. -->
+            <TextBlock Text="New Email"
+                        Foreground="LightSlateGray"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        HorizontalAlignment="Left"
+                        Margin="20,19,0,0"/>
+            <TextBox Name="TextBoxUsername"
+                     Text="{Binding NewEmail, UpdateSourceTrigger=PropertyChanged}"
+                     Height="24"
+                     VerticalContentAlignment="Center"
+                     Foreground="LightGray"
+                     Background="#33000000"
+                     FontSize="14"
+                     FontFamily="Segoe UI Semibold"
+                     CaretBrush="LightSlateGray"
+                     BorderBrush="SlateGray"
+                     BorderThickness="0,0,0,0"
+                     Margin="18,2,18,0"
+                     Padding="5,2,5,2"
+                     GotKeyboardFocus="TextBox_GotKeyboardFocus">
+            </TextBox>
 
             <!-- Error message. -->
-            <TextBlock Text="{Binding StatusMessage, Mode=TwoWay}"
-                       Foreground="{Binding MessageBrush, Mode=TwoWay}"
-                       FontSize="12"
-                       FontFamily="Segoe UI"
-                       TextWrapping="Wrap"
-                       Margin="10,10,10,0"/>
+            <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
+                        Foreground="IndianRed"
+                        FontSize="12"
+                        FontFamily="Segoe UI"
+                        TextWrapping="Wrap"
+                        Margin="10,10,10,0"/>
 
-            <!-- Submit button. -->
+            <!-- Submit button. Manually calls ViewModel command, necessary for PasswordBox security. -->
             <Button Name="ButtonSubmit"
                     Height="40"
                     Foreground="LightGray"
@@ -123,44 +111,23 @@
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border CornerRadius="5"
-                                Background="{TemplateBinding Background}">
+                        Background="{TemplateBinding Background}">
                             <ContentPresenter VerticalAlignment="Center"
-                                                  HorizontalAlignment="Center"
-                                                  Margin="0,0,0,2"/>
+                                      HorizontalAlignment="Center"
+                                      Margin="0,0,0,2"/>
                         </Border>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
 
-            <!-- Resend code interactable (clickable) text block. -->
-            <TextBlock Name="ResendCodeTextBlock"
-                        Text="Resend code"
-                        Background="Transparent"
-                        FontFamily="Segoe UI"
-                        HorizontalAlignment="Center"
-                        Cursor="Hand"
-                        Margin="0,12,0,0"
-                        MouseLeftButtonDown="ResendCodeTextBlock_MouseLeftButtonDown">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="LightSlateGray"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="LightGray"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-
-            <!-- Cancel interactable (clickable) text block. -->
-            <TextBlock Name="CancelTextBlock"
+            <!-- Return to login interactable (clickable) text block. -->
+            <TextBlock Name="CancelResetTextBlock"
                        Text="Cancel"
                        Background="Transparent"
                        FontFamily="Segoe UI"
                        HorizontalAlignment="Center"
                        Cursor="Hand"
-                       Margin="0,20,0,0"
+                       Margin="0,12,0,0"
                        MouseLeftButtonDown="CancelTextBlock_MouseLeftButtonDown">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
@@ -175,6 +142,5 @@
             </TextBlock>
 
         </StackPanel>
-
     </Grid>
 </UserControl>

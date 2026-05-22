@@ -46,18 +46,20 @@ namespace RPG_Launcher.ViewModel.Account
 
         // Commands
         public ICommand ChangeUsernameClickedCommand { get; }
+        public ICommand ChangeEmailClickedCommand { get; }
         public ICommand ChangePasswordClickedCommand { get; }
         public ICommand LogoutClickedCommand { get; }
-        public ICommand BackToHomeClickedCommand { get; }
+        public ICommand CloseClickedCommand { get; }
 
 
 
         public AccountViewModel()
         {
             ChangeUsernameClickedCommand = new ViewModelCommand(ExecuteChangeUsernameClickedCommand, CanExecuteChangeUsernameClickedCommand);
+            ChangeEmailClickedCommand = new ViewModelCommand(ExecuteChangeEmailClickedCommand, CanExecuteChangeEmailClickedCommand);
             ChangePasswordClickedCommand = new ViewModelCommand(ExecuteChangePasswordClickedCommand, CanExecuteChangePasswordClickedCommand);
             LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
-            BackToHomeClickedCommand = new ViewModelCommand(ExecuteBackToHomeClickedCommand, CanExecuteBackToHomeClickedCommand);
+            CloseClickedCommand = new ViewModelCommand(ExecuteCloseClickedCommand, CanExecuteCloseClickedCommand);
         }
 
         public override void HideView()
@@ -92,13 +94,38 @@ namespace RPG_Launcher.ViewModel.Account
 
         #endregion
 
+        #region Private: ChangeEmailClickedCommand (async)
+
+        private async Task ExecuteChangeEmailClickedCommand(object? obj)
+        {
+            // Request a change email code, then move onto confirmation code view with email change context.
+            IsButtonInputEnabled = false;
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(accountEmail);
+            IsButtonInputEnabled = true;
+            if (responseCode == -1)
+            {
+                ErrorMessage = "Failed to perform API request to change email, please try again.";
+                return;
+            }
+
+            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
+        }
+
+        private bool CanExecuteChangeEmailClickedCommand(object? obj)
+        {
+            return isAccountViewVisible && isButtonInputEnabled;
+        }
+
+        #endregion
+
+
         #region Private: ChangePasswordClickedCommand (async)
 
         private async Task ExecuteChangePasswordClickedCommand(object? obj)
         {
             // Request a password reset code, then move onto confirmation code view with password change/reset context.
             IsButtonInputEnabled = false;
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(accountUsername);
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(accountEmail);
             IsButtonInputEnabled = true;
             if (responseCode == -1)
             {
@@ -106,7 +133,7 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
-            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ManualChangePassword, accountUsername);
+            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ManualChangePassword, accountEmail);
         }
 
         private bool CanExecuteChangePasswordClickedCommand(object? obj)
@@ -136,12 +163,12 @@ namespace RPG_Launcher.ViewModel.Account
 
         #region Private: BackToHomeClickedCommand
 
-        private void ExecuteBackToHomeClickedCommand(object? obj)
+        private void ExecuteCloseClickedCommand(object? obj)
         {
             MainViewModel.Instance.ShowHomeView();
         }
 
-        private bool CanExecuteBackToHomeClickedCommand(object? obj)
+        private bool CanExecuteCloseClickedCommand(object? obj)
         {
             return isAccountViewVisible && isButtonInputEnabled;
         }

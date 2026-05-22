@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace RPG_Launcher.Model.Responses
 {
-    public class ResetPasswordCompleteResponseModel
+    public class EmailChangeTokenResponseModel
     {
-        public bool Success { get; set; }
+        public string EmailChangeToken { get; set; } = string.Empty;
     }
 }

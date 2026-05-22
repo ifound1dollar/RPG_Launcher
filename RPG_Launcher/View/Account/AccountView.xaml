@@ -114,6 +114,45 @@
                          VerticalAlignment="Center"
                          HorizontalAlignment="Center"
                          Margin="25,0,0,2"/>
+                <Button Name="ButtonChangeEmail"
+                        Command="{Binding ChangeEmailClickedCommand}"
+                        Width="80"
+                        Height="30"
+                        Foreground="LightGray"
+                        Content="CHANGE"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="15,0,0,0"
+                        IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </StackPanel>
 
             <StackPanel Name="PasswordRow"
@@ -222,24 +261,24 @@
                 </Button.Template>
             </Button>
 
-            <Button Name="ButtonBackToHome"
-                    Command="{Binding BackToHomeClickedCommand}"
-                    Height="40"
+            <Button Name="CloseButton"
+                    Command="{Binding CloseClickedCommand}"
+                    Height="30"
                     Foreground="White"
-                    Content="BACK TO HOME"
-                    FontSize="20"
+                    Content="CLOSE SETTINGS"
+                    FontSize="16"
                     Cursor="Hand"
-                    Margin="300,190,300,0"
+                    Margin="320,200,320,0"
                     IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
-                        <Setter Property="Background" Value="DarkGray"/>
+                        <Setter Property="Background" Value="Gray"/>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="Gray"/>
+                                <Setter Property="Background" Value="DarkGray"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#ff909090"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>

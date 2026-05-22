@@ -14,7 +14,7 @@ namespace RPG_Launcher.ViewModel.Account
 {
     public class ConfirmationCodeViewModel : ViewModelBase
     {
-        public enum CodeContext { None, NewAccountConfirmation, ForgotPassword, ManualChangePassword }
+        public enum CodeContext { None, NewAccountConfirmation, ForgotPassword, ManualChangePassword, RequestEmailChange, VerifyNewEmail }
 
         private readonly Brush infoBrush = Brushes.CornflowerBlue;
         private readonly Brush errorBrush = Brushes.IndianRed;
@@ -23,21 +23,21 @@ namespace RPG_Launcher.ViewModel.Account
         private CodeContext context;
         private DateTime lastSent;
 
-        private string verificationCode = string.Empty;
+        private string confirmationCode = string.Empty;
         private string contextTitle = string.Empty;
-        private string targetUser = string.Empty;
+        private string targetEmail = string.Empty;
         private Brush messageBrush = Brushes.White;
         private string statusMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
 
-        public string VerificationCode
+        public string ConfirmationCode
         {
-            get => verificationCode;
+            get => confirmationCode;
             set
             {
-                verificationCode = value;
-                OnPropertyChanged(nameof(VerificationCode));
+                confirmationCode = value;
+                OnPropertyChanged(nameof(ConfirmationCode));
                 StatusMessage = string.Empty;
             }
         }
@@ -46,10 +46,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => contextTitle;
             set { contextTitle = value; OnPropertyChanged(nameof(ContextTitle)); }
         }
-        public string TargetUser
+        public string TargetEmail
         {
-            get => targetUser;
-            set { targetUser = value; OnPropertyChanged(nameof(TargetUser)); }
+            get => targetEmail;
+            set { targetEmail = value; OnPropertyChanged(nameof(TargetEmail)); }
         }
         public Brush MessageBrush
         {
@@ -86,14 +86,37 @@ namespace RPG_Launcher.ViewModel.Account
         public void SetViewContext(CodeContext context)
         {
             this.context = context;
-            ContextTitle = (context == CodeContext.NewAccountConfirmation) ? "Confirm Email" : "Reset Password";
+            switch (context)
+            {
+                case CodeContext.NewAccountConfirmation:
+                    {
+                        ContextTitle = "Verify Account Email";
+                        break;
+                    }
+                case CodeContext.ForgotPassword:
+                case CodeContext.ManualChangePassword:
+                    {
+                        ContextTitle = "Reset Password";
+                        break;
+                    }
+                case CodeContext.RequestEmailChange:
+                    {
+                        ContextTitle = "Change Email";
+                        break;
+                    }
+                case CodeContext.VerifyNewEmail:
+                    {
+                        ContextTitle = "Verify New Email";
+                        break;
+                    }
+            }
         }
 
         public override void ShowView()
         {
-            VerificationCode = string.Empty;
+            ConfirmationCode = string.Empty;
             ContextTitle = string.Empty;
-            TargetUser = string.Empty;
+            TargetEmail = string.Empty;
             StatusMessage = string.Empty;
             IsButtonInputEnabled = true;
 
@@ -117,11 +140,11 @@ namespace RPG_Launcher.ViewModel.Account
             StatusMessage = string.Empty;
 
             // Validate input, enforcing specific-length code.
-            if (VerificationCode.Length != 8)
+            if (ConfirmationCode.Length != 8)
             {
+                ConfirmationCode = string.Empty;
                 StatusMessage = "Confirmation code must be length 8.";
                 MessageBrush = errorBrush;
-                VerificationCode = string.Empty;
                 return;
             }
 
@@ -135,7 +158,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyAccountEmail(VerificationCode);
+                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyAccountEmail(ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // If status code is good, then email verification fully logged us in already, so move onto home view.
@@ -145,9 +168,9 @@ namespace RPG_Launcher.ViewModel.Account
                         else
                         {
                             // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            ConfirmationCode = string.Empty;
                             StatusMessage = Message;
                             MessageBrush = errorBrush;
-                            IsButtonInputEnabled = true;
                             break;
                         }                        
                     }
@@ -155,27 +178,62 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ManualChangePassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        var (StatusCode, Message) = await LoginApiService.Instance.RequestPasswordReset(TargetUser, VerificationCode);
+                        var (StatusCode, Message) = await LoginApiService.Instance.RequestPasswordReset(TargetEmail, ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // After request is successful (code 0), we move on to password reset screen.
-                            MainViewModel.Instance.ShowResetPasswordView(isForgotPasswordContext: (context == CodeContext.ForgotPassword), TargetUser);
+                            MainViewModel.Instance.ShowResetPasswordView(isForgotPasswordContext: (context == CodeContext.ForgotPassword), TargetEmail);
                             break;
                         }
                         else
                         {
                             // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            ConfirmationCode = string.Empty;
                             StatusMessage = Message;
                             MessageBrush = errorBrush;
-                            IsButtonInputEnabled = true;
+                            break;
+                        }
+                    }
+                case CodeContext.RequestEmailChange:
+                    {
+                        var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange(ConfirmationCode);
+                        if (StatusCode == 0)
+                        {
+                            // If request is successful, move onto submit new email screen (we have our Email Change Token).
+                            MainViewModel.Instance.ShowSubmitNewEmailView();
+                            break;
+                        }
+                        else
+                        {
+                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            ConfirmationCode = string.Empty;
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
+                            break;
+                        }
+                    }
+                case CodeContext.VerifyNewEmail:
+                    {
+                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyNewEmailFromToken(ConfirmationCode);
+                        if (StatusCode == 0)
+                        {
+                            // If verification is successful, then we now are logged out, so return to login view.
+                            MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Email changed successfully, please log in again.");
+                            break;
+                        }
+                        else
+                        {
+                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                            ConfirmationCode = string.Empty;
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
                             break;
                         }
                     }
                 // Do nothing for None.
             }
 
-            // Before returning, clear verification code field.
-            VerificationCode = string.Empty;
+            IsButtonInputEnabled = true;
         }
 
         private bool CanExecuteSubmitButtonClicked(object? obj)
@@ -190,7 +248,7 @@ namespace RPG_Launcher.ViewModel.Account
         private async Task ExecuteResendCodeButtonClicked(object? obj)
         {
             // Always clear all fields right as button Command is executed.
-            VerificationCode = string.Empty;
+            ConfirmationCode = string.Empty;
             StatusMessage = string.Empty;
 
             // Only allow one new code per minute.
@@ -202,7 +260,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Send new confirmation code, not getting any response for security reasons.
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(targetUser);
+            int responseCode = await LoginApiService.Instance.SendConfirmationCode(targetEmail);
             if (responseCode == -1)
             {
                 StatusMessage = "Failed to perform API request, please try again.";
@@ -246,6 +304,13 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ManualChangePassword:
                     {
                         // If manually changing password, return to account view.
+                        MainViewModel.Instance.ShowAccountView();
+                        break;
+                    }
+                case CodeContext.RequestEmailChange:
+                case CodeContext.VerifyNewEmail:
+                    {
+                        // Requesting or verifying new can only be done from account view screen, so return to it.
                         MainViewModel.Instance.ShowAccountView();
                         break;
                     }

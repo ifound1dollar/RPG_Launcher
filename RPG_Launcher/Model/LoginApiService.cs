@@ -427,11 +427,11 @@ namespace RPG_Launcher.Model
         ///  the reset token request was successful.
         /// </summary>
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being requested for. </param>
-        /// <param name="verificationCode"> The one-time verification code received by the user via email. </param>
+        /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> RequestPasswordReset(string usernameOrEmail, string verificationCode)
+        public async Task<(int, string)> RequestPasswordReset(string usernameOrEmail, string confirmationCode)
         {
-            if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(verificationCode))
+            if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(confirmationCode))
             {
                 return (-1, "Request password reset failed: both input fields must be set");
             }
@@ -442,7 +442,7 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/request-password-reset")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { UsernameOrEmail = usernameOrEmail, Code = verificationCode }),
+                            JsonSerializer.Serialize(new { UsernameOrEmail = usernameOrEmail, Code = confirmationCode }),
                             Encoding.UTF8,
                             "application/json")
                 };
@@ -463,7 +463,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Store reset token, then return 0 for success.
-                AppData.PasswordResetToken = responseModel.ResetToken;
+                AppData.PasswordResetToken = responseModel.PasswordResetToken;
                 return (0, "Request password reset successful");
             }
             catch (Exception ex)
@@ -476,12 +476,12 @@ namespace RPG_Launcher.Model
 
         /// <summary>
         /// Attempts to reset the current account's password via a login API call. Passes the username and password
-        ///  form a NetworkCredential and requires a valid in-memory password reset token to be successful. Returns a
+        ///  from a NetworkCredential and requires a valid in-memory password reset token to be successful. Returns a
         ///  status code describing whether the password reset was successful.
         /// </summary>
         /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> ResetPasswordFromToken(NetworkCredential credential)
+        public async Task<(int, string)> SubmitNewPasswordFromToken(NetworkCredential credential)
         {
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(credential.Password) || string.IsNullOrEmpty(AppData.PasswordResetToken))
@@ -492,7 +492,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API, requiring content and access token (with reset Role).
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/reset-password")
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-new-password")
                 {
                     Content = new StringContent(
                             JsonSerializer.Serialize(new { NewPassword = credential.Password }),
@@ -577,6 +577,144 @@ namespace RPG_Launcher.Model
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
                 return (-1, "Change username failed: an unexpected error occurred during API request");
+            }
+        }
+
+        public async Task<(int, string)> RequestEmailChange(string confirmationCode)
+        {
+            if (string.IsNullOrEmpty(confirmationCode))
+            {
+                return (-1, "Request email change failed: missing confirmation code");
+            }
+
+            try
+            {
+                // Make request to API with content and parse response.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-email-change")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { Code = confirmationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Parse raw response into response model.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<EmailChangeTokenResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return (-1, "Request email change failed: could not parse API response into usable object model");
+                }
+
+                // Store reset token, then return 0 for success.
+                AppData.EmailChangeToken = responseModel.EmailChangeToken;
+                return (0, "Request email change successful");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Request email change failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Submits the user's desired new email to the API, used for email change logic. Accepts just a newEmail string,
+        ///  but requires passing the currently-stored EmailChangeToken to validate access. Returns a status code
+        ///  describing whether the new email submission was successful.
+        /// </summary>
+        /// <param name="newEmail"> The desired new email to change to. </param>
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> SubmitNewEmailFromToken(string newEmail)
+        {
+            // Ensure credentials and reset token are not empty.
+            if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(AppData.EmailChangeToken))
+            {
+                return (-1, "Submit new email failed: local email change token missing or missing new email input");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and access token (with reset Role).
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-new-email")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { NewEmail = newEmail }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.EmailChangeToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Else successful, but change is only pending so do NOT clear email changed token or log out yet.
+                return (0, "Submit new email successful, user must now verify new email");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Submit new email failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Attempts to verify the new email that was just submitted to the API during email change process. Accepts
+        ///  a confirmation code from the email and passes the in-memory EmailChangeToken to verify endpoint access.
+        ///  Returns a status code describing whether the new email verification was successful.
+        /// </summary>
+        /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> VerifyNewEmailFromToken(string confirmationCode)
+        {
+            // Ensure credentials and reset token are not empty.
+            if (string.IsNullOrEmpty(confirmationCode) || string.IsNullOrEmpty(AppData.EmailChangeToken))
+            {
+                return (-1, "Email change failed: local password reset token missing or missing new password input");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and access token (with reset Role).
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/verify-new-email")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { Code = confirmationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.EmailChangeToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Else successful, so immediately log out and return 0 for success.
+                AppData.EmailChangeToken = string.Empty;
+                await Logout();
+                return (0, "Email change successful, user must re-login");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Email change failed: an unexpected error occurred during API request");
             }
         }
 

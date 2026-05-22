@@ -23,7 +23,7 @@ namespace RPG_Launcher.ViewModel.Account
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
-        private bool isLoginButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string Username
         {
@@ -60,10 +60,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
-        public bool IsLoginButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isLoginButtonEnabled;
-            set { isLoginButtonEnabled = value; OnPropertyChanged(nameof(IsLoginButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -88,7 +88,7 @@ namespace RPG_Launcher.ViewModel.Account
             Username = AppData.SavedUsername;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
-            IsLoginButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             isLoginViewVisible = true;
         }
@@ -113,7 +113,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Disable login button before awaiting to prevent button spam.
-            IsLoginButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
             var (StatusCode, Message) = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
@@ -139,7 +139,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 // Code -1 (any other code) means generic login failure, so display login error message.
                 ErrorMessage = Message;
-                IsLoginButtonEnabled = true;
+                IsButtonInputEnabled = true;
                 return;
             }
         }
@@ -147,7 +147,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteLoginClickedCommand(object? obj)
         {
             // Login button can only be clicked if login subgrid is visible.
-            return isLoginViewVisible;
+            return isLoginViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -163,7 +163,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteForgotPasswordClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isLoginViewVisible && isLoginButtonEnabled;
+            return isLoginViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -178,7 +178,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteNewUserClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isLoginViewVisible && isLoginButtonEnabled;
+            return isLoginViewVisible && isButtonInputEnabled;
         }
 
         #endregion

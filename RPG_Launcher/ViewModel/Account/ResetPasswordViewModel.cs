@@ -23,7 +23,7 @@ namespace RPG_Launcher.ViewModel.Account
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
-        private bool isSubmitButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string TargetUser
         {
@@ -59,10 +59,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
-        public bool IsSubmitButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isSubmitButtonEnabled;
-            set { isSubmitButtonEnabled = value; OnPropertyChanged(nameof(IsSubmitButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -89,7 +89,7 @@ namespace RPG_Launcher.ViewModel.Account
             TargetUser = string.Empty;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
-            IsSubmitButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             isResetPasswordViewVisible = true;
         }
@@ -119,16 +119,16 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Disable submit button before awaiting to prevent button spam.
-            IsSubmitButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // After validating password, we can make actual API request to reset our password. Pulls reset token from AppData automatically.
-            var (StatusCode, Message) = await LoginApiService.Instance.ResetPasswordFromToken(credential);
+            var (StatusCode, Message) = await LoginApiService.Instance.SubmitNewPasswordFromToken(credential);
             if (StatusCode == 0)
             {
                 SecurePassword.Clear();
 
                 // Code 0 indicates success, password has been reset and we must now log in again.
-                MainViewModel.Instance.ShowReturnToLoginView(isError: false, Message);
+                MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Password reset successfully, please log in again.");
 
                 // Also updated saved username to the newly-reset account's username.
                 AppData.SavedUsername = TargetUser;
@@ -139,7 +139,7 @@ namespace RPG_Launcher.ViewModel.Account
                 // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
                 SecurePassword.Clear();
                 ErrorMessage = Message;
-                IsSubmitButtonEnabled = true;
+                IsButtonInputEnabled = true;
                 return;
             }
 
@@ -147,7 +147,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)
         {
-            return isResetPasswordViewVisible;
+            return isResetPasswordViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -176,7 +176,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isResetPasswordViewVisible && isSubmitButtonEnabled;
+            return isResetPasswordViewVisible && isButtonInputEnabled;
         }
 
 

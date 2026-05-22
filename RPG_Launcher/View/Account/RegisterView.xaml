@@ -157,7 +157,7 @@
                     Cursor="Hand"
                     Margin="40,8,40,0"
                     Click="ButtonRegister_Click"
-                    IsEnabled="{Binding IsRegisterButtonEnabled}">
+                    IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#4b4094"/>

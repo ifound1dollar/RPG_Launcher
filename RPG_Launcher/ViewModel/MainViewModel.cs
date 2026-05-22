@@ -46,6 +46,7 @@ namespace RPG_Launcher.ViewModel
         private ChangeUsernameViewModel ChangeUsernameVM { get; } = new ChangeUsernameViewModel();
         private ReturnToLoginViewModel ReturnToLoginVM { get; } = new ReturnToLoginViewModel();
         private ForgotPasswordViewModel ForgotPasswordVM { get; } = new ForgotPasswordViewModel();
+        private SubmitNewEmailViewModel SubmitNewEmailVM { get; } = new SubmitNewEmailViewModel();
 
         public MainViewModel()
         {
@@ -90,6 +91,7 @@ namespace RPG_Launcher.ViewModel
             ResetPasswordVM.HideView();
             ReturnToLoginVM.HideView();
             ForgotPasswordVM.HideView();
+            SubmitNewEmailVM.HideView();
         }
 
 
@@ -137,13 +139,13 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = RegisterVM;
         }
 
-        public void ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext codeContext, string targetUser)
+        public void ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext codeContext, string targetEmail)
         {
             HideAllViews();
             ConfirmationCodeVM.ShowView();
 
             ConfirmationCodeVM.SetViewContext(codeContext);
-            ConfirmationCodeVM.TargetUser = targetUser;
+            ConfirmationCodeVM.TargetEmail = targetEmail;
 
             CurrentViewModel = ConfirmationCodeVM;
         }
@@ -186,6 +188,16 @@ namespace RPG_Launcher.ViewModel
             ForgotPasswordVM.UsernameOrEmail = targetUser;
 
             CurrentViewModel = ForgotPasswordVM;
+        }
+
+        public void ShowSubmitNewEmailView()
+        {
+            Trace.WriteLine("ShowSubmitNewEmailView() called.");
+
+            HideAllViews();
+            SubmitNewEmailVM.ShowView();
+
+            CurrentViewModel = SubmitNewEmailVM;
         }
     }
 }

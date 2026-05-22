@@ -13,33 +13,33 @@ using System.Windows.Input;
 
 namespace RPG_Launcher.ViewModel.Account
 {
-    public class ChangeUsernameViewModel : ViewModelBase
+    public class SubmitNewEmailViewModel : ViewModelBase
     {
-        private bool isChangeUsernameViewVisible = false;
+        private bool isSubmitNewEmailViewVisible = false;
 
-        private string existingUsername = string.Empty;
-        private string newUsername = string.Empty;
+        private string existingEmail = string.Empty;
+        private string newEmail = string.Empty;
         private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
 
-        public string ExistingUsername
+        public string ExistingEmail
         {
-            get => existingUsername;
+            get => existingEmail;
             set
             {
-                existingUsername = value;
-                OnPropertyChanged(nameof(ExistingUsername));
+                existingEmail = value;
+                OnPropertyChanged(nameof(ExistingEmail));
                 ErrorMessage = string.Empty;
             }
         }
-        public string NewUsername
+        public string NewEmail
         {
-            get => newUsername;
+            get => newEmail;
             set
             {
-                newUsername = value;
-                OnPropertyChanged(nameof(NewUsername));
+                newEmail = value;
+                OnPropertyChanged(nameof(NewEmail));
                 ErrorMessage = string.Empty;
             }
         }
@@ -62,25 +62,25 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        public ChangeUsernameViewModel()
+        public SubmitNewEmailViewModel()
         {
             SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClickedCommand, CanExecuteSubmitButtonClickedCommand);
             CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
         }
 
-        public override void HideView()
-        {
-            isChangeUsernameViewVisible = false;
-        }
-
         public override void ShowView()
         {
-            ExistingUsername = AppData.SavedUsername;
-            NewUsername = string.Empty;
+            ExistingEmail = AppData.SavedEmail;
+            NewEmail = string.Empty;
             ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
 
-            isChangeUsernameViewVisible = true;
+            isSubmitNewEmailViewVisible = true;
+        }
+
+        public override void HideView()
+        {
+            isSubmitNewEmailViewVisible = false;
         }
 
 
@@ -89,23 +89,23 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
-            // First, ensure new username matches basic username regex.
-            string usernamePattern = @"^[a-zA-Z0-9_]{5,20}$";               // Username, 5-20 chars, upper lower digit underscore
-            if (!Regex.IsMatch(NewUsername, usernamePattern))
+            // Verify that email is legitimate using simple regex.
+            string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            if (!Regex.IsMatch(NewEmail, pattern))
             {
-                ErrorMessage = "Username must be between 5-20 characters and can only include uppercase and lowercase letters, digits, and underscores.";
+                ErrorMessage = "Please enter a valid email.";
                 return;
             }
 
             // Disable button input before performing async request.
             IsButtonInputEnabled = false;
 
-            // After validating username, we can make actual API request to change username.
-            var (StatusCode, Message) = await LoginApiService.Instance.ChangeUsername(NewUsername);
+            // After validating email, we can make actual API request to submit the new password.
+            var (StatusCode, Message) = await LoginApiService.Instance.SubmitNewEmailFromToken(NewEmail);
             if (StatusCode == 0)
             {
-                // Code 0 indicates success, username has been changed (AppData also already updated) and we can return to account view.
-                MainViewModel.Instance.ShowAccountView();
+                // Code 0 indicates success, meaning the API has accepted our new email. We can move onto new email verification screen.
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.VerifyNewEmail, NewEmail);
                 return;
             }
             else
@@ -119,7 +119,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)
         {
-            return isChangeUsernameViewVisible && isButtonInputEnabled;
+            return isSubmitNewEmailViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -134,9 +134,10 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
-            return isChangeUsernameViewVisible && isButtonInputEnabled;
+            return isSubmitNewEmailViewVisible && isButtonInputEnabled;
         }
 
         #endregion
+
     }
 }

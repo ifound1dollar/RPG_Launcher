@@ -8,6 +8,6 @@ namespace RPG_Launcher.Model.Responses
 {
     public class PasswordResetTokenResponseModel
     {
-        public string ResetToken { get; set; } = string.Empty;
+        public string PasswordResetToken { get; set; } = string.Empty;
     }
 }

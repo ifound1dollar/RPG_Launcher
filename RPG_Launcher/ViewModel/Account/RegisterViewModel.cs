@@ -21,7 +21,7 @@ namespace RPG_Launcher.ViewModel.Account
         private SecureString securePassword = new();
         private string errorMessage = string.Empty;
 
-        private bool isRegisterButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string Email
         {
@@ -72,10 +72,10 @@ namespace RPG_Launcher.ViewModel.Account
             get => errorMessage;
             set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
-        public bool IsRegisterButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isRegisterButtonEnabled;
-            set { isRegisterButtonEnabled = value; OnPropertyChanged(nameof(IsRegisterButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -99,7 +99,7 @@ namespace RPG_Launcher.ViewModel.Account
             Username = string.Empty;
             SecurePassword.Clear();
             ErrorMessage = string.Empty;
-            IsRegisterButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             isRegisterViewVisible = true;
         }
@@ -154,7 +154,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Disable register button before awaiting to prevent button spam.
-            IsRegisterButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
             var (StatusCode, Message) = await LoginApiService.Instance.Register(Email, credential);
@@ -171,15 +171,15 @@ namespace RPG_Launcher.ViewModel.Account
                 // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
                 SecurePassword.Clear();
                 ErrorMessage = Message;
-                IsRegisterButtonEnabled = true;
+                IsButtonInputEnabled = true;
                 return;
             }
         }
 
         private bool CanExecuteRegisterClickedCommand(object? obj)
         {
-            // Login button can only be clicked if login subgrid is visible.
-            return isRegisterViewVisible;
+            // Register button can only be clicked if login subgrid is visible and buttons are enabled.
+            return isRegisterViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -194,7 +194,7 @@ namespace RPG_Launcher.ViewModel.Account
         private bool CanExecuteAlreadyHaveClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isRegisterViewVisible && isRegisterButtonEnabled;
+            return isRegisterViewVisible && isButtonInputEnabled;
         }
 
         #endregion
