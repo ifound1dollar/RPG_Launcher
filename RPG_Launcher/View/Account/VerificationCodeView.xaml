@@ -74,7 +74,7 @@
                          Foreground="LightGray"
                          Background="#33000000"
                          FontSize="20"
-                         FontFamily="Segoe UI Semibold"
+                         FontFamily="Cascadia Mono"
                          CaretBrush="LightSlateGray"
                          BorderBrush="SlateGray"
                          BorderThickness="0,0,0,0"
