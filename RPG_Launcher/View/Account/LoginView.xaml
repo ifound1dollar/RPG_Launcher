@@ -27,7 +27,7 @@
             </StackPanel.Background>
 
             <Image Source="/Images/logo.png"
-                       Width="80" Height="80"
+                       Width="64" Height="64"
                        Margin="0,25,0,0"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
 

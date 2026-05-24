@@ -27,7 +27,7 @@
             </StackPanel.Background>
 
             <!-- Verification code header and text box. -->
-            <Grid Height="80"
+            <Grid Height="64"
                   Margin="0,25,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -42,7 +42,7 @@
                            VerticalAlignment="Center"
                            Margin="20,0,0,0"/>
                 <Image Source="/Images/logo.png"
-                       Width="80" Height="80"
+                       Width="64" Height="64"
                        Margin="0,0,20,0"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        Grid.Column="1"/>
