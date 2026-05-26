@@ -326,39 +326,41 @@ namespace RPG_Launcher.Model
 
 
 
-
-
         /// <summary>
-        /// Requests a new confirmation code from the login API. Does not return any usable status code
-        ///  for security reasons, but checks here for valid input state.
+        /// Requests the API resend a confirmation code to the currently-logged-in email, used for new account
+        ///  email verification AND for manual email change logic (automatically determines which email to send
+        ///  the code to depending on data hidden in access token). Pulls the stored access token and sends to 
+        ///  the endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
-        /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
-        /// <returns> A non-HTTP status code (custom) describing success or failure. Returns 0 if successful, -1 if HTTP request error.
-        ///  NOTE: Does not return an HTTP status code for security reasons (vulnerable to username/email lookup attack). </returns>
-        public async Task<int> SendConfirmationCode(string targetUser)
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> ResendEmailVerificationCode()
         {
-            if (string.IsNullOrEmpty(targetUser)) return -1;
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken)
+            {
+                return (-1, "Resend email verification code failed: local access token missing");
+            }
 
             try
             {
-                // Make request to API, no response or content AND no access token.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/confirmation-code")
-                {
-                    Content = new StringContent(
-                        JsonSerializer.Serialize(new { UsernameOrEmail = targetUser }),
-                        Encoding.UTF8,
-                        "application/json")
-                };
+                // Make request to API, requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Get, "users/resend-email-verification-code");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
 
-                // We do not know whether the request was successful; sharing information like username/password not
-                //  found is a security vulnerability, so we make API request and return success.
-                return 0;
+                // Return 0 for success.
+                return (0, "Resend email verification code successful");
             }
             catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
-                return -1;
+                return (-1, "Resend email verification code failed: an unexpected error occurred during API request");
             }
         }
 
@@ -374,8 +376,8 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
             {
-                return (-1, "Email verification failed: invalid local access token or confirmation code field empty");
-            }    
+                return (-1, "Email verification failed: local access token missing or confirmation code field empty");
+            }
 
             try
             {
@@ -421,25 +423,59 @@ namespace RPG_Launcher.Model
         }
 
         /// <summary>
-        /// Requests a password reset token from the login API, passing in the associated username or email with
+        /// Requests a new 'forgot password' confirmation code to be sent to the account with the provided username or
+        ///  email. Does not return any usable status code for security reasons, but checks here for valid input state.
+        /// </summary>
+        /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
+        /// <returns> A non-HTTP status code (custom) describing success or failure. Returns 0 if successful, -1 if HTTP request error.
+        ///  NOTE: Does not return an HTTP status code for security reasons (would be vulnerable to username/email lookup attack). </returns>
+        public async Task<int> ForgotPassword(string targetUser)
+        {
+            if (string.IsNullOrEmpty(targetUser)) return -1;
+
+            try
+            {
+                // Make request to API, no response or content AND no access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/forgot-password")
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { UsernameOrEmail = targetUser }),
+                        Encoding.UTF8,
+                        "application/json")
+                };
+                var rawResponse = await _httpClient.SendAsync(request);
+
+                // We do not know whether the request was successful; sharing information like username/password not
+                //  found is a security vulnerability, so we make API request and return success.
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// Initiates the password reset process via the login API, passing in the associated username or email with
         ///  the verification code received via email. Does not require a refresh token because the forgot
         ///  password functionality will not have a valid refresh token. Returns a status code describing whether
-        ///  the reset token request was successful.
+        ///  the password reset process was successfully initiated.
         /// </summary>
-        /// <param name="usernameOrEmail"> The account username or email that the password reset is being requested for. </param>
+        /// <param name="usernameOrEmail"> The account username or email that the password reset is being initiated for. </param>
         /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> RequestPasswordReset(string usernameOrEmail, string confirmationCode)
+        public async Task<(int, string)> InitiatePasswordReset(string usernameOrEmail, string confirmationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(confirmationCode))
             {
-                return (-1, "Request password reset failed: both input fields must be set");
+                return (-1, "Initiate password reset failed: both input fields must be set");
             }
 
             try
             {
                 // Make request to API with content and parse response.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-password-reset")
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-password-reset")
                 {
                     Content = new StringContent(
                             JsonSerializer.Serialize(new { UsernameOrEmail = usernameOrEmail, Code = confirmationCode }),
@@ -459,18 +495,18 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Request password reset failed: could not parse API response into usable object model");
+                    return (-1, "Initiate password reset failed: could not parse API response into usable object model");
                 }
 
                 // Store reset token, then return 0 for success.
                 AppData.PasswordResetToken = responseModel.PasswordResetToken;
-                return (0, "Request password reset successful");
+                return (0, "Initiate password reset successful");
             }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Request password reset failed: an unexpected error occurred during API request");
+                return (-1, "Initiate password reset failed: an unexpected error occurred during API request");
             }
         }
 
@@ -486,7 +522,7 @@ namespace RPG_Launcher.Model
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(credential.Password) || string.IsNullOrEmpty(AppData.PasswordResetToken))
             {
-                return (-1, "Password reset failed: local password reset token missing or missing new password input");
+                return (-1, "New password submission failed: local password reset token missing or missing new password input");
             }
 
             try
@@ -511,22 +547,22 @@ namespace RPG_Launcher.Model
                 // Else successful, so immediately log out and return 0 for success.
                 AppData.PasswordResetToken = string.Empty;
                 await Logout();
-                return (0, "Password reset successful, user must re-login");
+                return (0, "New password submission successful, user must re-login");
             }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Password reset failed: an unexpected error occurred during API request");
+                return (-1, "New password submission failed: an unexpected error occurred during API request");
             }
         }
 
         /// <summary>
-        /// Attempts to reset the current account's password via a login API call. Passes the username and password
-        ///  form a NetworkCredential and requires a valid in-memory password reset token to be successful. Returns a
-        ///  status code describing whether the password reset was successful.
+        /// Attempts to change the current account's username via a login API call. Passes the desired new username
+        ///  to the API, automatically sending the access token currently stored in memory for validation. Returns a
+        ///  status code describing whether the username change was successful.
         /// </summary>
-        /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
+        /// <param name="newUsername"> The desired new username for this account. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
         public async Task<(int, string)> ChangeUsername(string newUsername)
         {
@@ -580,17 +616,63 @@ namespace RPG_Launcher.Model
             }
         }
 
-        public async Task<(int, string)> RequestEmailChange(string confirmationCode)
+        /// <summary>
+        /// Requests a new 'change email' confirmation code from the API for the currently-logged-in user. Automatically
+        ///  passes our current access token to the endpoint, which is where the API retrieves the email to send the code
+        ///  to. Returns a status code describing whether the email change request was successful.
+        /// </summary>
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> RequestEmailChange()
         {
-            if (string.IsNullOrEmpty(confirmationCode))
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken)
             {
-                return (-1, "Request email change failed: missing confirmation code");
+                return (-1, "Request email change failed: local access token missing");
+            }
+
+            try
+            {
+                // Make request to API, requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Get, "users/request-email-change");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Return 0 for success.
+                return (0, "Request email change successful");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return (-1, "Request email change failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Initiates the manual email change process via the API, passing in a confirmation code and automatically sending
+        ///  the locally-stored access token (requires full access). Returns an 'email change' access token which is stored
+        ///  and will be used for submitting and verifying a new email. Returns a status code describing whether the email
+        ///  change initiation was successful.
+        /// </summary>
+        /// <param name="confirmationCode"></param>
+        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
+        public async Task<(int, string)> InitiateEmailChange(string confirmationCode)
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(confirmationCode))
+            {
+                return (-1, "Initiate email change failed: local access token missing or missing confirmation code");
             }
 
             try
             {
                 // Make request to API with content and parse response.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-email-change")
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-email-change")
                 {
                     Content = new StringContent(
                             JsonSerializer.Serialize(new { Code = confirmationCode }),
@@ -611,18 +693,18 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Request email change failed: could not parse API response into usable object model");
+                    return (-1, "Initiate email change failed: could not parse API response into usable object model");
                 }
 
                 // Store reset token, then return 0 for success.
                 AppData.EmailChangeToken = responseModel.EmailChangeToken;
-                return (0, "Request email change successful");
+                return (0, "Initiate email change successful");
             }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Request email change failed: an unexpected error occurred during API request");
+                return (-1, "Initiate email change failed: an unexpected error occurred during API request");
             }
         }
 
@@ -631,11 +713,11 @@ namespace RPG_Launcher.Model
         ///  but requires passing the currently-stored EmailChangeToken to validate access. Returns a status code
         ///  describing whether the new email submission was successful.
         /// </summary>
-        /// <param name="newEmail"> The desired new email to change to. </param>
+        /// <param name="newEmail"> The desired new email for this account. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
         public async Task<(int, string)> SubmitNewEmailFromToken(string newEmail)
         {
-            // Ensure credentials and reset token are not empty.
+            // Ensure credentials and email change token are not empty.
             if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(AppData.EmailChangeToken))
             {
                 return (-1, "Submit new email failed: local email change token missing or missing new email input");
@@ -676,14 +758,14 @@ namespace RPG_Launcher.Model
         ///  a confirmation code from the email and passes the in-memory EmailChangeToken to verify endpoint access.
         ///  Returns a status code describing whether the new email verification was successful.
         /// </summary>
-        /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
+        /// <param name="confirmationCode"> The one-time confirmation code received sent to the desired new email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
         public async Task<(int, string)> VerifyNewEmailFromToken(string confirmationCode)
         {
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(confirmationCode) || string.IsNullOrEmpty(AppData.EmailChangeToken))
             {
-                return (-1, "Email change failed: local password reset token missing or missing new password input");
+                return (-1, "New email verification successful: local password reset token missing or missing new password input");
             }
 
             try
@@ -708,13 +790,13 @@ namespace RPG_Launcher.Model
                 // Else successful, so immediately log out and return 0 for success.
                 AppData.EmailChangeToken = string.Empty;
                 await Logout();
-                return (0, "Email change successful, user must re-login");
+                return (0, "New email verification successful, user must re-login");
             }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Email change failed: an unexpected error occurred during API request");
+                return (-1, "New email verification successful: an unexpected error occurred during API request");
             }
         }
 

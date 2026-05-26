@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static RPG_Launcher.ViewModel.Account.ConfirmationCodeViewModel;
 
 namespace RPG_Launcher.ViewModel.Account
 {
@@ -98,17 +99,22 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteChangeEmailClickedCommand(object? obj)
         {
-            // Request a change email code, then move onto confirmation code view with email change context.
+            // Request an change email code, then move onto confirmation code view with email change context.
             IsButtonInputEnabled = false;
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(accountEmail);
+            var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange();
             IsButtonInputEnabled = true;
-            if (responseCode == -1)
+            if (StatusCode == 0)
             {
-                ErrorMessage = "Failed to perform API request to change email, please try again.";
+                // After request is successful (code 0), we move on to password reset screen.
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
                 return;
             }
-
-            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
+            else
+            {
+                // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+                ErrorMessage = Message;
+                return;
+            }
         }
 
         private bool CanExecuteChangeEmailClickedCommand(object? obj)
@@ -125,7 +131,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             // Request a password reset code, then move onto confirmation code view with password change/reset context.
             IsButtonInputEnabled = false;
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(accountEmail);
+            int responseCode = await LoginApiService.Instance.ForgotPassword(accountEmail);
             IsButtonInputEnabled = true;
             if (responseCode == -1)
             {

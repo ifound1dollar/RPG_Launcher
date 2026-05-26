@@ -178,7 +178,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ManualChangePassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        var (StatusCode, Message) = await LoginApiService.Instance.RequestPasswordReset(TargetEmail, ConfirmationCode);
+                        var (StatusCode, Message) = await LoginApiService.Instance.InitiatePasswordReset(TargetEmail, ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // After request is successful (code 0), we move on to password reset screen.
@@ -196,7 +196,7 @@ namespace RPG_Launcher.ViewModel.Account
                     }
                 case CodeContext.RequestEmailChange:
                     {
-                        var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange(ConfirmationCode);
+                        var (StatusCode, Message) = await LoginApiService.Instance.InitiateEmailChange(ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // If request is successful, move onto submit new email screen (we have our Email Change Token).
@@ -259,16 +259,52 @@ namespace RPG_Launcher.ViewModel.Account
                 return;
             }
 
-            // Send new confirmation code, not getting any response for security reasons.
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(targetEmail);
-            if (responseCode == -1)
+
+            // Send new confirmation code to the correct endpoint based on context, and handle response accordingly.
+            switch (context)
             {
-                StatusMessage = "Failed to perform API request, please try again.";
-                MessageBrush = errorBrush;
-                return;
+                case CodeContext.NewAccountConfirmation:
+                case CodeContext.VerifyNewEmail:
+                    {
+                        // Request a new email verification code, printing an error message if unsuccessful.
+                        var (StatusCode, Message) = await LoginApiService.Instance.ResendEmailVerificationCode();
+                        if (StatusCode != 0)
+                        {
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.ForgotPassword:
+                case CodeContext.ManualChangePassword:
+                    {
+                        // Submit a forgot password request anonymously, printing an error message if unsuccessful.
+                        int responseCode = await LoginApiService.Instance.ForgotPassword(targetEmail);
+                        if (responseCode == -1)
+                        {
+                            StatusMessage = "Failed to perform API request, please try again.";
+                            MessageBrush = errorBrush;
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.RequestEmailChange:
+                    {
+                        // Generate an entirely new email change request, printing an error message if unsuccessful.
+                        var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange();
+                        if (StatusCode != 0)
+                        {
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
+                            return;
+                        }
+                        break;
+                    }
+                    // Do nothing for None.
             }
 
-            // Else successful, so update status message with success confirmation.
+            // Else successful (did not return within switch), so update status message with success confirmation.
             lastSent = DateTime.UtcNow;
             StatusMessage = "Code successfuly re-sent.";
             MessageBrush = infoBrush;

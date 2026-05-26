@@ -85,7 +85,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Request a password reset code, not knowing whether successful for security reasons.
-            int responseCode = await LoginApiService.Instance.SendConfirmationCode(UsernameOrEmail);
+            int responseCode = await LoginApiService.Instance.ForgotPassword(UsernameOrEmail);
             if (responseCode == -1)
             {
                 ErrorMessage = "Failed to perform API request, please try again.";
