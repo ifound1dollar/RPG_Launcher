@@ -103,18 +103,16 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
             var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange();
             IsButtonInputEnabled = true;
-            if (StatusCode == 0)
+
+            // Only check for request error. If request is made too soon (less than 60 seconds after previous), then
+            //  should still allow progression to confirmation code view because previously-sent code is still valid.
+            if (StatusCode == -1)
             {
-                // After request is successful (code 0), we move on to password reset screen.
-                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
+                ErrorMessage = "Failed to perform API request to change password, please try again.";
                 return;
             }
-            else
-            {
-                // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                ErrorMessage = Message;
-                return;
-            }
+
+            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
         }
 
         private bool CanExecuteChangeEmailClickedCommand(object? obj)

@@ -280,50 +280,6 @@ namespace RPG_Launcher.Model
             AppData.RefreshToken = string.Empty;
         }
 
-        /// <summary>
-        /// Pings the API to notify it that we are still in the launcher (used to maintain account state). Does not
-        ///  return any data because it is a simple GET request with our access token.
-        /// </summary>
-        public async Task PingInLauncher()
-        {
-            bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken) return;
-
-            try
-            {
-                // Make request to API, no response or content but requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Get, "users/ping-in-launcher");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
-                var rawResponse = await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Notifies the API that the launcher has been closed. This should be automatically invoked on application exit
-        ///  so that the API is aware of launcher exit status. Does not return any data.
-        /// </summary>
-        public async Task NotifyLauncherExit()
-        {
-            bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken) return;
-
-            try
-            {
-                // Make request to API, no response or content but requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Get, "users/notify-launcher-exit");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
-                var rawResponse = await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.Message);
-            }
-        }
-
 
 
         /// <summary>
@@ -344,7 +300,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API, requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Get, "users/resend-email-verification-code");
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/resend-email-verification-code");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
@@ -633,7 +589,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API, requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Get, "users/request-email-change");
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-email-change");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
@@ -797,6 +753,52 @@ namespace RPG_Launcher.Model
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
                 return (-1, "New email verification successful: an unexpected error occurred during API request");
+            }
+        }
+
+
+
+        /// <summary>
+        /// Pings the API to notify it that we are still in the launcher (used to maintain account state). Does not
+        ///  return any data because it is a simple GET request with our access token.
+        /// </summary>
+        public async Task PingInLauncher()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken) return;
+
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/ping-in-launcher");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Notifies the API that the launcher has been closed. This should be automatically invoked on application exit
+        ///  so that the API is aware of launcher exit status. Does not return any data.
+        /// </summary>
+        public async Task NotifyLauncherExit()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken) return;
+
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/notify-launcher-exit");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
             }
         }
 
