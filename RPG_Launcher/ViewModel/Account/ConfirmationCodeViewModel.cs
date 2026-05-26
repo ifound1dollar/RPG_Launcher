@@ -154,85 +154,62 @@ namespace RPG_Launcher.ViewModel.Account
             // Switch on context - if reset password, validate with correct API endpoint and move on to
             //  password reset screen. If email verification, confirm account in database via API endpoint
             //  and move onto home screen with fully usable account.
+            int StatusCode; string Message = string.Empty;
             switch (context)
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyAccountEmail(ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.Instance.VerifyEmail(ConfirmationCode, isForNewAccount: true);
                         if (StatusCode == 0)
                         {
                             // If status code is good, then email verification fully logged us in already, so move onto home view.
                             MainViewModel.Instance.ShowHomeView();
-                            break;
+                            return;
                         }
-                        else
-                        {
-                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                            ConfirmationCode = string.Empty;
-                            StatusMessage = Message;
-                            MessageBrush = errorBrush;
-                            break;
-                        }                        
+                        break;
                     }
                 case CodeContext.ForgotPassword:
                 case CodeContext.ManualChangePassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        var (StatusCode, Message) = await LoginApiService.Instance.InitiatePasswordReset(TargetEmail, ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.Instance.InitiatePasswordReset(TargetEmail, ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // After request is successful (code 0), we move on to password reset screen.
                             MainViewModel.Instance.ShowResetPasswordView(isForgotPasswordContext: (context == CodeContext.ForgotPassword), TargetEmail);
-                            break;
+                            return;
                         }
-                        else
-                        {
-                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                            ConfirmationCode = string.Empty;
-                            StatusMessage = Message;
-                            MessageBrush = errorBrush;
-                            break;
-                        }
+                        break;
                     }
                 case CodeContext.RequestEmailChange:
                     {
-                        var (StatusCode, Message) = await LoginApiService.Instance.InitiateEmailChange(ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.Instance.InitiateEmailChange(ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // If request is successful, move onto submit new email screen (we have our Email Change Token).
                             MainViewModel.Instance.ShowSubmitNewEmailView();
-                            break;
+                            return;
                         }
-                        else
-                        {
-                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                            ConfirmationCode = string.Empty;
-                            StatusMessage = Message;
-                            MessageBrush = errorBrush;
-                            break;
-                        }
+                        break;
                     }
                 case CodeContext.VerifyNewEmail:
                     {
-                        var (StatusCode, Message) = await LoginApiService.Instance.VerifyNewEmailFromToken(ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.Instance.VerifyEmail(ConfirmationCode, isForNewAccount: false);
                         if (StatusCode == 0)
                         {
-                            // If verification is successful, then we now are logged out, so return to login view.
-                            MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Email changed successfully, please log in again.");
-                            break;
+                            // If verification is successful, then email has been fully changed, so return to account view.
+                            MainViewModel.Instance.ShowAccountView();
+                            return;
                         }
-                        else
-                        {
-                            // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                            ConfirmationCode = string.Empty;
-                            StatusMessage = Message;
-                            MessageBrush = errorBrush;
-                            break;
-                        }
+                        break;
                     }
                 // Do nothing for None.
             }
 
+            // Any non-success code means either unexpected error (exception) or legitimate HTTP status code error.
+            ConfirmationCode = string.Empty;
+            StatusMessage = Message;
+            MessageBrush = errorBrush;
             IsButtonInputEnabled = true;
         }
 
@@ -338,15 +315,10 @@ namespace RPG_Launcher.ViewModel.Account
                         break;
                     }
                 case CodeContext.ManualChangePassword:
-                    {
-                        // If manually changing password, return to account view.
-                        MainViewModel.Instance.ShowAccountView();
-                        break;
-                    }
                 case CodeContext.RequestEmailChange:
                 case CodeContext.VerifyNewEmail:
                     {
-                        // Requesting or verifying new can only be done from account view screen, so return to it.
+                        // These states can only be from account view screen, so return to it.
                         MainViewModel.Instance.ShowAccountView();
                         break;
                     }

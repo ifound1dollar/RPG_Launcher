@@ -321,13 +321,14 @@ namespace RPG_Launcher.Model
         }
 
         /// <summary>
-        /// Attempts to confirm the email of the currently-logged-in account. Sends the current refresh token
-        ///  to the API along with the passed-in verification code that will have been sent to the user's
-        ///  email. Returns a status code describing the success or failure of the request.
+        /// Attempts to confirm the email of the currently-logged-in account. Is used for verifying main email or pending
+        ///  new email on email change, automatically sending either the stored access token (initial account verification)
+        ///  or email change token (final step of manual email change). Returns a status code describing the success or
+        ///  failure of the request.
         /// </summary>
         /// <param name="confirmationCode"> The user-supplied verification code, which should have been received via email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> VerifyAccountEmail(string confirmationCode)
+        public async Task<(int, string)> VerifyEmail(string confirmationCode, bool isForNewAccount)
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
@@ -345,7 +346,9 @@ namespace RPG_Launcher.Model
                             Encoding.UTF8,
                             "application/json")
                 };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                string authToken = (isForNewAccount) ? AppData.AccessToken : AppData.EmailChangeToken;
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
+
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
@@ -368,6 +371,7 @@ namespace RPG_Launcher.Model
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                AppData.EmailChangeToken = string.Empty;                                // Reset on any verification regardless of context.
                 return (responseModel.LoginStatusCode, $"Email verification successful");
             }
             catch (Exception ex)
@@ -706,53 +710,6 @@ namespace RPG_Launcher.Model
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
                 return (-1, "Submit new email failed: an unexpected error occurred during API request");
-            }
-        }
-
-        /// <summary>
-        /// Attempts to verify the new email that was just submitted to the API during email change process. Accepts
-        ///  a confirmation code from the email and passes the in-memory EmailChangeToken to verify endpoint access.
-        ///  Returns a status code describing whether the new email verification was successful.
-        /// </summary>
-        /// <param name="confirmationCode"> The one-time confirmation code received sent to the desired new email. </param>
-        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> VerifyNewEmailFromToken(string confirmationCode)
-        {
-            // Ensure credentials and reset token are not empty.
-            if (string.IsNullOrEmpty(confirmationCode) || string.IsNullOrEmpty(AppData.EmailChangeToken))
-            {
-                return (-1, "New email verification successful: local password reset token missing or missing new password input");
-            }
-
-            try
-            {
-                // Make request to API, requiring content and access token (with reset Role).
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/verify-new-email")
-                {
-                    Content = new StringContent(
-                            JsonSerializer.Serialize(new { Code = confirmationCode }),
-                            Encoding.UTF8,
-                            "application/json")
-                };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.EmailChangeToken);
-                var rawResponse = await _httpClient.SendAsync(request);
-                if (!rawResponse.IsSuccessStatusCode)
-                {
-                    // If not success status code, then there was some error, so return HTTP status code and error message.
-                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
-                    return ((int)rawResponse.StatusCode, errorMessage);
-                }
-
-                // Else successful, so immediately log out and return 0 for success.
-                AppData.EmailChangeToken = string.Empty;
-                await Logout();
-                return (0, "New email verification successful, user must re-login");
-            }
-            catch (Exception ex)
-            {
-                // Exceptions will only come from the HTTP request, meaning the action failed.
-                Trace.WriteLine(ex.Message);
-                return (-1, "New email verification successful: an unexpected error occurred during API request");
             }
         }
 
