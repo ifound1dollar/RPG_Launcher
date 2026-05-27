@@ -122,7 +122,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating password, we can make actual API request to reset our password. Pulls reset token from AppData automatically.
-            var (StatusCode, Message) = await LoginApiService.Instance.SubmitNewPasswordFromToken(credential);
+            var (StatusCode, Message) = await LoginApiService.SubmitNewPasswordFromToken(credential);
             if (StatusCode == 0)
             {
                 SecurePassword.Clear();

@@ -116,7 +116,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
-            var (StatusCode, Message) = await LoginApiService.Instance.Login(new NetworkCredential(Username, SecurePassword));
+            var (StatusCode, Message) = await LoginApiService.Login(new NetworkCredential(Username, SecurePassword));
             if (StatusCode == 0)
             {
                 // Code 0 means full login success, so show home view.

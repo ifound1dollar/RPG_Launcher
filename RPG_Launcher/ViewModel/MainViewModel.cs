@@ -63,7 +63,7 @@ namespace RPG_Launcher.ViewModel
                 if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration < DateTime.UtcNow) return;
 
                 // Else we have valid access token, so call API method.
-                _ = LoginApiService.Instance.PingInLauncher();
+                _ = LoginApiService.PingInLauncher();
             };
             timer.AutoReset = true;
             timer.Start();

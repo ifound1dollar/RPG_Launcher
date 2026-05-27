@@ -36,7 +36,7 @@ namespace RPG_Launcher
             //  application is opened.
 
             // We do not need to await this, and should not because we want to allow the launcher to exit immediately.
-            _ = LoginApiService.Instance.NotifyLauncherExit();
+            _ = LoginApiService.NotifyLauncherExit();
 
             //AppData.Deinitialize();
         }

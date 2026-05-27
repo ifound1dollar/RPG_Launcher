@@ -20,32 +20,11 @@ using System.Threading.Tasks;
 namespace RPG_Launcher.Model
 {
     /// <summary>
-    /// Singleton class that directly accesses the login API. Use this class via LoginApiService.Instance.
+    /// Singleton class that directly accesses the login API. Use this class via LoginApiService.
     /// </summary>
-    public class LoginApiService
+    public static class LoginApiService
     {
-        #region API SERVICE SINGLETON STUFF
-
-        private static readonly LoginApiService _instance = new();
-        /// <summary>
-        /// The active LoginApiService singleton instance. Use this to access the LoginApiService.
-        /// </summary>
-        public static LoginApiService Instance { get => _instance; }
-
-        static LoginApiService()
-        {
-            // Empty constructor for static singleton pattern. See fourth pattern for why this
-            //  is necessary for thread safety: https://csharpindepth.com/articles/singleton
-        }
-
-        private LoginApiService()
-        {
-            // This is the actual constructor that is called.
-        }
-
-        #endregion
-
-        HttpClient _httpClient = new()
+        private static HttpClient _httpClient = new()
         {
             BaseAddress = new Uri("https://localhost:7127/api/")
         };
@@ -56,19 +35,14 @@ namespace RPG_Launcher.Model
         /// Pings the API to determine whether the server is online. Returns a status code describing the success or
         ///  failure of the ping.
         /// </summary>
-        /// <returns> A status code describing the request result. 0 for success, 1 for server offline, -1 for other exception. </returns>
-        public async Task<int> PingServer()
+        /// <returns> A status code describing the request result. 0 for success, -1 for server offline or other exception. </returns>
+        public static async Task<int> PingServer()
         {
             try
             {
                 // The HTTP request will throw an HttpRequestException if the server is offline. Thus, we can directly return 0.
                 using HttpResponseMessage response = await _httpClient.GetAsync("ping");
                 return 0;
-            }
-            catch (HttpRequestException ex)
-            {
-                Trace.WriteLine(ex.Message);
-                return 1;
             }
             catch (Exception ex)
             {
@@ -81,12 +55,12 @@ namespace RPG_Launcher.Model
         /// Attempts to log in to the API using an existing refresh token. Makes an HTTPS request to the API
         ///  endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
-        /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure,
+        /// <returns> A status code describing the request result. 0+ for success (custom code for login state), 1 for account not confirmed, -1 for generic failure,
         ///  HTTP status code otherwise. </returns>
-        public async Task<(int, string)> TryLoginFromRefreshToken()
+        public static async Task<(int, string)> TryLoginFromRefreshToken()
         {
             // Ensure refreshToken is not empty.
-            if (string.IsNullOrEmpty(AppData.RefreshToken)) return (-2, "Refresh login failed: no local refresh token found");
+            if (string.IsNullOrEmpty(AppData.RefreshToken)) return (-1, "Refresh login failed: no local refresh token found");
 
             try
             {
@@ -122,7 +96,7 @@ namespace RPG_Launcher.Model
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
-                return (responseModel.LoginStatusCode, $"Refresh login successful with login status code {responseModel.LoginStatusCode}");                
+                return (responseModel.LoginStatusCode, $"Refresh login successful with login status code {responseModel.LoginStatusCode}");
             }
             catch (Exception ex)
             {
@@ -137,9 +111,9 @@ namespace RPG_Launcher.Model
         ///  the API endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
-        /// <returns> A status code describing the request result. 0 for success, 1 for account not confirmed, -1 for generic failure,
+        /// <returns> A status code describing the request result. 0+ for success (custom code for login state), 1 for account not confirmed, -1 for generic failure,
         ///  HTTP status code otherwise. </returns>
-        public async Task<(int, string)> Login(NetworkCredential credential)
+        public static async Task<(int, string)> Login(NetworkCredential credential)
         {
             // Ensure credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password))
@@ -196,8 +170,8 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="email"> The email associated with the account attempting to be registered. </param>
         /// <param name="credential"> A NetworkCredential object instantiated with the username and password. </param>
-        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> Register(string email, NetworkCredential credential)
+        /// <returns> A status code describing the request result. 0+ for success (custom code for login state), -1 for generic failure, HTTP status code otherwise. </returns>
+        public static async Task<(int, string)> Register(string email, NetworkCredential credential)
         {
             // Ensure email and credentials are not empty.
             if (string.IsNullOrEmpty(credential.UserName) || string.IsNullOrEmpty(credential.Password)
@@ -252,7 +226,7 @@ namespace RPG_Launcher.Model
         /// Logs out of the API. Makes an HTTPS request to the API endpoint. Logout is always successful, even
         ///  if no acknowledgement is received from the server. Automatically invalidates any stored tokens.
         /// </summary>
-        public async Task Logout()
+        public static async Task Logout()
         {
             // Call the API logout endpoint, passing it our access token so it can find us (logout requires valid access token).
             // This method will not need to return anything. If we call this logout endpoint with an access token that the
@@ -289,7 +263,7 @@ namespace RPG_Launcher.Model
         ///  the endpoint. Returns a status code describing the success or failure of the request.
         /// </summary>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> ResendEmailVerificationCode()
+        public static async Task<(int, string)> ResendEmailVerificationCode()
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
@@ -328,7 +302,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="confirmationCode"> The user-supplied verification code, which should have been received via email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> VerifyEmail(string confirmationCode, bool isForNewAccount)
+        public static async Task<(int, string)> VerifyEmail(string confirmationCode, bool isForNewAccount)
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
@@ -389,7 +363,7 @@ namespace RPG_Launcher.Model
         /// <param name="targetUser"> The account username or email to send the confirmation/verification code to. </param>
         /// <returns> A non-HTTP status code (custom) describing success or failure. Returns 0 if successful, -1 if HTTP request error.
         ///  NOTE: Does not return an HTTP status code for security reasons (would be vulnerable to username/email lookup attack). </returns>
-        public async Task<int> ForgotPassword(string targetUser)
+        public static async Task<int> ForgotPassword(string targetUser)
         {
             if (string.IsNullOrEmpty(targetUser)) return -1;
 
@@ -425,7 +399,7 @@ namespace RPG_Launcher.Model
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being initiated for. </param>
         /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> InitiatePasswordReset(string usernameOrEmail, string confirmationCode)
+        public static async Task<(int, string)> InitiatePasswordReset(string usernameOrEmail, string confirmationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(confirmationCode))
             {
@@ -477,7 +451,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> SubmitNewPasswordFromToken(NetworkCredential credential)
+        public static async Task<(int, string)> SubmitNewPasswordFromToken(NetworkCredential credential)
         {
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(credential.Password) || string.IsNullOrEmpty(AppData.PasswordResetToken))
@@ -524,7 +498,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="newUsername"> The desired new username for this account. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> ChangeUsername(string newUsername)
+        public static async Task<(int, string)> ChangeUsername(string newUsername)
         {
             // Ensure new username and access token are not empty.
             bool validToken = await EnsureAccessTokenIsValid();
@@ -535,7 +509,7 @@ namespace RPG_Launcher.Model
 
             try
             {
-                // Make request to API, requiring content and access token (with reset Role).
+                // Make request to API, requiring content and access token.
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/change-username")
                 {
                     Content = new StringContent(
@@ -582,7 +556,7 @@ namespace RPG_Launcher.Model
         ///  to. Returns a status code describing whether the email change request was successful.
         /// </summary>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> RequestEmailChange()
+        public static async Task<(int, string)> RequestEmailChange()
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
@@ -621,7 +595,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="confirmationCode"></param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> InitiateEmailChange(string confirmationCode)
+        public static async Task<(int, string)> InitiateEmailChange(string confirmationCode)
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
@@ -675,7 +649,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="newEmail"> The desired new email for this account. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public async Task<(int, string)> SubmitNewEmailFromToken(string newEmail)
+        public static async Task<(int, string)> SubmitNewEmailFromToken(string newEmail)
         {
             // Ensure credentials and email change token are not empty.
             if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(AppData.EmailChangeToken))
@@ -719,7 +693,7 @@ namespace RPG_Launcher.Model
         /// Pings the API to notify it that we are still in the launcher (used to maintain account state). Does not
         ///  return any data because it is a simple GET request with our access token.
         /// </summary>
-        public async Task PingInLauncher()
+        public static async Task PingInLauncher()
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken) return;
@@ -741,7 +715,7 @@ namespace RPG_Launcher.Model
         /// Notifies the API that the launcher has been closed. This should be automatically invoked on application exit
         ///  so that the API is aware of launcher exit status. Does not return any data.
         /// </summary>
-        public async Task NotifyLauncherExit()
+        public static async Task NotifyLauncherExit()
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken) return;
@@ -768,7 +742,7 @@ namespace RPG_Launcher.Model
         ///  expired. Attempts to retrieve a new access token if the current access token is missing or invalid.
         /// </summary>
         /// <returns> True if a valid access token exists or has been retrieved, false if no valid token. </returns>
-        private async Task<bool> EnsureAccessTokenIsValid()
+        private static async Task<bool> EnsureAccessTokenIsValid()
         {
             // If no current access token OR access token is expiring within 1 minute (or already expired), try to get a new one.
             if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration - DateTime.UtcNow < TimeSpan.FromMinutes(1))

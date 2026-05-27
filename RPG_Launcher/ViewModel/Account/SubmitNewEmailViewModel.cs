@@ -101,7 +101,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating email, we can make actual API request to submit the new password.
-            var (StatusCode, Message) = await LoginApiService.Instance.SubmitNewEmailFromToken(NewEmail);
+            var (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(NewEmail);
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, meaning the API has accepted our new email. We can move onto new email verification screen.

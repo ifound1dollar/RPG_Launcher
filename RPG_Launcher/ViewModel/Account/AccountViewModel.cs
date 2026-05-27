@@ -101,7 +101,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             // Request an change email code, then move onto confirmation code view with email change context.
             IsButtonInputEnabled = false;
-            var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange();
+            var (StatusCode, Message) = await LoginApiService.RequestEmailChange();
             IsButtonInputEnabled = true;
 
             // Only check for request error. If request is made too soon (less than 60 seconds after previous), then
@@ -129,7 +129,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             // Request a password reset code, then move onto confirmation code view with password change/reset context.
             IsButtonInputEnabled = false;
-            int responseCode = await LoginApiService.Instance.ForgotPassword(accountEmail);
+            int responseCode = await LoginApiService.ForgotPassword(accountEmail);
             IsButtonInputEnabled = true;
             if (responseCode == -1)
             {
@@ -152,7 +152,7 @@ namespace RPG_Launcher.ViewModel.Account
         private async Task ExecuteLogoutClickedCommand(object? obj)
         {
             // Call API service logout method, which will always successfully log us out.
-            await LoginApiService.Instance.Logout();
+            await LoginApiService.Logout();
 
             // After logout, we must return to the login screen (show login window and hide main).
             MainViewModel.Instance.ShowLoginView();

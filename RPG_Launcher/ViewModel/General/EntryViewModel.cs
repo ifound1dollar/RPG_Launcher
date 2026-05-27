@@ -83,7 +83,7 @@ namespace RPG_Launcher.ViewModel.General
             StatusMessage = "Connecting to the login API...";
 
             // Ping the server 
-            int pingStatus = await LoginApiService.Instance.PingServer();
+            int pingStatus = await LoginApiService.PingServer();
             if (pingStatus == 1)
             {
                 MessageBrush = errorBrush;
@@ -105,7 +105,7 @@ namespace RPG_Launcher.ViewModel.General
             await Task.Delay(1500);
 
             // Then, try to login with existing securely-stored refresh token (retrieved on Initialize() above).
-            var (StatusCode, Message) = await LoginApiService.Instance.TryLoginFromRefreshToken();
+            var (StatusCode, Message) = await LoginApiService.TryLoginFromRefreshToken();
             if (StatusCode == 0)
             {
                 // Code 0 means successful login with full access, to move onto home screen.
@@ -123,15 +123,10 @@ namespace RPG_Launcher.ViewModel.General
                 // Code 1 means account email needs confirmation before we can fully log in.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, AppData.SavedUsername);
             }
-            else if (StatusCode == -2)
-            {
-                // SPECIAL CASE: -2 means we don't have a local refresh token stored, so skip the error message and go directly to login view.
-                MainViewModel.Instance.ShowLoginView();
-            }
             else
             {
                 // Any other code (ex. -1 or 400/500 status code) indicates generic failure, so return to login screen.
-                MainViewModel.Instance.ShowReturnToLoginView(true, Message);
+                MainViewModel.Instance.ShowLoginView();
             }
         }
 

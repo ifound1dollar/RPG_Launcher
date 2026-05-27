@@ -157,7 +157,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
-            var (StatusCode, Message) = await LoginApiService.Instance.Register(Email, credential);
+            var (StatusCode, Message) = await LoginApiService.Register(Email, credential);
             if (StatusCode == 1)    // Will always need email confirmation.
             {
                 SecurePassword.Clear();

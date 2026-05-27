@@ -159,7 +159,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        (StatusCode, Message) = await LoginApiService.Instance.VerifyEmail(ConfirmationCode, isForNewAccount: true);
+                        (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: true);
                         if (StatusCode == 0)
                         {
                             // If status code is good, then email verification fully logged us in already, so move onto home view.
@@ -172,7 +172,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ManualChangePassword:
                     {
                         // We pass the target user instead of refresh token because we might not have a valid refresh token here.
-                        (StatusCode, Message) = await LoginApiService.Instance.InitiatePasswordReset(TargetEmail, ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.InitiatePasswordReset(TargetEmail, ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // After request is successful (code 0), we move on to password reset screen.
@@ -183,7 +183,7 @@ namespace RPG_Launcher.ViewModel.Account
                     }
                 case CodeContext.RequestEmailChange:
                     {
-                        (StatusCode, Message) = await LoginApiService.Instance.InitiateEmailChange(ConfirmationCode);
+                        (StatusCode, Message) = await LoginApiService.InitiateEmailChange(ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // If request is successful, move onto submit new email screen (we have our Email Change Token).
@@ -194,7 +194,7 @@ namespace RPG_Launcher.ViewModel.Account
                     }
                 case CodeContext.VerifyNewEmail:
                     {
-                        (StatusCode, Message) = await LoginApiService.Instance.VerifyEmail(ConfirmationCode, isForNewAccount: false);
+                        (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: false);
                         if (StatusCode == 0)
                         {
                             // If verification is successful, then email has been fully changed, so return to account view.
@@ -244,7 +244,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.VerifyNewEmail:
                     {
                         // Request a new email verification code, printing an error message if unsuccessful.
-                        var (StatusCode, Message) = await LoginApiService.Instance.ResendEmailVerificationCode();
+                        var (StatusCode, Message) = await LoginApiService.ResendEmailVerificationCode();
                         if (StatusCode != 0)
                         {
                             StatusMessage = Message;
@@ -257,7 +257,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.ManualChangePassword:
                     {
                         // Submit a forgot password request anonymously, printing an error message if unsuccessful.
-                        int responseCode = await LoginApiService.Instance.ForgotPassword(targetEmail);
+                        int responseCode = await LoginApiService.ForgotPassword(targetEmail);
                         if (responseCode == -1)
                         {
                             StatusMessage = "Failed to perform API request, please try again.";
@@ -269,7 +269,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.RequestEmailChange:
                     {
                         // Generate an entirely new email change request, printing an error message if unsuccessful.
-                        var (StatusCode, Message) = await LoginApiService.Instance.RequestEmailChange();
+                        var (StatusCode, Message) = await LoginApiService.RequestEmailChange();
                         if (StatusCode != 0)
                         {
                             StatusMessage = Message;
@@ -309,7 +309,7 @@ namespace RPG_Launcher.ViewModel.Account
                         // Cancelling new account confirmation or forgot password should return to login.
                         // Upon returning to login, fully logout to clear access and refresh token, then show login view.
                         // NOTE: Do not await logout (fire-and-forget).
-                        _ = LoginApiService.Instance.Logout();
+                        _ = LoginApiService.Logout();
 
                         MainViewModel.Instance.ShowLoginView();
                         break;

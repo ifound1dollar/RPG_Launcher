@@ -101,7 +101,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating username, we can make actual API request to change username.
-            var (StatusCode, Message) = await LoginApiService.Instance.ChangeUsername(NewUsername);
+            var (StatusCode, Message) = await LoginApiService.ChangeUsername(NewUsername);
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, username has been changed (AppData also already updated) and we can return to account view.
