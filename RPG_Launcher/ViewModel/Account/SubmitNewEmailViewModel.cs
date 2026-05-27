@@ -89,9 +89,11 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
+            string trimmedEmail = NewEmail.Trim();
+
             // Verify that email is legitimate using simple regex.
             string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-            if (!Regex.IsMatch(NewEmail, pattern))
+            if (!Regex.IsMatch(trimmedEmail, pattern))
             {
                 ErrorMessage = "Please enter a valid email.";
                 return;
@@ -101,7 +103,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating email, we can make actual API request to submit the new password.
-            var (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(NewEmail);
+            var (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(trimmedEmail);
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, meaning the API has accepted our new email. We can move onto new email verification screen.

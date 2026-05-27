@@ -89,11 +89,13 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
+            string trimmedUsername = NewUsername.Trim();
+
             // First, ensure new username matches basic username regex.
-            string usernamePattern = @"^[a-zA-Z0-9_]{5,20}$";               // Username, 5-20 chars, upper lower digit underscore
-            if (!Regex.IsMatch(NewUsername, usernamePattern))
+            string usernamePattern = @"^[a-zA-Z0-9_ ]{3,16}$";
+            if (!Regex.IsMatch(trimmedUsername, usernamePattern))
             {
-                ErrorMessage = "Username must be between 5-20 characters and can only include uppercase and lowercase letters, digits, and underscores.";
+                ErrorMessage = "New username must be 3-16 characters and can only include letters, digits, underscores, and spaces.";
                 return;
             }
 
@@ -101,7 +103,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating username, we can make actual API request to change username.
-            var (StatusCode, Message) = await LoginApiService.ChangeUsername(NewUsername);
+            var (StatusCode, Message) = await LoginApiService.ChangeUsername(trimmedUsername);
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, username has been changed (AppData also already updated) and we can return to account view.

@@ -117,11 +117,13 @@ namespace RPG_Launcher.ViewModel.Account
             // NOTE: We have to compare Password and Confirm Password fields within the View, not here.
             //  It is not trivial to compare SecureStrings, so we compare the PasswordBoxes in RegisterView.
 
-            NetworkCredential credential = new(Username, SecurePassword);
+            string trimmedUsername = Username.Trim();
+            string trimmedEmail = Email.Trim();
+            NetworkCredential credential = new(trimmedUsername, SecurePassword);
 
             // Clear error message, then validate input.
             ErrorMessage = string.Empty;
-            if (Email.Length <= 0 || Username.Length <= 0 || SecurePassword.Length <= 0)
+            if (trimmedEmail.Length <= 0 || trimmedUsername.Length <= 0 || SecurePassword.Length <= 0)
             {
                 SecurePassword.Clear();
                 ErrorMessage = "All input fields must be set.";
@@ -130,18 +132,18 @@ namespace RPG_Launcher.ViewModel.Account
 
             // Verify that email is legitimate using simple regex.
             string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-            if (!Regex.IsMatch(Email, pattern))
+            if (!Regex.IsMatch(trimmedEmail, pattern))
             {
                 SecurePassword.Clear();
                 ErrorMessage = "Please enter a valid email.";
                 return;
             }
             // Verify username is valid.
-            pattern = @"^[a-zA-Z0-9_]{5,20}$";
-            if (!Regex.IsMatch(Username, pattern))
+            pattern = @"^[a-zA-Z0-9_ ]{3,16}$";
+            if (!Regex.IsMatch(trimmedUsername, pattern))
             {
                 SecurePassword.Clear();
-                ErrorMessage = "Username must be length 5-20 and include only letters, numbers, and underscores.";
+                ErrorMessage = "Username must be 3-16 characters and can only include letters, digits, underscores, and spaces.";
                 return;
             }
             // Verify password is valid.
@@ -157,7 +159,7 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
-            var (StatusCode, Message) = await LoginApiService.Register(Email, credential);
+            var (StatusCode, Message) = await LoginApiService.Register(trimmedEmail, credential);
             if (StatusCode == 1)    // Will always need email confirmation.
             {
                 SecurePassword.Clear();
