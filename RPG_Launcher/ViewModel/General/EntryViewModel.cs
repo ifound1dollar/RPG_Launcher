@@ -84,17 +84,10 @@ namespace RPG_Launcher.ViewModel.General
 
             // Ping the server 
             int pingStatus = await LoginApiService.PingServer();
-            if (pingStatus == 1)
+            if (pingStatus == -1)
             {
                 MessageBrush = errorBrush;
                 StatusMessage = "Failed to connect to the login API. Please try again later.";
-                IsRetryButtonVisible = true;
-                return;
-            }
-            else if (pingStatus == -1)
-            {
-                MessageBrush = errorBrush;
-                StatusMessage = "An unexpected error occurred when trying to connect to the login API. Please try again later.";
                 IsRetryButtonVisible = true;
                 return;
             }

@@ -35,7 +35,7 @@
                        FontFamily="Segoe UI Semibold"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
-                       Margin="10,30,10,0"/>
+                       Margin="10,25,10,0"/>
 
             <!-- Return button. Manually calls ViewModel command, necessary for PasswordBox security. -->
             <Button Name="ButtonReturn"
@@ -44,7 +44,7 @@
                     Content="RETRY"
                     FontSize="16"
                     Cursor="Hand"
-                    Margin="60,30,60,0"
+                    Margin="60,25,60,0"
                     Click="ButtonRetry_Click"
                     Visibility="{Binding IsRetryButtonVisible, Converter={StaticResource BoolToVis}}">
                 <Button.Style>

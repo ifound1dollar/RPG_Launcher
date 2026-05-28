@@ -20,7 +20,6 @@ namespace RPG_Launcher.ViewModel.Account
         private MainViewModel.MfaContext context;
 
         private string otpAuthLink = string.Empty;
-        private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
 
@@ -38,11 +37,6 @@ namespace RPG_Launcher.ViewModel.Account
         {
             get => otpAuthLink;
             set { otpAuthLink = value; OnPropertyChanged(nameof(OtpAuthLink)); }
-        }
-        public string ErrorMessage
-        {
-            get => errorMessage;
-            set { errorMessage = value; OnPropertyChanged(nameof(ErrorMessage)); }
         }
         public bool IsButtonInputEnabled
         {
@@ -72,7 +66,6 @@ namespace RPG_Launcher.ViewModel.Account
         public override void ShowView()
         {
             OtpAuthLink = string.Empty;
-            ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
 
             isViewVisible = true;
@@ -89,8 +82,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private void ExecuteContinueButtonClickedCommand(object? obj)
         {
-            // Clear error message and XamlQRCode immediately on continue.
-            ErrorMessage = string.Empty;
+            // Clear OtpAuthLink immediately on continue.
             OtpAuthLink = string.Empty;
 
             // Disable send code button before awaiting to prevent button spam.

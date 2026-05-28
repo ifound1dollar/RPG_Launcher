@@ -30,7 +30,7 @@
                        Margin="0,25,0,0"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
 
-            <TextBlock Text="Reset multi-factor authentication"
+            <TextBlock Text="Reset MFA"
                        Width="180"
                        Foreground="AliceBlue"
                        FontSize="20"
@@ -61,15 +61,15 @@
                      Text="{Binding RecoveryCode, UpdateSourceTrigger=PropertyChanged}"
                      VerticalContentAlignment="Center"
                      HorizontalContentAlignment="Center"
-                     Foreground="LightGray"
-                     Background="#33000000"
-                     FontSize="14"
-                     FontFamily="Cascadia Mono"
-                     CaretBrush="LightSlateGray"
-                     BorderBrush="SlateGray"
-                     BorderThickness="0,0,0,0"
-                     Margin="20,5,20,0"
-                     Padding="5,2,5,2"
+                      Width="160"
+                      Height="45"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"
+                      Foreground="LightGray"
+                      Background="#33000000"
+                      FontSize="18"
+                      FontFamily="Cascadia Mono"
+                      TextWrapping="Wrap"
                      Grid.Column="1"
                      GotKeyboardFocus="TextBox_GotKeyboardFocus"/>
 
