@@ -105,7 +105,7 @@ namespace RPG_Launcher.ViewModel.General
             await Task.Delay(1500);
 
             // Then, try to login with existing securely-stored refresh token (retrieved on Initialize() above).
-            var (StatusCode, Message) = await LoginApiService.TryLoginFromRefreshToken();
+            var (StatusCode, Response) = await LoginApiService.TryLoginFromRefreshToken();
             if (StatusCode == 0)
             {
                 // Code 0 means successful login with full access, to move onto home screen.
@@ -113,15 +113,29 @@ namespace RPG_Launcher.ViewModel.General
             }
             // IMPORTANT: WE PRIORITIZE PASSWORD RESET BECAUSE A SUCCESSFUL PASSWORD RESET REQUIRES A VALID EMAIL.
             // IF THE USER SUCCESSFULLY RESETS THEIR PASSWORD, IT WILL IMPLICITLY CONFIRM THE ACCOUNT EMAIL.
-            else if (StatusCode == 2)
+            else if (StatusCode == 20)
             {
-                // Code 2 means password must be reset for security reasons.
+                // Code 20 means password must be reset for security reasons.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, AppData.SavedUsername);
             }
-            else if (StatusCode == 1)
+            else if (StatusCode == 10)
             {
-                // Code 1 means account email needs confirmation before we can fully log in.
+                // Code 10 means account email needs confirmation before we can fully log in.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, AppData.SavedUsername);
+            }
+            else if (StatusCode == 30)
+            {
+                // Code 30 means MFA is not yet enabled, so request MFA setup and then show setup view.
+                (StatusCode, Response) = await LoginApiService.SetupMfa();
+                if (StatusCode != 0)
+                {
+                    // If status code is bad, logout and return to login view.
+                    MainViewModel.Instance.ShowLoginView();
+                    return;
+                }
+
+                // Else good status code means the response is our new QR code, so move onto setup screen.
+                MainViewModel.Instance.ShowMfaSetupView(MainViewModel.MfaContext.InitialSetup, Response);
             }
             else
             {

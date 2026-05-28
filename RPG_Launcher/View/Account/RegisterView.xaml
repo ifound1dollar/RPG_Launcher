@@ -26,7 +26,7 @@
                 </LinearGradientBrush>
             </StackPanel.Background>
 
-            <!-- Verification code header and text box. -->
+            <!-- Header and text box. -->
             <Grid Height="64"
                   Margin="0,25,0,0">
                 <Grid.ColumnDefinitions>

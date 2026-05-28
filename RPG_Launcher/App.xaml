@@ -53,6 +53,18 @@
         <DataTemplate DataType="{x:Type vma:SubmitNewEmailViewModel}">
             <va:SubmitNewEmailView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:SubmitMfaCodeViewModel}">
+            <va:SubmitMfaCodeView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:MfaSetupViewModel}">
+            <va:MfaSetupView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:RecoverMfaViewModel}">
+            <va:RecoverMfaView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:RecoveryCodeDisplayViewModel}">
+            <va:RecoveryCodeDisplayView/>
+        </DataTemplate>
     </Application.Resources>
     
 </Application>

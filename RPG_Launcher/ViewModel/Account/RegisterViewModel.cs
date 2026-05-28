@@ -160,7 +160,7 @@ namespace RPG_Launcher.ViewModel.Account
 
             // Call API service login method with Username and Password.
             var (StatusCode, Message) = await LoginApiService.Register(trimmedEmail, credential);
-            if (StatusCode == 1)    // Will always need email confirmation.
+            if (StatusCode == 10)       // Will always need email confirmation.
             {
                 SecurePassword.Clear();
 

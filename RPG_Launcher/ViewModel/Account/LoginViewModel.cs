@@ -116,29 +116,44 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Call API service login method with Username and Password.
-            var (StatusCode, Message) = await LoginApiService.Login(new NetworkCredential(Username, SecurePassword));
-            if (StatusCode == 0)
+            var (StatusCode, Response) = await LoginApiService.Login(new NetworkCredential(Username, SecurePassword));
+            if (StatusCode == 1)
             {
-                // Code 0 means full login success, so show home view.
-                MainViewModel.Instance.ShowHomeView();
+                // Code 1 means login successful but awaiting MFA code submission, so move onto MFA code view.
+                MainViewModel.Instance.ShowSubmitMfaCodeView(MainViewModel.MfaContext.MfaLogin);
                 return;
             }
-            else if (StatusCode == 1)
+            else if (StatusCode == 20)
             {
-                // Code 1 means account is not yet confirmed, so we must move onto confirmation code view.
+                // Code 20 means account password must be reset for security reasons.
+                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, Username);
+                return;
+            }
+            else if (StatusCode == 10)
+            {
+                // Code 10 means account email is not yet confirmed, so we must move onto confirmation code view.
                 MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.NewAccountConfirmation, Username);
                 return;
             }
-            else if (StatusCode == 2)
+            else if (StatusCode == 30)
             {
-                // Code 2 means account password must be reset for security reasons.
-                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ForgotPassword, Username);
+                // Code 30 means MFA is not yet enabled, so request MFA setup and then show setup view.
+                (StatusCode, Response) = await LoginApiService.SetupMfa();
+                if (StatusCode != 0)
+                {
+                    // If status code is bad, logout and return to login view.
+                    MainViewModel.Instance.ShowLoginView();
+                    return;
+                }
+
+                // Else good status code means the response is our new QR code, so move onto setup screen.
+                MainViewModel.Instance.ShowMfaSetupView(MainViewModel.MfaContext.InitialSetup, Response);
                 return;
             }
             else
             {
                 // Code -1 (any other code) means generic login failure, so display login error message.
-                ErrorMessage = Message;
+                ErrorMessage = Response;
                 IsButtonInputEnabled = true;
                 return;
             }

@@ -20,7 +20,7 @@ namespace RPG_Launcher.ViewModel.General
         private string statusMessage = string.Empty;
         private Brush messageBrush = Brushes.White;
 
-        private bool isReturnButtonEnabled = true;
+        private bool isButtonInputEnabled = true;
 
         public string StatusMessage
         {
@@ -32,10 +32,10 @@ namespace RPG_Launcher.ViewModel.General
             get => messageBrush;
             set { messageBrush = value; OnPropertyChanged(nameof(MessageBrush)); }
         }
-        public bool IsReturnButtonEnabled
+        public bool IsButtonInputEnabled
         {
-            get => isReturnButtonEnabled;
-            set { isReturnButtonEnabled = value; OnPropertyChanged(nameof(IsReturnButtonEnabled)); }
+            get => isButtonInputEnabled;
+            set { isButtonInputEnabled = value; OnPropertyChanged(nameof(IsButtonInputEnabled)); }
         }
 
 
@@ -58,7 +58,7 @@ namespace RPG_Launcher.ViewModel.General
         {
             StatusMessage = string.Empty;
             MessageBrush = Brushes.White;
-            IsReturnButtonEnabled = true;
+            IsButtonInputEnabled = true;
 
             isReturnToLoginViewVisible = true;
         }
@@ -75,7 +75,7 @@ namespace RPG_Launcher.ViewModel.General
         private void ExecuteReturnButtonClickedCommand(object? obj)
         {
             // Disable return button before awaiting to prevent button spam.
-            IsReturnButtonEnabled = false;
+            IsButtonInputEnabled = false;
 
             // We may have already logged out, but log out again just to be sure. 
             // NOTE: We do not await logout (fire-and-forget).
@@ -86,7 +86,7 @@ namespace RPG_Launcher.ViewModel.General
 
         private bool CanExecuteReturnButtonClickedCommand(object? obj)
         {
-            return isReturnToLoginViewVisible;
+            return isReturnToLoginViewVisible && isButtonInputEnabled;
         }
 
 

@@ -1,16 +1,15 @@
-﻿<UserControl x:Class="RPG_Launcher.View.ReturnToLoginView"
+﻿<UserControl x:Class="RPG_Launcher.View.Account.RecoveryCodeDisplayView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:vm="clr-namespace:RPG_Launcher.ViewModel.General"
+             xmlns:vm="clr-namespace:RPG_Launcher.ViewModel.Account"
              xmlns:v="clr-namespace:RPG_Launcher.View"
-             xmlns:local="clr-namespace:RPG_Launcher.View"
+             xmlns:local="clr-namespace:RPG_Launcher.View.Account"
              mc:Ignorable="d" 
              d:DesignHeight="690" d:DesignWidth="1280"
-             KeyDown="Universal_KeyDown"
-             d:DataContext="{d:DesignInstance Type=vm:ReturnToLoginViewModel}">
-    
+             d:DataContext="{d:DesignInstance Type=vm:RecoveryCodeDisplayViewModel}">
+
     <Grid>
 
         <StackPanel Width="250px"
@@ -30,24 +29,57 @@
                        Margin="0,25,0,0"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
 
-            <!-- Error message. -->
-            <TextBlock Text="{Binding StatusMessage, Mode=TwoWay}"
-                       Foreground="{Binding MessageBrush, Mode=TwoWay}"
+            <TextBlock Text="MFA recovery code"
+                       Width="180"
+                       Foreground="AliceBlue"
+                       FontSize="20"
+                       FontFamily="Segoe UI Semibold"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="0,15,0,0"/>
+
+            <TextBlock Text="Please store this recovery code in a secure location. If you lose access to your current MFA configuration, this recovery code can be used to reset it."
+                       Width="200"
+                       Foreground="LightBlue"
+                       FontSize="14"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="10,15,10,0"/>
+            
+            <!-- Recovery code display. -->
+            <TextBlock Text="Recovery Code: "
+                       Foreground="LightSlateGray"
                        FontSize="16"
                        FontFamily="Segoe UI"
-                       TextWrapping="Wrap"
                        HorizontalAlignment="Center"
-                       Margin="10,75,10,0"/>
+                       VerticalAlignment="Center"
+                       Margin="0,15,0,0"/>
+            <TextBox Text="{Binding RecoveryCode, Mode=TwoWay}"
+                     IsReadOnly="True"
+                       Width="160"
+                       Height="45"
+                     HorizontalContentAlignment="Center"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Foreground="LightGray"
+                       Background="#33000000"
+                       FontSize="18"
+                       FontFamily="Cascadia Mono"
+                       TextWrapping="Wrap"
+                       Margin="10,5,10,0"/>
 
-            <!-- Return button. Manually calls ViewModel command, necessary for PasswordBox security. -->
-            <Button Name="ButtonReturn"
+            <!-- Done button. -->
+            <Button Name="ButtonDone"
                     Height="40"
                     Foreground="LightGray"
-                    Content="RETURN TO LOGIN"
+                    Content="DONE"
                     FontSize="16"
                     Cursor="Hand"
-                    Margin="40,75,40,0"
-                    Click="ButtonReturn_Click"
+                    Margin="40,25,40,0"
+                    Click="ButtonDone_Click"
                     IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">

@@ -1,4 +1,6 @@
-﻿using RPG_Launcher.Model;
+﻿using QRCoder;
+using QRCoder.Xaml;
+using RPG_Launcher.Model;
 using RPG_Launcher.Util;
 using RPG_Launcher.ViewModel.Account;
 using RPG_Launcher.ViewModel.Base;
@@ -18,6 +20,8 @@ namespace RPG_Launcher.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
+        public enum MfaContext { None, InitialSetup, ManualSetup, RecoverySetup, MfaLogin }
+
         public static MainViewModel Instance { get; private set; } = null!;     // STATIC SINGLETON
 
         private string windowTitle;
@@ -40,6 +44,7 @@ namespace RPG_Launcher.ViewModel
         private HomeViewModel HomeVM { get; } = new HomeViewModel();
         private AccountViewModel AccountVM { get; } = new AccountViewModel();
         private LoginViewModel LoginVM { get; } = new LoginViewModel();
+        private SubmitMfaCodeViewModel SubmitMfaCodeVM { get; } = new SubmitMfaCodeViewModel();
         private RegisterViewModel RegisterVM { get; } = new RegisterViewModel();
         private ConfirmationCodeViewModel ConfirmationCodeVM { get; } = new ConfirmationCodeViewModel();
         private ResetPasswordViewModel ResetPasswordVM { get; } = new ResetPasswordViewModel();
@@ -47,6 +52,9 @@ namespace RPG_Launcher.ViewModel
         private ReturnToLoginViewModel ReturnToLoginVM { get; } = new ReturnToLoginViewModel();
         private ForgotPasswordViewModel ForgotPasswordVM { get; } = new ForgotPasswordViewModel();
         private SubmitNewEmailViewModel SubmitNewEmailVM { get; } = new SubmitNewEmailViewModel();
+        private MfaSetupViewModel MfaSetupVM { get; } = new MfaSetupViewModel();
+        private RecoverMfaViewModel RecoverMfaVM { get; } = new RecoverMfaViewModel();
+        private RecoveryCodeDisplayViewModel RecoveryCodeDisplayVM { get; } = new RecoveryCodeDisplayViewModel();
 
         public MainViewModel()
         {
@@ -86,12 +94,17 @@ namespace RPG_Launcher.ViewModel
             HomeVM.HideView();
             AccountVM.HideView();
             LoginVM.HideView();
+            SubmitMfaCodeVM.HideView();
             RegisterVM.HideView();
             ConfirmationCodeVM.HideView();
             ResetPasswordVM.HideView();
             ReturnToLoginVM.HideView();
             ForgotPasswordVM.HideView();
             SubmitNewEmailVM.HideView();
+
+            MfaSetupVM.HideView();
+            RecoverMfaVM.HideView();
+            RecoveryCodeDisplayVM.HideView();
         }
 
 
@@ -129,6 +142,15 @@ namespace RPG_Launcher.ViewModel
             LoginVM.ShowView();
 
             CurrentViewModel = LoginVM;
+        }
+
+        public void ShowSubmitMfaCodeView(MfaContext context)
+        {
+            HideAllViews();
+            SubmitMfaCodeVM.ShowView();
+            SubmitMfaCodeVM.SetViewContext(context);
+
+            CurrentViewModel = SubmitMfaCodeVM;
         }
 
         public void ShowRegisterView()
@@ -192,12 +214,39 @@ namespace RPG_Launcher.ViewModel
 
         public void ShowSubmitNewEmailView()
         {
-            Trace.WriteLine("ShowSubmitNewEmailView() called.");
-
             HideAllViews();
             SubmitNewEmailVM.ShowView();
 
             CurrentViewModel = SubmitNewEmailVM;
+        }
+
+        public void ShowMfaSetupView(MfaContext context, string otpAuthLink)
+        {
+            HideAllViews();
+            MfaSetupVM.ShowView();
+            MfaSetupVM.SetViewContext(context);
+            MfaSetupVM.OtpAuthLink = otpAuthLink;
+
+            CurrentViewModel = MfaSetupVM;
+        }
+
+        public void ShowRecoverMfaView(MfaContext context)
+        {
+            HideAllViews();
+            RecoverMfaVM.ShowView();
+            RecoverMfaVM.SetViewContext(context);
+
+            CurrentViewModel = RecoverMfaVM;
+        }
+
+        public void ShowRecoveryCodeDisplayView(MfaContext context, string recoveryCode)
+        {
+            HideAllViews();
+            RecoveryCodeDisplayVM.ShowView();
+            RecoveryCodeDisplayVM.SetViewContext(context);
+            RecoveryCodeDisplayVM.RecoveryCode = recoveryCode;
+
+            CurrentViewModel = RecoveryCodeDisplayVM;
         }
     }
 }

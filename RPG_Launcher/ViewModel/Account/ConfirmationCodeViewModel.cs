@@ -160,10 +160,10 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.NewAccountConfirmation:
                     {
                         (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: true);
-                        if (StatusCode == 0)
+                        if (StatusCode == 1)
                         {
-                            // If status code is good, then email verification fully logged us in already, so move onto home view.
-                            MainViewModel.Instance.ShowHomeView();
+                            // If status code is good, then we are logged in but require MFA submission, so move onto MFA submission view.
+                            MainViewModel.Instance.ShowSubmitMfaCodeView(MainViewModel.MfaContext.InitialSetup);
                             return;
                         }
                         break;
@@ -197,7 +197,7 @@ namespace RPG_Launcher.ViewModel.Account
                         (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: false);
                         if (StatusCode == 0)
                         {
-                            // If verification is successful, then email has been fully changed, so return to account view.
+                            // If verification is successful and not for new account, then we are still fully logged in.
                             MainViewModel.Instance.ShowAccountView();
                             return;
                         }
