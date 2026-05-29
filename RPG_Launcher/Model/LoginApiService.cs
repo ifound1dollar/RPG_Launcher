@@ -290,9 +290,6 @@ namespace RPG_Launcher.Model
             //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
             //  should log the user out of everything).
 
-            bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken) return;
-
             try
             {
                 // Make request to API, no response or content but requires access token.
