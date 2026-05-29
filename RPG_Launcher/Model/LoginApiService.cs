@@ -178,7 +178,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(mfaCode))
             {
-                return (-1, "Submit MFA code failed: local access token missing or missing MFA code input");
+                return (-1, "Submit MFA code failed: missing MFA code input");
             }
 
             try
@@ -324,7 +324,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
             {
-                return (-1, "Resend email verification code failed: local access token missing");
+                return (-1, "Resend email verification code failed: could not refresh login session");
             }
 
             try
@@ -363,7 +363,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
             {
-                return (-1, "Email verification failed: local access token missing or confirmation code field empty");
+                return (-1, "Email verification failed: confirmation code field empty");
             }
 
             try
@@ -560,7 +560,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(newUsername))
             {
-                return (-1, "Change username failed: local access token missing or missing new username input");
+                return (-1, "Change username failed: missing new username input");
             }
 
             try
@@ -617,7 +617,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
             {
-                return (-1, "Request email change failed: local access token missing");
+                return (-1, "Request email change failed: could not refresh login session");
             }
 
             try
@@ -656,7 +656,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(confirmationCode))
             {
-                return (-1, "Initiate email change failed: local access token missing or missing confirmation code");
+                return (-1, "Initiate email change failed: missing confirmation code");
             }
 
             try
@@ -755,7 +755,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
             {
-                return (-1, "Setup MFA failed: local access token missing");
+                return (-1, "Setup MFA failed: could not refresh login session");
             }
 
             try
@@ -802,7 +802,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(mfaCode))
             {
-                return (-1, "Verify MFA setup failed: local access token missing or missing MFA code input");
+                return (-1, "Verify MFA setup failed: missing MFA code input");
             }
 
             try
@@ -824,7 +824,7 @@ namespace RPG_Launcher.Model
                     return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
-                // Parse raw response into MfaRecoveryKeyResponseModel.
+                // Parse raw response into MfaRecoveryCodeResponseModel.
                 var responseModel = await rawResponse.Content.ReadFromJsonAsync<MfaRecoveryCodeResponseModel>();
                 if (responseModel == null)
                 {
@@ -862,7 +862,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(recoveryCode))
             {
-                return (-1, "Recover MFA failed: local access token missing or missing recovery code input");
+                return (-1, "Recover MFA failed: missing recovery code input");
             }
 
             try
@@ -899,6 +899,59 @@ namespace RPG_Launcher.Model
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
                 return (-1, "Recover MFA failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Requests that the API regenerates the MFA recovery code for the currently-logged-in account. Only accepts
+        ///  an access token with full account access, which is automatically submitted with the API request. Returns
+        ///  a status code describing whether the new recovery code generation was successful, alongside the actual
+        ///  recovery code string if successful (error message otherwise).
+        /// </summary>
+        /// <returns> A status code describing whether the request was successful, and a recovery code in hex format if sucessful (error message otherwise). </returns>
+        public static async Task<(int, string)> RegenerateMfaRecoveryCode()
+        {
+            // Ensure new username and access token are not empty.
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken)
+            {
+                return (-1, "Regenerate MFA recovery code failed: could not refresh login session");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/regenerate-mfa-recovery-code");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Parse raw response into MfaRecoveryCodeResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<MfaRecoveryCodeResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1.
+                    return (-1, "Regenerate MFA recovery code failed: could not parse API response into usable object model");
+                }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, responseModel.RecoveryCode);     // Return recovery code for display purposes.
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Verify MFA setup failed: an unexpected error occurred during API request");
             }
         }
 
