@@ -1012,21 +1012,22 @@ namespace RPG_Launcher.Model
             // If no current access token OR access token is expiring within 1 minute (or already expired), try to get a new one.
             if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration - DateTime.UtcNow < TimeSpan.FromMinutes(1))
             {
-                // Try to login via refresh token. If returned code is not 0, then login has failed and we should return to login.
-                // IMPORTANT: If refresh login fails with status code 401, then the currently-stored refresh token has become
+                // Try to login via refresh token. If returned code is -1, then login has failed and we should return to login.
+                //  Otherwise, our returned access token is valid (but might have code 0, 1, 10, 20, or 30 based on account state).
+                // IMPORTANT: If refresh login fails (returns code -1), then the currently-stored refresh token has become
                 //  invalid. This will typically ONLY ever happen when this same account has been logged into by another device.
                 //  We should display an error message noting that the account was logged into on another device.
                 var (Code, Message) = await TryLoginFromRefreshToken();
-                if (Code != 0)
+                if (Code == -1)
                 {
                     _ = Logout();                                   // Do not await logout.
                     MainViewModel.Instance.ShowReturnToLoginView(true, "Could not refresh login session because your account was logged into by" +
                         " another device. If you did not perform this login, please re-login with MFA and reset your password.");
                     return false;
-                }    
+                }
             }
 
-            // Else access token is good OR we got new valid token, so return true.
+            // All codes EXCEPT -1 are good login codes, just with different success codes based on account state.
             return true;
         }
 
