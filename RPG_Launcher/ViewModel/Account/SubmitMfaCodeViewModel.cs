@@ -142,9 +142,6 @@ namespace RPG_Launcher.ViewModel.Account
                             return;
                         }
 
-                        // If MFA verification was successful, re-login with our refresh token (gets proper access token).
-                        await LoginApiService.TryLoginFromRefreshToken();
-
                         // If good status code, then API returned a recovery code that must be displayed.
                         MainViewModel.Instance.ShowRecoveryCodeDisplayView(context, Response);
                         break;

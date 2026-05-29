@@ -1,6 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using RPG_Launcher.Model.Responses;
 using RPG_Launcher.Util;
+using RPG_Launcher.ViewModel;
 using RPG_Login_API.Models.UserResponses;
 using System;
 using System.Collections.Generic;
@@ -535,7 +536,7 @@ namespace RPG_Launcher.Model
 
                 // Else successful, so immediately log out and return 0 for success.
                 AppData.PasswordResetToken = string.Empty;
-                await Logout();
+                _ = Logout();                                   // Do not await logout.
                 return (0, "New password submission successful, user must re-login");
             }
             catch (Exception ex)
@@ -831,7 +832,13 @@ namespace RPG_Launcher.Model
                     return (-1, "Verify MFA setup failed: could not parse API response into usable object model");
                 }
 
-                return (0, responseModel.RecoveryCode);
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.Email;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, responseModel.RecoveryCode);     // Return recovery code for display purposes.
             }
             catch (Exception ex)
             {
@@ -955,9 +962,18 @@ namespace RPG_Launcher.Model
             // If no current access token OR access token is expiring within 1 minute (or already expired), try to get a new one.
             if (string.IsNullOrEmpty(AppData.AccessToken) || AppData.AccessTokenExpiration - DateTime.UtcNow < TimeSpan.FromMinutes(1))
             {
-                // Try to login via refresh token, returning false if return code is != 0 (anything other than 0 does not allow access).
+                // Try to login via refresh token. If returned code is not 0, then login has failed and we should return to login.
+                // IMPORTANT: If refresh login fails with status code 401, then the currently-stored refresh token has become
+                //  invalid. This will typically ONLY ever happen when this same account has been logged into by another device.
+                //  We should display an error message noting that the account was logged into on another device.
                 var (Code, Message) = await TryLoginFromRefreshToken();
-                if (Code != 0) return false;
+                if (Code != 0)
+                {
+                    _ = Logout();                                   // Do not await logout.
+                    MainViewModel.Instance.ShowReturnToLoginView(true, "Could not refresh login session because your account was logged into by" +
+                        " another device. If you did not perform this login, please re-login with MFA and reset your password.");
+                    return false;
+                }    
             }
 
             // Else access token is good OR we got new valid token, so return true.

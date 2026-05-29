@@ -74,13 +74,7 @@ namespace RPG_Launcher.ViewModel.General
 
         private void ExecuteReturnButtonClickedCommand(object? obj)
         {
-            // Disable return button before awaiting to prevent button spam.
             IsButtonInputEnabled = false;
-
-            // We may have already logged out, but log out again just to be sure. 
-            // NOTE: We do not await logout (fire-and-forget).
-            _ = LoginApiService.Logout();
-
             MainViewModel.Instance.ShowLoginView();
         }
 

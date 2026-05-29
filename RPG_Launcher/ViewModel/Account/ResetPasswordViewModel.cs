@@ -127,7 +127,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 SecurePassword.Clear();
 
-                // Code 0 indicates success, password has been reset and we must now log in again.
+                // Code 0 indicates success, password has been reset and we must now log in again. Logs out automatically within API method.
                 MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Password reset successfully, please log in again.");
 
                 // Also updated saved username to the newly-reset account's username.
