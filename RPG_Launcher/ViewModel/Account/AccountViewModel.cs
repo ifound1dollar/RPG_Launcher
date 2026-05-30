@@ -13,7 +13,7 @@ namespace RPG_Launcher.ViewModel.Account
 {
     public class AccountViewModel : ViewModelBase
     {
-        private bool isAccountViewVisible = false;
+        private bool isViewVisible = false;
 
         private string accountUsername = string.Empty;
         private string accountEmail = string.Empty;
@@ -49,6 +49,8 @@ namespace RPG_Launcher.ViewModel.Account
         public ICommand ChangeUsernameClickedCommand { get; }
         public ICommand ChangeEmailClickedCommand { get; }
         public ICommand ChangePasswordClickedCommand { get; }
+        public ICommand ResetMfaConfigurationClickedCommand { get; }
+        public ICommand RegenerateRecoveryCodeClickedCommand { get; }
         public ICommand LogoutClickedCommand { get; }
         public ICommand CloseClickedCommand { get; }
 
@@ -59,13 +61,17 @@ namespace RPG_Launcher.ViewModel.Account
             ChangeUsernameClickedCommand = new ViewModelCommand(ExecuteChangeUsernameClickedCommand, CanExecuteChangeUsernameClickedCommand);
             ChangeEmailClickedCommand = new ViewModelCommand(ExecuteChangeEmailClickedCommand, CanExecuteChangeEmailClickedCommand);
             ChangePasswordClickedCommand = new ViewModelCommand(ExecuteChangePasswordClickedCommand, CanExecuteChangePasswordClickedCommand);
+
+            ResetMfaConfigurationClickedCommand = new ViewModelCommand(ExecuteResetMfaConfigurationClickedCommand, CanExecuteResetMfaConfigurationClickedCommand);
+            RegenerateRecoveryCodeClickedCommand = new ViewModelCommand(ExecuteRegenerateRecoveryCodeClickedCommand, CanExecuteRegenerateRecoveryCodeClickedCommand);
+
             LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
             CloseClickedCommand = new ViewModelCommand(ExecuteCloseClickedCommand, CanExecuteCloseClickedCommand);
         }
 
         public override void HideView()
         {
-            isAccountViewVisible = false;
+            isViewVisible = false;
         }
 
         public override void ShowView()
@@ -75,7 +81,7 @@ namespace RPG_Launcher.ViewModel.Account
             ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
 
-            isAccountViewVisible = true;
+            isViewVisible = true;
         }
 
 
@@ -90,7 +96,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteChangeUsernameClickedCommand(object? obj)
         {
-            return isAccountViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -117,11 +123,10 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteChangeEmailClickedCommand(object? obj)
         {
-            return isAccountViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion
-
 
         #region Private: ChangePasswordClickedCommand (async)
 
@@ -142,10 +147,41 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteChangePasswordClickedCommand(object? obj)
         {
-            return isAccountViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion
+
+
+        #region Private: ResetMfaConfigurationClickedCommand
+
+        private void ExecuteResetMfaConfigurationClickedCommand(object? obj)
+        {
+            MainViewModel.Instance.ShowManageMfaView(ManageMfaViewModel.ManageMfaContext.ResetMfa);
+        }
+
+        private bool CanExecuteResetMfaConfigurationClickedCommand(object? obj)
+        {
+            return isViewVisible && isButtonInputEnabled;
+        }
+
+        #endregion
+
+        #region Private: RegenerateRecoveryCodeClickedCommand
+
+        private void ExecuteRegenerateRecoveryCodeClickedCommand(object? obj)
+        {
+            MainViewModel.Instance.ShowManageMfaView(ManageMfaViewModel.ManageMfaContext.GenerateNewRecovery);
+        }
+
+        private bool CanExecuteRegenerateRecoveryCodeClickedCommand(object? obj)
+        {
+            return isViewVisible && isButtonInputEnabled;
+        }
+
+        #endregion
+
+
 
         #region Private: LogoutClickedCommand (async)
 
@@ -160,7 +196,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteLogoutClickedCommand(object? obj)
         {
-            return isAccountViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -174,7 +210,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteCloseClickedCommand(object? obj)
         {
-            return isAccountViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion

@@ -55,6 +55,7 @@ namespace RPG_Launcher.ViewModel
         private MfaSetupViewModel MfaSetupVM { get; } = new MfaSetupViewModel();
         private RecoverMfaViewModel RecoverMfaVM { get; } = new RecoverMfaViewModel();
         private RecoveryCodeDisplayViewModel RecoveryCodeDisplayVM { get; } = new RecoveryCodeDisplayViewModel();
+        private ManageMfaViewModel ManageMfaVM { get; } = new ManageMfaViewModel();
 
         public MainViewModel()
         {
@@ -105,6 +106,7 @@ namespace RPG_Launcher.ViewModel
             MfaSetupVM.HideView();
             RecoverMfaVM.HideView();
             RecoveryCodeDisplayVM.HideView();
+            ManageMfaVM.HideView();
         }
 
 
@@ -247,6 +249,15 @@ namespace RPG_Launcher.ViewModel
             RecoveryCodeDisplayVM.RecoveryCode = recoveryCode;
 
             CurrentViewModel = RecoveryCodeDisplayVM;
+        }
+
+        public void ShowManageMfaView(ManageMfaViewModel.ManageMfaContext context)
+        {
+            HideAllViews();
+            ManageMfaVM.ShowView();
+            ManageMfaVM.SetViewContext(context);
+
+            CurrentViewModel = ManageMfaVM;
         }
     }
 }

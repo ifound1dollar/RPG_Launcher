@@ -27,13 +27,20 @@
                        FontSize="40"
                        FontFamily="Segoe UI"
                        TextAlignment="Center"
-                       Margin="0,50,0,0"/>
+                       Margin="0,40,0,0"/>
+
+            <TextBlock Text="Basic Info"
+                       Foreground="LightGray"
+                       FontSize="24"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Left"
+                       Margin="130,20,0,0"/>
 
             <StackPanel Name="UsernameRow"
                         Orientation="Horizontal"
                         Background="#A016141f"
                         Height="40"
-                        Margin="120,50,120,0">
+                        Margin="120,10,120,0">
                 <TextBlock Text="Username:"
                          Width="100"
                          Foreground="SlateGray"
@@ -219,13 +226,114 @@
                 </Button>
             </StackPanel>
 
+            <TextBlock Text="Multi-Factor Authentication"
+                       Foreground="LightGray"
+                       FontSize="24"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Left"
+                       Margin="130,25,0,0"/>
+
+            <TextBlock Text="Multi-factor authentication is required for all accounts and must be set up on account creation before it can be used. Manage the current MFA configuration here."
+                       Foreground="LightBlue"
+                       FontSize="14"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Margin="120,5,120,0"/>
+
+            <StackPanel Name="ManageMfaRow"
+                        Orientation="Horizontal"
+                        Background="#A016141f"
+                        Height="50"
+                        Margin="120,10,120,0">
+                <Button Name="ButtonResetMfaConfiguration"
+                        Command="{Binding ResetMfaConfigurationClickedCommand}"
+                        Width="200"
+                        Height="35"
+                        Foreground="LightGray"
+                        Content="Reset MFA Configuration"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="45,0,25,0"
+                        IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                
+                <Button Name="ButtonRegenerateMfaRecoveryCode"
+                        Command="{Binding RegenerateRecoveryCodeClickedCommand}"
+                        Width="200"
+                        Height="35"
+                        Foreground="LightGray"
+                        Content="Regenerate Recovery Code"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="25,0,30,0"
+                        IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+
             <!-- Error message. -->
             <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
                         Foreground="IndianRed"
                         FontSize="12"
                         FontFamily="Segoe UI"
                         TextWrapping="Wrap"
-                        Margin="200,20,200,0"/>
+                        Margin="200,15,200,0"/>
 
             <Button Name="ButtonLogout"
                     Command="{Binding LogoutClickedCommand}"
@@ -268,7 +376,7 @@
                     Content="CLOSE SETTINGS"
                     FontSize="16"
                     Cursor="Hand"
-                    Margin="320,200,320,0"
+                    Margin="320,50,320,0"
                     IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
