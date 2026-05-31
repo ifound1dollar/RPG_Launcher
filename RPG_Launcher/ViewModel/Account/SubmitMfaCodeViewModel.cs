@@ -115,7 +115,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case MainViewModel.MfaContext.MfaLogin:
                     {
                         // Login MFA submission will behave differently from setup.
-                        var (StatusCode, Response) = await LoginApiService.SubmitMfaCode(MfaCode);
+                        var (StatusCode, Response) = await LoginApiService.SubmitMfaCodeForLogin(MfaCode);
                         if (StatusCode != 0)
                         {
                             // If status code is bad, will just be an error message.
