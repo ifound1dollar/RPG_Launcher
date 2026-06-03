@@ -59,5 +59,24 @@ namespace RPG_Launcher
             Application.Current.Shutdown();
         }
 
+        private void Window_Activated(object sender, EventArgs e)
+        {
+            // Set the title bar to the 'active' color when activated.
+            var converter = new BrushConverter();
+            TitleBarRectangle.Fill = (Brush?)converter.ConvertFromString("#AA000000");
+            ButtonSettings.Foreground = Brushes.GhostWhite;
+            ButtonMinimize.Foreground = Brushes.GhostWhite;
+            ButtonClose.Foreground = Brushes.GhostWhite;
+        }
+
+        private void Window_Deactivated(object sender, EventArgs e)
+        {
+            // Set the title bar to the 'inactive' color when deactivated.
+            var converter = new BrushConverter();
+            TitleBarRectangle.Fill = (Brush?)converter.ConvertFromString("#AA222222");
+            ButtonSettings.Foreground = Brushes.DarkGray;
+            ButtonMinimize.Foreground= Brushes.DarkGray;
+            ButtonClose.Foreground = Brushes.DarkGray;
+        }
     }
 }

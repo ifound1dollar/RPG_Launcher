@@ -13,7 +13,9 @@
         Background="Transparent"
         AllowsTransparency="True"
         MouseLeftButtonDown="Universal_MouseLeftButtonDown"
-        Icon="/Images/logo.ico">
+        Icon="/Images/logo.ico"
+        Activated="Window_Activated"
+        Deactivated="Window_Deactivated">
 
     <!-- We can also set the DataContext in the codebehind. The DataContext
         is used to directly access fields and properties within the bound
@@ -47,8 +49,10 @@
                     <ImageBrush ImageSource="/Images/background.png"/>
                 </Rectangle.Fill>
             </Rectangle>
-            <!-- Create a slightly darker title bar. -->
-            <Rectangle Grid.Row="0" Fill="#AA000000"/>
+            <!-- Darker title bar, updated on activate/deactivate in code-behind. -->
+            <Rectangle Name="TitleBarRectangle"
+                       Grid.Row="0"
+                       Fill="#AA000000"/>
 
             <!-- Sub-grid for title bar column definitions. -->
             <Grid Name="ColumnGrid">

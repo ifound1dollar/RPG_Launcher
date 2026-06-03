@@ -84,6 +84,7 @@
                         Margin="0,200,0,0"/>
 
             <Button Name="PlayGameButton"
+                    Focusable="False"
                     Command="{Binding PlayGameClickedCommand}"
                     Width="250"
                     Height="75"
@@ -96,13 +97,13 @@
                     IsEnabled="{Binding IsPlayGameButtonEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
-                        <Setter Property="Background" Value="#ff12ad12"/>
+                        <Setter Property="Background" Value="#ff029d02"/>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="Lime"/>
+                                <Setter Property="Background" Value="LimeGreen"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="LimeGreen"/>
+                                <Setter Property="Background" Value="#ff16b116"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Background" Value="#bb444444"/>

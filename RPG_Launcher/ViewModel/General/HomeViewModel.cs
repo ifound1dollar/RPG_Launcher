@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -72,9 +73,10 @@ namespace RPG_Launcher.ViewModel.General
             playGameButtonTimer.Start();
 
             // Make API request to get a connect token, which is required to actually connect to the online service.
-            int statusCode = 0; string response = Guid.NewGuid().ToString();    // TODO: ACTUALLY IMPLEMENT API REQUEST
+            (int statusCode, string response) = await LoginApiService.PlayGame();
             if (statusCode != 0)
             {
+                // Play game will be re-enabled once timer elapses, so do not explicitly re-enable here.
                 ErrorMessage = response;
                 return;
             }
@@ -112,9 +114,7 @@ namespace RPG_Launcher.ViewModel.General
                     ErrorMessage = "Failed to start game process, please try again.";
                     return;
                 }
-
-                // Else process started successfully, so store ID.
-                gameProcessId = p.Id;
+                gameProcessId = p.Id;   // Process started successfully, so store ID.
             }
             catch (Exception ex)
             {
@@ -137,21 +137,24 @@ namespace RPG_Launcher.ViewModel.General
             {
                 // Get process by ID and make sure the name matches.
                 var proc = Process.GetProcessById(gameProcessId);
-                if (proc == null || proc.ProcessName != AppData.GameExecutableName)
+                if (proc != null && proc.ProcessName == AppData.GameExecutableName)
                 {
-                    // If mismatch (not running), stop timer and enable button.
-                    gameProcessId = -1;
-                    playGameButtonTimer.Stop();
-                    IsPlayGameButtonEnabled = true;
+                    // If match, simply return.
+                    return;
                 }
             }
             catch (Exception)
             {
-                // Throws exception if not running, so re-enable button and stop timer.
-                gameProcessId = -1;
-                playGameButtonTimer.Stop();
-                IsPlayGameButtonEnabled = true;
+                // Allow control to continue to below.
             }
+
+            // If we do not return above, then game process is not running so focus window, re-enable button, and stop timer.
+            gameProcessId = -1;
+            playGameButtonTimer.Stop();
+
+            App.Current.MainWindow.WindowState = WindowState.Normal;    // Un-minimizes if minimized.
+            App.Current.MainWindow.Activate();                          // Focuses entire application.
+            IsPlayGameButtonEnabled = true;
         }
 
         #endregion
