@@ -110,22 +110,27 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // Determine which API call to make based on context (submit MFA code is different from verifying MFA setup).
+            int StatusCode; string Response = string.Empty;
             switch (context)
             {
                 case MainViewModel.MfaContext.MfaLogin:
                     {
-                        // Login MFA submission will behave differently from setup.
-                        var (StatusCode, Response) = await LoginApiService.SubmitMfaCodeForLogin(MfaCode);
-                        if (StatusCode != 0)
+                        // Login MFA submission will behave differently from MFA setup.
+                        (StatusCode, Response) = await LoginApiService.SubmitMfaCodeForLogin(MfaCode);
+                        if (StatusCode == 0)
                         {
-                            // If status code is bad, will just be an error message.
-                            ErrorMessage = Response;
-                            IsButtonInputEnabled = true;
+                            // If status code is good, so we are now fully logged in and can move onto home view.
+                            MainViewModel.Instance.ShowHomeView();
                             return;
                         }
-
-                        // Else status code is good, so we are now fully logged in and can move onto home view.
-                        MainViewModel.Instance.ShowHomeView();
+                        else if (StatusCode >= 1 && StatusCode < 100)
+                        {
+                            // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Correct MFA code submitted, but unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
                         break;
                     }
                 case MainViewModel.MfaContext.InitialSetup:
@@ -133,21 +138,28 @@ namespace RPG_Launcher.ViewModel.Account
                 case MainViewModel.MfaContext.ManualSetup:
                     {
                         // All setup tasks perform a different API call.
-                        var (StatusCode, Response) = await LoginApiService.VerifyMfaSetup(MfaCode);
-                        if (StatusCode != 0)
+                        (StatusCode, Response) = await LoginApiService.VerifyMfaSetup(MfaCode);
+                        if (StatusCode == 0)
                         {
-                            // If status code is bad, will just be an error message.
-                            ErrorMessage = Response;
-                            IsButtonInputEnabled = true;
+                            // If good status code, then API returned a recovery code that must be displayed.
+                            MainViewModel.Instance.ShowRecoveryCodeDisplayView(context, Response);
                             return;
                         }
-
-                        // If good status code, then API returned a recovery code that must be displayed.
-                        MainViewModel.Instance.ShowRecoveryCodeDisplayView(context, Response);
+                        else if (StatusCode >= 1 && StatusCode < 100)
+                        {
+                            // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Multi-factor authentication set up successfully, but unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
                         break;
                     }
             }
 
+            // If no explicit return in switch statement, just display error message from response (400 or 500 code).
+            ErrorMessage = Response;
+            IsButtonInputEnabled = true;
         }
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)

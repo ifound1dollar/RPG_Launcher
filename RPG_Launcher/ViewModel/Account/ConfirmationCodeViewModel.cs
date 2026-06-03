@@ -166,6 +166,14 @@ namespace RPG_Launcher.ViewModel.Account
                             MainViewModel.Instance.ShowSubmitMfaCodeView(MainViewModel.MfaContext.InitialSetup);
                             return;
                         }
+                        else if (StatusCode >= 0 && StatusCode < 100)
+                        {
+                            // If code 0, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Email verified successfully, but unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
                         break;
                     }
                 case CodeContext.ForgotPassword:
@@ -199,6 +207,14 @@ namespace RPG_Launcher.ViewModel.Account
                         {
                             // If verification is successful and not for new account, then we are still fully logged in.
                             MainViewModel.Instance.ShowAccountView();
+                            return;
+                        }
+                        else if (StatusCode >= 1 && StatusCode < 100)
+                        {
+                            // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Email changed successfully, but unexpected account state detected in response. Please log in again.");
                             return;
                         }
                         break;

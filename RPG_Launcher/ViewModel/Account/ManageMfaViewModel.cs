@@ -130,6 +130,14 @@ namespace RPG_Launcher.ViewModel.Account
                             MainViewModel.Instance.ShowRecoveryCodeDisplayView(MainViewModel.MfaContext.ManualSetup, response);
                             return;
                         }
+                        else if (statusCode >= 1 && statusCode < 100)
+                        {
+                            // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Could not regenerate recovery code, unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
                         break;
                     }
                 // Do nothing for None.

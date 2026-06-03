@@ -110,6 +110,13 @@ namespace RPG_Launcher.ViewModel.Account
                 MainViewModel.Instance.ShowAccountView();
                 return;
             }
+            else if (StatusCode >= 1 && StatusCode < 100)
+            {
+                // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                _ = LoginApiService.Logout();
+                MainViewModel.Instance.ShowReturnToLoginView(true,
+                    "Username changed successfully, but unexpected account state detected in response. Please log in again.");
+            }
             else
             {
                 // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
