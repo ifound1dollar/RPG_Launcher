@@ -30,18 +30,34 @@
                     Command="{Binding AccountClickedCommand}"
                     Width="150"
                     Foreground="LightGray"
-                    Background="DarkSlateBlue"
                     Content="ACCOUNT"
                     FontSize="20"
                     Cursor="Hand"
                     Margin="10,10,0,0">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#4b4094"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="SlateBlue"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#5a4cb5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#bb444444"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border CornerRadius="10"
-                Background="{TemplateBinding Background}">
+                                Background="{TemplateBinding Background}">
                             <ContentPresenter VerticalAlignment="Center"
-                              HorizontalAlignment="Center"
-                              Margin="0,0,0,2"/>
+                                              HorizontalAlignment="Center"
+                                              Margin="0,0,0,2"/>
                         </Border>
                     </ControlTemplate>
                 </Button.Template>
@@ -49,13 +65,66 @@
 
         </StackPanel>
 
-        <TextBlock Grid.Row="1"
-                    Text="HOME SCREEN"
+        <StackPanel Orientation="Vertical"
+                    Grid.Row="1">
+            <TextBlock Text="HOME SCREEN"
+                        Foreground="GhostWhite"
+                        FontSize="50"
+                        FontFamily="Segoe UI"
+                        TextAlignment="Center"
+                        Margin="0,50,0,0"/>
+
+            <!-- Error message. -->
+            <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
+                       Width="300"
+                        Foreground="IndianRed"
+                        FontSize="12"
+                        FontFamily="Segoe UI"
+                        TextWrapping="Wrap"
+                        Margin="0,200,0,0"/>
+
+            <Button Name="PlayGameButton"
+                    Command="{Binding PlayGameClickedCommand}"
+                    Width="250"
+                    Height="75"
                     Foreground="GhostWhite"
-                    FontSize="50"
-                    FontFamily="Segoe UI"
-                    TextAlignment="Center"
-                    Margin="0,200,0,0"/>
+                    Content="PLAY GAME"
+                    FontSize="32"
+                    FontFamily="Segoe UI Black"
+                    Cursor="Hand"
+                    Margin="0,20,0,0"
+                    IsEnabled="{Binding IsPlayGameButtonEnabled}">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#ff12ad12"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="Lime"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="LimeGreen"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#bb444444"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border CornerRadius="5"
+                                Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="Center"
+                                              Margin="0,0,0,2"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+        </StackPanel>
+        
 
     </Grid>
 </UserControl>

@@ -71,11 +71,13 @@ namespace RPG_Launcher.Util
 
 
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.9.8";
+        private static readonly string version = "0.10.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataPath = "appdata.json";
-        // Default path to executable.
-        private static readonly string defaultPathToExecutable = "/";
+        // Default path to executable. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.
+        private static readonly string defaultPathToExecutable = "E:\\Unreal Engine\\UE_5.6\\Engine\\Binaries\\Win64\\";
+        // Executable name, appended to path to actually start the game process.
+        private static readonly string executableName = "UnrealEditor";
 
 
 
@@ -83,6 +85,9 @@ namespace RPG_Launcher.Util
 
         // Publicly-readable application version.
         public static string Version { get; private set; } = version;   // Not populated from file.
+
+        // Executable name is the actual name of the executable game file.
+        public static string ExecutableName { get => executableName; }
 
         // Timestamp (string format derived from DateTime) that is generated the first time the application is run.
         public static string Timestamp { get; private set; } = string.Empty;
@@ -134,6 +139,7 @@ namespace RPG_Launcher.Util
                 SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, pathToExecutable));
             }
         }
+
 
         #endregion
 
