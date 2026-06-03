@@ -47,12 +47,12 @@ namespace RPG_Launcher.Util
 
             public static AppDataJson CreateNew()
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty, string.Empty, defaultPathToExecutable);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), string.Empty, string.Empty, defaultGameInstallDirectory);
             }
 
             public static AppDataJson CreateNewWithUsername(string username)
             {
-                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username, string.Empty, defaultPathToExecutable);
+                return new AppDataJson(version, DateTime.UtcNow.ToString(), Guid.NewGuid().ToString(), username, string.Empty, defaultGameInstallDirectory);
             }
 
             public static AppDataJson UpdateExistingVersion(AppDataJson appData, string version)
@@ -71,13 +71,13 @@ namespace RPG_Launcher.Util
 
 
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.10.0";
+        private static readonly string version = "0.11.0";
         // Path to appdata.json file (should be working directory).
-        private static readonly string appDataPath = "appdata.json";
-        // Default path to executable. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.
-        private static readonly string defaultPathToExecutable = "E:\\Unreal Engine\\UE_5.6\\Engine\\Binaries\\Win64\\";
-        // Executable name, appended to path to actually start the game process.
-        private static readonly string executableName = "UnrealEditor";
+        private static readonly string appDataFilePath = "appdata.json";
+        // Default game install directory. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.
+        private static readonly string defaultGameInstallDirectory = "E:\\Unreal Engine\\UE_5.6\\Engine\\Binaries\\Win64";
+        // Executable name, appended to path to actually start the game process. Do not include .exe suffix.
+        private static readonly string gameExecutableName = "UnrealEditor";
 
 
 
@@ -85,9 +85,6 @@ namespace RPG_Launcher.Util
 
         // Publicly-readable application version.
         public static string Version { get; private set; } = version;   // Not populated from file.
-
-        // Executable name is the actual name of the executable game file.
-        public static string ExecutableName { get => executableName; }
 
         // Timestamp (string format derived from DateTime) that is generated the first time the application is run.
         public static string Timestamp { get; private set; } = string.Empty;
@@ -110,7 +107,7 @@ namespace RPG_Launcher.Util
             set
             {
                 savedUsername = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, PathToExecutable));
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
             }
         }
 
@@ -124,21 +121,25 @@ namespace RPG_Launcher.Util
             set
             {
                 savedEmail = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, PathToExecutable));
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
             }
         }
 
-        // Path to executable is the path to the folder/directory where the game executable is located.
-        private static string pathToExecutable = string.Empty;
-        public static string PathToExecutable
+        // Install directory is the path to the folder/directory where the game executable is located.
+        private static string gameInstallDirectory = string.Empty;
+        public static string GameInstallDirectory
         {
-            get => pathToExecutable;
+            get => gameInstallDirectory;
             set
             {
-                pathToExecutable = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, pathToExecutable));
+                gameInstallDirectory = value;
+                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, gameInstallDirectory));
             }
         }
+
+        // Executable name is the actual name of the executable game file.
+        public static string GameExecutableName { get => gameExecutableName; }
+
 
 
         #endregion
@@ -212,7 +213,7 @@ namespace RPG_Launcher.Util
                 AppDataJson? appData;
 
                 // First, check if appdata.json file exists.
-                if (!File.Exists(appDataPath))
+                if (!File.Exists(appDataFilePath))
                 {
                     // If file does not exist, create a new file with initial-run data.
                     appData = AppDataJson.CreateNew();
@@ -221,7 +222,7 @@ namespace RPG_Launcher.Util
                     // Store newly-generated data in static fields (saved username remains empty).
                     Timestamp = appData.Timestamp;
                     ClientGuid = Guid.Parse(appData.ClientGuid);
-                    PathToExecutable = appData.PathToExecutable;    // Uses default path on AppDataJson creation.
+                    GameInstallDirectory = appData.PathToExecutable;    // Uses default path on AppDataJson creation.
 
                     // Since file does not exist, we cannot read refresh token, so reset token and return.
                     DataProtection.ResetRefreshToken();
@@ -247,7 +248,7 @@ namespace RPG_Launcher.Util
                     ClientGuid = Guid.Parse(appData.ClientGuid);
                     SavedUsername = appData.SavedUsername;
                     SavedEmail = appData.SavedEmail;
-                    PathToExecutable = appData.PathToExecutable;
+                    GameInstallDirectory = appData.PathToExecutable;
                 }
             }
             catch (Exception ex)
@@ -267,7 +268,7 @@ namespace RPG_Launcher.Util
         {
             try
             {
-                return JsonSerializer.Deserialize<AppDataJson>(File.ReadAllText(appDataPath));
+                return JsonSerializer.Deserialize<AppDataJson>(File.ReadAllText(appDataFilePath));
             }
             catch (Exception ex)
             {
@@ -288,7 +289,7 @@ namespace RPG_Launcher.Util
             try
             {
                 string jsonString = JsonSerializer.Serialize(appInfo, options);
-                File.WriteAllText(appDataPath, jsonString);
+                File.WriteAllText(appDataFilePath, jsonString);
             }
             catch (Exception ex)
             {

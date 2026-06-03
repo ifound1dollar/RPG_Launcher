@@ -6,6 +6,7 @@
              xmlns:vmg="clr-namespace:RPG_Launcher.ViewModel.General"
              xmlns:v="clr-namespace:RPG_Launcher.View"
              xmlns:va="clr-namespace:RPG_Launcher.View.Account"
+             xmlns:vg="clr-namespace:RPG_Launcher.View.General"
              xmlns:local="clr-namespace:RPG_Launcher"
              Startup="Application_Startup"
              Exit="Application_Exit">
@@ -20,6 +21,9 @@
             then we flip back and forth between view models as necessary using commands
             within the MainViewModel. -->
     <Application.Resources>
+        <DataTemplate DataType="{x:Type vmg:SettingsViewModel}">
+            <vg:SettingsView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vmg:EntryViewModel}">
             <v:EntryView/>
         </DataTemplate>

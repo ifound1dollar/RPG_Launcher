@@ -27,6 +27,9 @@ namespace RPG_Launcher.ViewModel
         private string windowTitle;
         private ViewModelBase currentViewModel;
 
+        private bool isSettingsViewOpen = false;
+        private ViewModelBase settingsRememberViewModel;
+
         // View element properties
         public string WindowTitle
         {
@@ -40,6 +43,7 @@ namespace RPG_Launcher.ViewModel
         }
 
         // Sub-viewmodels (read-only)
+        private SettingsViewModel SettingsVM { get; } = new SettingsViewModel();
         private EntryViewModel EntryVM { get; } = new EntryViewModel();
         private HomeViewModel HomeVM { get; } = new HomeViewModel();
         private AccountViewModel AccountVM { get; } = new AccountViewModel();
@@ -57,12 +61,18 @@ namespace RPG_Launcher.ViewModel
         private RecoveryCodeDisplayViewModel RecoveryCodeDisplayVM { get; } = new RecoveryCodeDisplayViewModel();
         private ManageMfaViewModel ManageMfaVM { get; } = new ManageMfaViewModel();
 
+        // Commands
+        public ICommand SettingsButtonClickedCommand { get; }
+
         public MainViewModel()
         {
+            SettingsButtonClickedCommand = new ViewModelCommand(ExecuteSettingsButtonClickedCommand, CanExecuteSettingsButtonClickedCommand);
+
             Instance = this;
 
             windowTitle = string.Empty;     // Make window title empty, but is set in App.xaml.cs.
             currentViewModel = EntryVM;     // Default to HomeViewModel, but don't show yet. Set local property (no event).
+            settingsRememberViewModel = currentViewModel;
 
             // Set timer to automatically call the API PingInLauncher method to notify it that we are open and logged in.
             System.Timers.Timer timer = new(60000);     // Once per minute.
@@ -110,6 +120,8 @@ namespace RPG_Launcher.ViewModel
         }
 
 
+
+        #region Public: View Showing
 
         public void ShowEntryView()
         {
@@ -259,5 +271,39 @@ namespace RPG_Launcher.ViewModel
 
             CurrentViewModel = ManageMfaVM;
         }
+
+        #endregion
+
+        #region Private: SettingsButtonClickedCommand
+
+        private void ExecuteSettingsButtonClickedCommand(object? obj)
+        {
+            // TOGGLE BETWEEN SHOWING AND HIDING, USING LOCAL VARIABLE
+            if (isSettingsViewOpen)
+            {
+                SettingsVM.HideView();
+                isSettingsViewOpen = false;
+                
+                // Return current view model to the temporarily-stored previous VM.
+                CurrentViewModel = settingsRememberViewModel;
+            }
+            else
+            {
+                SettingsVM.ShowView();
+                isSettingsViewOpen = true;
+
+                // Store the current view model temporarily, then set it to settings for now.
+                settingsRememberViewModel = CurrentViewModel;
+                CurrentViewModel = SettingsVM;
+            }
+        }
+
+        private bool CanExecuteSettingsButtonClickedCommand(object? obj)
+        {
+            // Always can toggle.
+            return true;
+        }
+
+        #endregion
     }
 }

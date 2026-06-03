@@ -55,6 +55,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition Width="30px"/>
+                    <ColumnDefinition Width="30px"/>
                     <ColumnDefinition Width="32px"/>
                 </Grid.ColumnDefinitions>
 
@@ -65,6 +66,41 @@
                            VerticalAlignment="Center"
                            Margin="10,0,0,2"/>
 
+                <Button Name="ButtonSettings"
+                        Command="{Binding SettingsButtonClickedCommand}"
+                        Content="⚙️"
+                        Foreground="GhostWhite"
+                        FontSize="16"
+                        FontFamily="Segoe UI Semibold"
+                        Cursor="Hand"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Focusable="False">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="Gray"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="DimGray"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="0"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Top"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="-1,4,0,0"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
                 <Button Name="ButtonMinimize"
                         Content="-"
                         Foreground="GhostWhite"
@@ -72,7 +108,7 @@
                         FontFamily="Segoe UI Semibold"
                         Cursor="Hand"
                         Grid.Row="0"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         Focusable="False"
                         Click="ButtonMinimize_Click">
                     <Button.Style>
@@ -106,7 +142,7 @@
                         FontFamily="Segoe UI Semibold"
                         Cursor="Hand"
                         Grid.Row="0"
-                        Grid.Column="2"
+                        Grid.Column="3"
                         Focusable="False"
                         Click="ButtonClose_Click">
                     <Button.Style>

@@ -85,9 +85,9 @@ namespace RPG_Launcher.ViewModel.General
                 // TODO: UPDATE WITH COMPILED BINARY LAUNCH INSTEAD OF UNREAL EDITOR
                 ProcessStartInfo info = new()
                 {
-                    FileName = AppData.PathToExecutable + AppData.ExecutableName + ".exe",  // IS CURRENTLY UNREAL EDITOR
+                    FileName = AppData.GameInstallDirectory + "\\" + AppData.GameExecutableName + ".exe",   // IS CURRENTLY UNREAL EDITOR
                     Arguments = $"\"E:\\Unreal Projects\\RPG_Main\\RPG_Main.uproject\" -game -connectToken={response}",
-                    UseShellExecute = false                                                 // False ensures PID is returned.
+                    UseShellExecute = false                                                                 // False ensures PID is returned.
                 };
 
                 // Actually start the process, resetting process ID to -1 if failure then returning.
@@ -124,7 +124,7 @@ namespace RPG_Launcher.ViewModel.General
             {
                 // Get process by ID and make sure the name matches.
                 var proc = Process.GetProcessById(gameProcessId);
-                if (proc == null || proc.ProcessName != AppData.ExecutableName)
+                if (proc == null || proc.ProcessName != AppData.GameExecutableName)
                 {
                     // If mismatch (not running), stop timer and enable button.
                     gameProcessId = -1;
