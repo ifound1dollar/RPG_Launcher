@@ -79,18 +79,32 @@ namespace RPG_Launcher.ViewModel.General
                 return;
             }
 
+            // Create ProcessStartInfo for the future process, with different behavior based on whether development or release.
+            ProcessStartInfo info;
+            if (AppData.IsDevelopment)
+            {
+                // For development, the executable is UnrealEditor.exe. We have to pass in the game .uproject file path to run.
+                info = new ProcessStartInfo
+                {
+                    FileName = AppData.GameInstallDirectory + "\\" + AppData.GameExecutableName + ".exe",
+                    Arguments = $"\"E:\\Unreal Projects\\RPG_Main\\RPG_Main.uproject\" -game -connectToken={response}",
+                    UseShellExecute = false                                                     // False ensures PID is returned.
+                };
+            }
+            else
+            {
+                // For non-development (release), the executable is the compiled binary. We directly pass in the connect token.
+                info = new ProcessStartInfo
+                {
+                    FileName = AppData.GameInstallDirectory + "\\" + AppData.GameExecutableName + ".exe",
+                    Arguments = $"-connectToken={response}",
+                    UseShellExecute = false
+                };
+            }
+
+            // Actually start the process, setting process ID if successful, else returning to -1 and displaying error.
             try
             {
-                // Create ProcessStartInfo with our path and executable name, setting UseShellExecute to false to ensure PID is returned.
-                // TODO: UPDATE WITH COMPILED BINARY LAUNCH INSTEAD OF UNREAL EDITOR
-                ProcessStartInfo info = new()
-                {
-                    FileName = AppData.GameInstallDirectory + "\\" + AppData.GameExecutableName + ".exe",   // IS CURRENTLY UNREAL EDITOR
-                    Arguments = $"\"E:\\Unreal Projects\\RPG_Main\\RPG_Main.uproject\" -game -connectToken={response}",
-                    UseShellExecute = false                                                                 // False ensures PID is returned.
-                };
-
-                // Actually start the process, resetting process ID to -1 if failure then returning.
                 using Process? p = Process.Start(info);
                 if (p == null)
                 {
@@ -104,7 +118,6 @@ namespace RPG_Launcher.ViewModel.General
             }
             catch (Exception ex)
             {
-                // If exception, ensure the process ID is reset to -1 and display error message.
                 gameProcessId = -1;
                 ErrorMessage = ex.Message;
                 return;
