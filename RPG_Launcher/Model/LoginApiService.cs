@@ -28,7 +28,7 @@ namespace RPG_Launcher.Model
     {
         private static HttpClient _httpClient = new()
         {
-            BaseAddress = new Uri("https://accounts.edranagame.com/api/")
+            BaseAddress = new Uri("https://accounts.edranagame.com/")
         };
 
 
