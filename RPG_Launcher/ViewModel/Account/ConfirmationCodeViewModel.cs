@@ -14,7 +14,8 @@ namespace RPG_Launcher.ViewModel.Account
 {
     public class ConfirmationCodeViewModel : ViewModelBase
     {
-        public enum CodeContext { None, NewAccountConfirmation, ForgotPassword, ManualChangePassword, RequestEmailChange, VerifyNewEmail }
+        public enum CodeContext { None, NewAccountConfirmation, ForgotPassword, ManualChangePassword,
+            RequestEmailChange, VerifyNewEmail, VerifySecondaryEmail }
 
         private readonly Brush infoBrush = Brushes.CornflowerBlue;
         private readonly Brush errorBrush = Brushes.IndianRed;
@@ -106,7 +107,12 @@ namespace RPG_Launcher.ViewModel.Account
                     }
                 case CodeContext.VerifyNewEmail:
                     {
-                        ContextTitle = "Verify New Email";
+                        ContextTitle = "Verify New Primary Email";
+                        break;
+                    }
+                case CodeContext.VerifySecondaryEmail:
+                    {
+                        ContextTitle = "Verify Secondary Email";
                         break;
                     }
             }
@@ -195,7 +201,7 @@ namespace RPG_Launcher.ViewModel.Account
                         if (StatusCode == 0)
                         {
                             // If request is successful, move onto submit new email screen (we have our Email Change Token).
-                            MainViewModel.Instance.ShowSubmitNewEmailView();
+                            MainViewModel.Instance.ShowSubmitNewEmailView(isForMainEmail: true);
                             return;
                         }
                         break;
@@ -211,10 +217,29 @@ namespace RPG_Launcher.ViewModel.Account
                         }
                         else if (StatusCode >= 1 && StatusCode < 100)
                         {
-                            // If code 1, 10, 20, or 30 (success response code but bad account state), return to login view.
+                            // If code 1, 10, 20, 30, or 40 (success response code but bad account state), return to login view.
                             _ = LoginApiService.Logout();
                             MainViewModel.Instance.ShowReturnToLoginView(true,
                                 "Email changed successfully, but unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.VerifySecondaryEmail:
+                    {
+                        (StatusCode, Message) = await LoginApiService.VerifySecondaryEmail(ConfirmationCode);
+                        if (StatusCode == 0)
+                        {
+                            // If secondary email verification is successful, then we are still fully logged in.
+                            MainViewModel.Instance.ShowAccountView();
+                            return;
+                        }
+                        else if (StatusCode >= 1 && StatusCode < 100)
+                        {
+                            // If code 1, 10, 20, 30, or 40 (success response code but bad account state), return to login view.
+                            _ = LoginApiService.Logout();
+                            MainViewModel.Instance.ShowReturnToLoginView(true,
+                                "Secondary email verified successfully, but unexpected account state detected in response. Please log in again.");
                             return;
                         }
                         break;
@@ -286,6 +311,18 @@ namespace RPG_Launcher.ViewModel.Account
                     {
                         // Generate an entirely new email change request, printing an error message if unsuccessful.
                         var (StatusCode, Message) = await LoginApiService.RequestEmailChange();
+                        if (StatusCode != 0)
+                        {
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.VerifySecondaryEmail:
+                    {
+                        // Request a new secondary email verification code, printing an error message if unsuccessful.
+                        var (StatusCode, Message) = await LoginApiService.ResendSecondaryEmailVerificationCode();
                         if (StatusCode != 0)
                         {
                             StatusMessage = Message;

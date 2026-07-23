@@ -28,7 +28,7 @@
                    Margin="0,25,0,0"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
 
-            <TextBlock Text="Submit New Email"
+            <TextBlock Text="{Binding ContextTitle, Mode=TwoWay}"
                        Foreground="AliceBlue"
                        FontSize="20"
                        FontFamily="Segoe UI Semibold"

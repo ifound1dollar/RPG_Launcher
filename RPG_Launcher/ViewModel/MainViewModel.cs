@@ -226,10 +226,11 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = ForgotPasswordVM;
         }
 
-        public void ShowSubmitNewEmailView()
+        public void ShowSubmitNewEmailView(bool isForMainEmail)
         {
             HideAllViews();
             SubmitNewEmailVM.ShowView();
+            SubmitNewEmailVM.SetViewContext(isForMainEmail);
 
             CurrentViewModel = SubmitNewEmailVM;
         }

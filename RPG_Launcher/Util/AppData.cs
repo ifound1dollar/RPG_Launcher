@@ -73,11 +73,11 @@ namespace RPG_Launcher.Util
         // Whether this application build is development or release. CHANGE INSTALL DIRECTORY AND EXECUTABLE NAME FOR RELEASE.
         private static readonly bool isDevelopment = true;
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.11.4";
+        private static readonly string version = "0.12.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataFilePath = "appdata.json";
         // Default game install directory. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.
-        private static readonly string defaultGameInstallDirectory = "E:\\Unreal Engine\\UE_5.6\\Engine\\Binaries\\Win64";
+        private static readonly string defaultGameInstallDirectory = "E:\\Unreal Engine\\UE_5.8\\Engine\\Binaries\\Win64";
         // Executable name, appended to path to actually start the game process. Do not include .exe suffix.
         private static readonly string gameExecutableName = "UnrealEditor";
 
@@ -149,7 +149,7 @@ namespace RPG_Launcher.Util
 
         #endregion
 
-        #region IN-MEMORY TOKENS
+        #region IN-MEMORY DATA
 
         // Refresh token is long-lived and is securely written to disk. Loads on startup when Initialize() is
         //  called, and is re-written to file anytime the property is updated.
@@ -174,6 +174,10 @@ namespace RPG_Launcher.Util
         //  reset via the login API. Reset tokens only last a very short time (5 minutes).
         public static string PasswordResetToken { get; set; } = string.Empty;
         public static string EmailChangeToken { get; set; } = string.Empty;
+
+        // Used to store the secondary (recovery) email for the currently-logged-in account. Will be empty
+        //  string when not logged in OR secondary email is not set up and verified.
+        public static string SecondaryEmail { get; set;  } = string.Empty;
 
         #endregion
 

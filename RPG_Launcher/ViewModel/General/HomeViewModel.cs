@@ -89,7 +89,7 @@ namespace RPG_Launcher.ViewModel.General
                 info = new ProcessStartInfo
                 {
                     FileName = AppData.GameInstallDirectory + "\\" + AppData.GameExecutableName + ".exe",
-                    Arguments = $"\"E:\\Unreal Projects\\RPG_Main\\RPG_Main.uproject\" -game -connectToken={response}",
+                    Arguments = $"\"E:\\Unreal Projects\\Edrana_Game\\Edrana_Game.uproject\" -game -connectToken={response}",
                     UseShellExecute = false                                                     // False ensures PID is returned.
                 };
             }

@@ -17,12 +17,20 @@ namespace RPG_Launcher.ViewModel.Account
     {
         private bool isSubmitNewEmailViewVisible = false;
 
+        private bool isForMainEmail = true;
+
+        private string contextTitle = string.Empty;
         private string existingEmail = string.Empty;
         private string newEmail = string.Empty;
         private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
 
+        public string ContextTitle
+        {
+            get => contextTitle;
+            set { contextTitle = value; OnPropertyChanged(nameof(ContextTitle)); }
+        }
         public string ExistingEmail
         {
             get => existingEmail;
@@ -68,9 +76,23 @@ namespace RPG_Launcher.ViewModel.Account
             CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
         }
 
+        public void SetViewContext(bool isForMainEmail)
+        {
+            this.isForMainEmail = isForMainEmail;
+            if (isForMainEmail)
+            {
+                ContextTitle = "Change Primary Email";
+                ExistingEmail = AppData.SavedEmail;
+            }
+            else
+            {
+                ContextTitle = "Secondary Email Setup";
+                ExistingEmail = (AppData.SecondaryEmail == string.Empty) ? "None" : AppData.SecondaryEmail;
+            }
+        }
+
         public override void ShowView()
         {
-            ExistingEmail = AppData.SavedEmail;
             NewEmail = string.Empty;
             ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
@@ -103,11 +125,22 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating email, we can make actual API request to submit the new password.
-            var (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(trimmedEmail);
+            int StatusCode; string Message = string.Empty;
+            if (isForMainEmail)
+            {
+                (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(trimmedEmail);
+            }
+            else
+            {
+                (StatusCode, Message) = await LoginApiService.SubmitSecondaryEmail(trimmedEmail);
+            }
+
+            // Move on based on response and context.
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, meaning the API has accepted our new email. We can move onto new email verification screen.
-                MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.VerifyNewEmail, NewEmail);
+                var context = (isForMainEmail) ? ConfirmationCodeViewModel.CodeContext.VerifyNewEmail : ConfirmationCodeViewModel.CodeContext.VerifySecondaryEmail;
+                MainViewModel.Instance.ShowConfirmationCodeView(context, NewEmail);
                 return;
             }
             else

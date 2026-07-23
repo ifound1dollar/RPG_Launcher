@@ -34,13 +34,13 @@
                        FontSize="24"
                        FontFamily="Segoe UI"
                        TextAlignment="Left"
-                       Margin="130,20,0,0"/>
+                       Margin="130,10,0,0"/>
 
             <StackPanel Name="UsernameRow"
                         Orientation="Horizontal"
                         Background="#A016141f"
                         Height="40"
-                        Margin="120,10,120,0">
+                        Margin="120,5,120,0">
                 <TextBlock Text="Username:"
                          Width="100"
                          Foreground="SlateGray"
@@ -103,7 +103,7 @@
                         Orientation="Horizontal"
                         Background="#A016141f"
                         Height="40"
-                        Margin="120,20,120,0">
+                        Margin="120,10,120,0">
                 <TextBlock Text="Email:"
                          Width="100"
                          Foreground="SlateGray"
@@ -166,7 +166,7 @@
                         Orientation="Horizontal"
                         Background="#A016141f"
                         Height="40"
-                        Margin="120,20,120,0">
+                        Margin="120,10,120,0">
                 <TextBlock Text="Password:"
                          Width="100"
                          Foreground="SlateGray"
@@ -175,9 +175,9 @@
                          VerticalAlignment="Center"
                          HorizontalAlignment="Center"
                          Margin="15,0,0,2"/>
-                <TextBlock Text="hidden for security reasons"
+                <TextBlock Text="password not stored or displayed"
                          Width="300"
-                         Foreground="Gray"
+                         Foreground="DimGray"
                          Background="Transparent"
                          FontSize="20"
                          FontFamily="Segoe UI"
@@ -231,7 +231,7 @@
                        FontSize="24"
                        FontFamily="Segoe UI"
                        TextAlignment="Left"
-                       Margin="130,25,0,0"/>
+                       Margin="130,20,0,0"/>
 
             <TextBlock Text="Multi-factor authentication is required for all accounts and must be set up on account creation before it can be used. Manage the current MFA configuration here."
                        Foreground="LightBlue"
@@ -327,6 +327,77 @@
                 </Button>
             </StackPanel>
 
+            <TextBlock Text="Account Recovery"
+                       Foreground="LightGray"
+                       FontSize="24"
+                       FontFamily="Segoe UI"
+                       TextAlignment="Left"
+                       Margin="130,20,0,0"/>
+
+            <StackPanel Name="SecondaryEmailRow"
+                        Orientation="Horizontal"
+                        Background="#A016141f"
+                        Height="40"
+                        Margin="120,5,120,0">
+                <TextBlock Text="Secondary Email:"
+                             Width="135"
+                             Foreground="SlateGray"
+                             Background="Transparent"
+                             FontSize="18"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Center"
+                             Margin="15,0,0,2"/>
+                <TextBlock Text="{Binding SecondaryEmail}"
+                             Width="275"
+                             Foreground="LightGray"
+                             Background="Transparent"
+                             FontSize="18"
+                             FontFamily="Segoe UI"
+                             FontStyle="Normal"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Center"
+                             Margin="15,0,0,2"/>
+                <Button Name="ButtonChangeSecondaryEmail"
+                        Command="{Binding ChangeSecondaryEmailClickedCommand}"
+                        Width="80"
+                        Height="30"
+                        Foreground="LightGray"
+                        Content="CHANGE"
+                        FontSize="15"
+                        FontFamily="Segoe UI"
+                        Cursor="Hand"
+                        Margin="15,0,0,0"
+                        IsEnabled="{Binding IsButtonInputEnabled}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#4b4094"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="SlateBlue"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Background" Value="#5a4cb5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#bb444444"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="5"
+                                    Background="{TemplateBinding Background}">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  Margin="0,0,0,2"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+
             <!-- Error message. -->
             <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
                         Foreground="IndianRed"
@@ -342,7 +413,7 @@
                     Content="LOG OUT"
                     FontSize="20"
                     Cursor="Hand"
-                    Margin="300,20,300,0"
+                    Margin="300,15,300,0"
                     IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">
@@ -376,7 +447,7 @@
                     Content="CLOSE SETTINGS"
                     FontSize="16"
                     Cursor="Hand"
-                    Margin="320,50,320,0"
+                    Margin="320,20,320,0"
                     IsEnabled="{Binding IsButtonInputEnabled}">
                 <Button.Style>
                     <Style TargetType="Button">

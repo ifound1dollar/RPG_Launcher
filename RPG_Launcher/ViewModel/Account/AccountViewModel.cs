@@ -17,6 +17,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private string accountUsername = string.Empty;
         private string accountEmail = string.Empty;
+        private string secondaryEmail = string.Empty;
         private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
@@ -30,6 +31,11 @@ namespace RPG_Launcher.ViewModel.Account
         {
             get => accountEmail;
             set { accountEmail = value; OnPropertyChanged(nameof(AccountEmail)); }
+        }
+        public string SecondaryEmail
+        {
+            get => secondaryEmail;
+            set { secondaryEmail = value; OnPropertyChanged(nameof(SecondaryEmail)); }
         }
         public string ErrorMessage
         {
@@ -51,6 +57,7 @@ namespace RPG_Launcher.ViewModel.Account
         public ICommand ChangePasswordClickedCommand { get; }
         public ICommand ResetMfaConfigurationClickedCommand { get; }
         public ICommand RegenerateRecoveryCodeClickedCommand { get; }
+        public ICommand ChangeSecondaryEmailClickedCommand { get; }
         public ICommand LogoutClickedCommand { get; }
         public ICommand CloseClickedCommand { get; }
 
@@ -65,6 +72,8 @@ namespace RPG_Launcher.ViewModel.Account
             ResetMfaConfigurationClickedCommand = new ViewModelCommand(ExecuteResetMfaConfigurationClickedCommand, CanExecuteResetMfaConfigurationClickedCommand);
             RegenerateRecoveryCodeClickedCommand = new ViewModelCommand(ExecuteRegenerateRecoveryCodeClickedCommand, CanExecuteRegenerateRecoveryCodeClickedCommand);
 
+            ChangeSecondaryEmailClickedCommand = new ViewModelCommand(ExecuteChangeSecondaryEmailClickedCommand, CanExecuteChangeSecondaryEmailClickedCommand);
+
             LogoutClickedCommand = new ViewModelCommand(ExecuteLogoutClickedCommand, CanExecuteLogoutClickedCommand);
             CloseClickedCommand = new ViewModelCommand(ExecuteCloseClickedCommand, CanExecuteCloseClickedCommand);
         }
@@ -78,6 +87,7 @@ namespace RPG_Launcher.ViewModel.Account
         {
             AccountUsername = AppData.SavedUsername;
             AccountEmail = AppData.SavedEmail;
+            SecondaryEmail = (AppData.SecondaryEmail == string.Empty) ? "None" : AppData.SecondaryEmail;
             ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
 
@@ -153,6 +163,7 @@ namespace RPG_Launcher.ViewModel.Account
         #endregion
 
 
+
         #region Private: ResetMfaConfigurationClickedCommand
 
         private void ExecuteResetMfaConfigurationClickedCommand(object? obj)
@@ -175,6 +186,23 @@ namespace RPG_Launcher.ViewModel.Account
         }
 
         private bool CanExecuteRegenerateRecoveryCodeClickedCommand(object? obj)
+        {
+            return isViewVisible && isButtonInputEnabled;
+        }
+
+        #endregion
+
+
+
+        #region Private: ChangeSecondaryEmailClickedCommand
+
+        private void ExecuteChangeSecondaryEmailClickedCommand(object? obj)
+        {
+            // Simply show the change email view with secondary email context.
+            MainViewModel.Instance.ShowSubmitNewEmailView(isForMainEmail: false);
+        }
+
+        private bool CanExecuteChangeSecondaryEmailClickedCommand(object? obj)
         {
             return isViewVisible && isButtonInputEnabled;
         }

@@ -28,7 +28,7 @@ namespace RPG_Launcher.Model
     {
         private static HttpClient _httpClient = new()
         {
-            BaseAddress = new Uri("https://accounts.edranagame.com/")
+            BaseAddress = new Uri("https://login.edranagame.com/")
         };
 
 
@@ -94,7 +94,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -151,7 +152,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -210,7 +212,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within (should be 0).
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -269,7 +272,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -399,7 +403,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -594,7 +599,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -836,7 +842,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -943,7 +950,8 @@ namespace RPG_Launcher.Model
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
                 AppData.SavedUsername = responseModel.Username;
-                AppData.SavedEmail = responseModel.Email;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
@@ -956,6 +964,156 @@ namespace RPG_Launcher.Model
                 return (-1, "Regenerate MFA recovery code failed: an unexpected error occurred during API request");
             }
         }
+
+        #region Public: Secondary Account Email Setup
+
+        /// <summary>
+        /// Submits a new secondary email address to the API, beginning the secondary email setup process. Requires
+        ///  an access token with full account access, which is automatically submitted in the request. The user must
+        ///  submit their desired secondary email address, which the API will attempt to write to the pending new
+        ///  secondary email address field. Returns a status code describing whether the request was successful.
+        /// </summary>
+        /// <param name="secondaryEmail"> The desired new secondary email for this account. </param>
+        /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
+        public static async Task<(int, string)> SubmitSecondaryEmail(string secondaryEmail)
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(secondaryEmail))
+            {
+                return (-1, "Submit secondary email failed: missing secondary email input");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and full access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-secondary-email")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { SecondaryEmail = secondaryEmail }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Else successful, but change is only pending so do NOT clear email changed token or log out yet.
+                return (0, "Submit secondary email successful, user must now verify pending secondary email");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Submit secondary email failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Requests that the API resends the short-duration email confirmation code to the submitted new secondary
+        ///  email. This will fail if attempted more than once every 60 seconds, or if the API endpoint is called
+        ///  without a pending secondary email awaiting verification. Returns a status code describing whether the
+        ///  resend was successful.
+        /// </summary>
+        /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
+        public static async Task<(int, string)> ResendSecondaryEmailVerificationCode()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken)
+            {
+                return (-1, "Resend secondary email verification code failed: could not refresh login session");
+            }
+
+            try
+            {
+                // Make request to API, requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/resend-secondary-verification-code");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Return 0 for success.
+                return (0, "Resend secondary email verification code successful");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+                return (-1, "Resend secondary email verification code failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Attempts to verify the previously-submitted new secondary email for this account. Accepts a full
+        ///  access token and the confirmation code that was sent to the email address for verification. If the
+        ///  code is correct, the API will set the active secondary email field and return a new full access
+        ///  login response model with the newly-verified secondary email. Returns a status code describing
+        ///  whether the request was successful.
+        /// </summary>
+        /// <param name="confirmationCode"> The short-duration confirmation code sent to the new secondary email for verification. </param>
+        /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
+        public static async Task<(int, string)> VerifySecondaryEmail(string confirmationCode)
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(confirmationCode))
+            {
+                return (-1, "Secondary email verification failed: confirmation code field empty");
+            }
+
+            try
+            {
+                // Make request to API, requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/verify-secondary-email")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { Code = confirmationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                if (responseModel == null)
+                {
+                    // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
+                    return (-1, "Secondary email verification successful, but API response error: could not parse API response into usable object model");
+                }
+
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                AppData.EmailChangeToken = string.Empty;                                // Reset on any verification regardless of context.
+                return (responseModel.LoginStatusCode, $"Secondary email verification successful");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Secondary email verification failed: an unexpected error occurred during API request");
+            }
+        }
+
+        #endregion
 
         #region Public: Play game
 
