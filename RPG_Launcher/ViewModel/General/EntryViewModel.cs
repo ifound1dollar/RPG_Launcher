@@ -105,11 +105,6 @@ namespace RPG_Launcher.ViewModel.General
                 _ = LoginApiService.PingInLauncher();       // Notify the API that we are logged into the launcher right away.
                 MainViewModel.Instance.ShowHomeView();
             }
-            else if (StatusCode == 1)
-            {
-                // Code 1 means successful login but awaiting MFA submission, so move onto submit MFA view.
-                MainViewModel.Instance.ShowSubmitMfaCodeView(MainViewModel.MfaContext.MfaLogin);
-            }
             // IMPORTANT: WE PRIORITIZE PASSWORD RESET BECAUSE A SUCCESSFUL PASSWORD RESET REQUIRES A VALID EMAIL.
             // IF THE USER SUCCESSFULLY RESETS THEIR PASSWORD, IT WILL IMPLICITLY CONFIRM THE ACCOUNT EMAIL.
             else if (StatusCode == 20)

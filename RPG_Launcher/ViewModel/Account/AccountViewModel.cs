@@ -213,10 +213,10 @@ namespace RPG_Launcher.ViewModel.Account
 
         #region Private: LogoutClickedCommand (async)
 
-        private async Task ExecuteLogoutClickedCommand(object? obj)
+        private void ExecuteLogoutClickedCommand(object? obj)
         {
             // Call API service logout method, which will always successfully log us out.
-            await LoginApiService.Logout();
+            _ = LoginApiService.Logout();
 
             // After logout, we must return to the login screen (show login window and hide main).
             MainViewModel.Instance.ShowLoginView();
