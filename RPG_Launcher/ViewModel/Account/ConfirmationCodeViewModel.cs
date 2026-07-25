@@ -165,7 +165,7 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 case CodeContext.NewAccountConfirmation:
                     {
-                        (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: true);
+                        (StatusCode, Message) = await LoginApiService.VerifyEmailForNewAccount(ConfirmationCode);
                         if (StatusCode == 1)
                         {
                             // If status code is good, then we are logged in but require MFA submission, so move onto MFA submission view.
@@ -208,7 +208,7 @@ namespace RPG_Launcher.ViewModel.Account
                     }
                 case CodeContext.VerifyNewEmail:
                     {
-                        (StatusCode, Message) = await LoginApiService.VerifyEmail(ConfirmationCode, isForNewAccount: false);
+                        (StatusCode, Message) = await LoginApiService.VerifyChangedEmail(ConfirmationCode);
                         if (StatusCode == 0)
                         {
                             // If verification is successful and not for new account, then we are still fully logged in.
@@ -282,7 +282,6 @@ namespace RPG_Launcher.ViewModel.Account
             switch (context)
             {
                 case CodeContext.NewAccountConfirmation:
-                case CodeContext.VerifyNewEmail:
                     {
                         // Request a new email verification code, printing an error message if unsuccessful.
                         var (StatusCode, Message) = await LoginApiService.ResendEmailVerificationCode();
@@ -311,6 +310,18 @@ namespace RPG_Launcher.ViewModel.Account
                     {
                         // Generate an entirely new email change request, printing an error message if unsuccessful.
                         var (StatusCode, Message) = await LoginApiService.RequestEmailChange();
+                        if (StatusCode != 0)
+                        {
+                            StatusMessage = Message;
+                            MessageBrush = errorBrush;
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.VerifyNewEmail:
+                    {
+                        // Request a new email verification code to be sent to the pending new email.
+                        var (StatusCode, Message) = await LoginApiService.ResendChangedEmailVerificationCode();
                         if (StatusCode != 0)
                         {
                             StatusMessage = Message;

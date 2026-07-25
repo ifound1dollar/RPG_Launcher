@@ -102,6 +102,7 @@ namespace RPG_Launcher.ViewModel.General
             if (StatusCode == 0)
             {
                 // Code 0 means successful login with full access, to move onto home screen.
+                _ = LoginApiService.PingInLauncher();       // Notify the API that we are logged into the launcher right away.
                 MainViewModel.Instance.ShowHomeView();
             }
             else if (StatusCode == 1)

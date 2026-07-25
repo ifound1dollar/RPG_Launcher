@@ -128,7 +128,7 @@ namespace RPG_Launcher.ViewModel.Account
             int StatusCode; string Message = string.Empty;
             if (isForMainEmail)
             {
-                (StatusCode, Message) = await LoginApiService.SubmitNewEmailFromToken(trimmedEmail);
+                (StatusCode, Message) = await LoginApiService.SubmitChangedEmail(trimmedEmail);
             }
             else
             {

@@ -120,6 +120,7 @@ namespace RPG_Launcher.ViewModel.Account
                         if (StatusCode == 0)
                         {
                             // If status code is good, so we are now fully logged in and can move onto home view.
+                            _ = LoginApiService.PingInLauncher();       // Notify the API that we are logged into the launcher right away.
                             MainViewModel.Instance.ShowHomeView();
                             return;
                         }
