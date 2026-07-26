@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RPG_Launcher.Model.Responses
 {
-    public class LoginResponseModel
+    public class AccessResponseModel
     {
         public string Username { get; set; } = string.Empty;
         public string PrimaryEmail { get; set; } = string.Empty;
@@ -23,5 +23,4 @@ namespace RPG_Launcher.Model.Responses
     /// 10 : primary email not yet verified
     /// 20 : password needs reset
     /// 30 : MFA not yet set up
-    /// 40 : account locked while awaiting MFA hard reset
 }

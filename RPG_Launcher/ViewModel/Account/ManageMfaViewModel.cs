@@ -111,7 +111,7 @@ namespace RPG_Launcher.ViewModel.Account
                 case ManageMfaContext.ResetMfa:
                     {
                         // If resetting MFA, call setup MFA endpoint with our full-access token.
-                        (statusCode, response) = await LoginApiService.SetupMfa();
+                        (statusCode, response) = await LoginApiService.BeginMfaSetup();
                         if (statusCode == 0)
                         {
                             // If status code is good, then we received a new QR code, so show setup MFA view.

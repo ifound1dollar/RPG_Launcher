@@ -48,6 +48,9 @@
         <DataTemplate DataType="{x:Type vma:ChangeUsernameViewModel}">
             <va:ChangeUsernameView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vma:ChangePasswordViewModel}">
+            <va:ChangePasswordView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vmg:ReturnToLoginViewModel}">
             <v:ReturnToLoginView/>
         </DataTemplate>

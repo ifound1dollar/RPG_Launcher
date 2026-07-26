@@ -19,8 +19,6 @@ namespace RPG_Launcher.Util
     /// </summary>
     public static class AppData
     {
-        private static bool isInitialized = false;
-
         /// <summary>
         /// Data class used to represent JSON data stored in appinfo.json.
         /// </summary>
@@ -68,12 +66,12 @@ namespace RPG_Launcher.Util
             }
         }
 
-
+        #region STATIC DESCRIPTOR DATA
 
         // Whether this application build is development or release. CHANGE INSTALL DIRECTORY AND EXECUTABLE NAME FOR RELEASE.
         private static readonly bool isDevelopment = true;
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.13.1";
+        private static readonly string version = "0.14.0";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataFilePath = "appdata.json";
         // Default game install directory. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.
@@ -81,15 +79,21 @@ namespace RPG_Launcher.Util
         // Executable name, appended to path to actually start the game process. Do not include .exe suffix.
         private static readonly string gameExecutableName = "UnrealEditor";
 
-
-
-        #region BASIC APP DATA (LOADS ON STARTUP)
-
-        // Publicly-readable development/release flag.
+        // PUBLIC ACCESSORS FOR STATIC FIELDS
         public static bool IsDevelopment { get => isDevelopment; }
+        public static string Version { get; private set; } = version;
+        public static string GameExecutableName { get => gameExecutableName; }
 
-        // Publicly-readable application version.
-        public static string Version { get; private set; } = version;   // Not populated from file.
+        #endregion
+
+
+
+        // APP DATA STATE
+        private static bool isInitialized = false;
+
+
+
+        #region DATA LOADED FROM DISK (from appdata.json AND credentials.dat)
 
         // Timestamp (string format derived from DateTime) that is generated the first time the application is run.
         public static string Timestamp { get; private set; } = string.Empty;
@@ -112,7 +116,7 @@ namespace RPG_Launcher.Util
             set
             {
                 savedUsername = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
+                WriteAppDataToFile(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
             }
         }
 
@@ -126,7 +130,7 @@ namespace RPG_Launcher.Util
             set
             {
                 savedEmail = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
+                WriteAppDataToFile(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), savedUsername, savedEmail, GameInstallDirectory));
             }
         }
 
@@ -138,18 +142,9 @@ namespace RPG_Launcher.Util
             set
             {
                 gameInstallDirectory = value;
-                SaveAppData(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, gameInstallDirectory));
+                WriteAppDataToFile(new AppDataJson(Version, Timestamp, ClientGuid.ToString(), SavedUsername, SavedEmail, gameInstallDirectory));
             }
         }
-
-        // Executable name is the actual name of the executable game file.
-        public static string GameExecutableName { get => gameExecutableName; }
-
-
-
-        #endregion
-
-        #region IN-MEMORY DATA
 
         // Refresh token is long-lived and is securely written to disk. Loads on startup when Initialize() is
         //  called, and is re-written to file anytime the property is updated.
@@ -164,6 +159,10 @@ namespace RPG_Launcher.Util
             }
         }
 
+        #endregion
+
+        #region IN-MEMORY-ONLY DATA
+
         // Access token is short-lived and is never stored outside of memory. A new access token is received
         //  upon login, and one must be received each time the application is run.
         public static string AccessToken { get; set; } = string.Empty;
@@ -173,7 +172,6 @@ namespace RPG_Launcher.Util
         //  populated once the client (this launcher) successfully verifies itself and requests a password
         //  reset via the login API. Reset tokens only last a very short time (5 minutes).
         public static string PasswordResetToken { get; set; } = string.Empty;
-        public static string EmailChangeToken { get; set; } = string.Empty;
 
         // Used to store the secondary (recovery) email for the currently-logged-in account. Will be empty
         //  string when not logged in OR secondary email is not set up and verified.
@@ -194,7 +192,7 @@ namespace RPG_Launcher.Util
             // Try to load data from appdata.json, then try to load refresh token.
             if (!isInitialized)
             {
-                InitializeAppData();
+                LoadAppData();
 
                 // This method requires AppData to be initialized already.
                 refreshToken = DataProtection.LoadRefreshToken();
@@ -204,11 +202,11 @@ namespace RPG_Launcher.Util
         }
 
         /// <summary>
-        /// Private method for actual app data retrieval on initialization. Reads appdata.json for basic
-        ///  application data like version, timestamp, client GUID, and saved username. Data which
-        ///  changes at runtime is immediately updated elsewhere in this class, but is initially read here.
+        /// Attempts to load data from appdata.json on initialization, populating fields which contain data
+        ///  read from this file. If no file exists, a new file is created and populated with default values;
+        ///  if the file already exists, the data is directly retrieved.
         /// </summary>
-        private static void InitializeAppData()
+        private static void LoadAppData()
         {
             // PROCESS:
             //  - Try to read appdata.json file on application startup.
@@ -221,12 +219,11 @@ namespace RPG_Launcher.Util
             {
                 AppDataJson? appData;
 
-                // First, check if appdata.json file exists.
+                // If appdata.json does not exist, create new with initial-run data.
                 if (!File.Exists(appDataFilePath))
                 {
-                    // If file does not exist, create a new file with initial-run data.
                     appData = AppDataJson.CreateNew();
-                    SaveAppData(appData);
+                    WriteAppDataToFile(appData);
 
                     // Store newly-generated data in static fields (saved username remains empty).
                     Timestamp = appData.Timestamp;
@@ -239,7 +236,7 @@ namespace RPG_Launcher.Util
                 }
 
                 // Else if file does exist, read JSON into AppInfoJson object and compare old data against current.
-                appData = LoadAppData();
+                appData = ReadAppDataFromFile();
                 if (appData != null)
                 {
                     // If there is a version change (app updated), we should immediately update the file with the
@@ -248,8 +245,7 @@ namespace RPG_Launcher.Util
                     {
                         // Update only the stored version using static AppDataJson method, then write immediately.
                         AppDataJson.UpdateExistingVersion(appData, version);
-                        SaveAppData(appData);
-
+                        WriteAppDataToFile(appData);
                     }
 
                     // Store values read from the file in fields.
@@ -273,7 +269,7 @@ namespace RPG_Launcher.Util
         ///  data, or null if failure for any reason.
         /// </summary>
         /// <returns> The populated AppDataJson object if successful, else null. </returns>
-        private static AppDataJson? LoadAppData()
+        private static AppDataJson? ReadAppDataFromFile()
         {
             try
             {
@@ -291,7 +287,7 @@ namespace RPG_Launcher.Util
         /// Writes the passed-in AppDataJson object to appdata.json, automatically serializing into JSON format.
         /// </summary>
         /// <param name="appInfo"> The AppDataJson object to serialize and write to appdata.json. </param>
-        private static void SaveAppData(AppDataJson appInfo)
+        private static void WriteAppDataToFile(AppDataJson appInfo)
         {
             JsonSerializerOptions options = new() { WriteIndented = true };   // Pretty printing.
 

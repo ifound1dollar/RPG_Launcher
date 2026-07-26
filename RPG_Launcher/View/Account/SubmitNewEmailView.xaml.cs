@@ -52,6 +52,20 @@ namespace RPG_Launcher.View.Account
             // This will generically select all text in the box when it gets keyboard focus.
             ((TextBox)sender).Dispatcher.BeginInvoke(new Action(() => ((TextBox)sender).SelectAll()));
         }
+        private void PasswordBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            ((PasswordBox)sender).Dispatcher.BeginInvoke(new Action(() => ((PasswordBox)sender).SelectAll()));
+        }
+
+
+
+        // BELOW METHODS TECHNICALLY VIOLATE MVVM PATTERN, BUT THIS IS NECESSARY FOR SECURITY (CLEARING PASSWORDBOX).
+
+        private void TextBoxCurrentPassword_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            // Update ViewModel directly when this password box is updated. This includes after Clear() is called.
+            SubmitNewEmailVM.CurrentPassword = (TextBoxCurrentPassword.SecurePassword);
+        }
 
 
 
@@ -60,6 +74,8 @@ namespace RPG_Launcher.View.Account
             if (SubmitNewEmailVM.SubmitButtonClickedCommand.CanExecute(sender))
             {
                 SubmitNewEmailVM.SubmitButtonClickedCommand.Execute(sender);
+
+                ClearPasswords();
             }
         }
 
@@ -68,7 +84,18 @@ namespace RPG_Launcher.View.Account
             if (SubmitNewEmailVM.CancelButtonClickedCommand.CanExecute(sender))
             {
                 SubmitNewEmailVM.CancelButtonClickedCommand.Execute(sender);
+
+                ClearPasswords();
             }
+        }
+
+
+
+        private void ClearPasswords()
+        {
+            // Clear both password boxes and ViewModel property.
+            TextBoxCurrentPassword.Clear();
+            SubmitNewEmailVM.CurrentPassword.Clear();
         }
     }
 }

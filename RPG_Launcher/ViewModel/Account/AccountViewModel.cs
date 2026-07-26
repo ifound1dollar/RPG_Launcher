@@ -100,7 +100,6 @@ namespace RPG_Launcher.ViewModel.Account
 
         private void ExecuteChangeUsernameClickedCommand(object? obj)
         {
-            // Simply show the username reset view.
             MainViewModel.Instance.ShowChangeUsernameView();
         }
 
@@ -115,20 +114,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteChangeEmailClickedCommand(object? obj)
         {
-            // Request an change email code, then move onto confirmation code view with email change context.
-            IsButtonInputEnabled = false;
-            var (StatusCode, Message) = await LoginApiService.RequestEmailChange();
-            IsButtonInputEnabled = true;
-
-            // Only check for request error. If request is made too soon (less than 60 seconds after previous), then
-            //  should still allow progression to confirmation code view because previously-sent code is still valid.
-            if (StatusCode == -1)
-            {
-                ErrorMessage = "Failed to perform API request to change password, please try again.";
-                return;
-            }
-
-            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.RequestEmailChange, accountEmail);
+            MainViewModel.Instance.ShowSubmitNewEmailView(isForMainEmail: true);
         }
 
         private bool CanExecuteChangeEmailClickedCommand(object? obj)
@@ -142,17 +128,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteChangePasswordClickedCommand(object? obj)
         {
-            // Request a password reset code, then move onto confirmation code view with password change/reset context.
-            IsButtonInputEnabled = false;
-            int responseCode = await LoginApiService.ForgotPassword(accountEmail);
-            IsButtonInputEnabled = true;
-            if (responseCode == -1)
-            {
-                ErrorMessage = "Failed to perform API request to change password, please try again.";
-                return;
-            }
-
-            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.ManualChangePassword, accountEmail);
+            MainViewModel.Instance.ShowChangePasswordView();
         }
 
         private bool CanExecuteChangePasswordClickedCommand(object? obj)

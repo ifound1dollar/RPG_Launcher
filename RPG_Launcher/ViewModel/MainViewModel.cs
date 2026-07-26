@@ -53,6 +53,7 @@ namespace RPG_Launcher.ViewModel
         private ConfirmationCodeViewModel ConfirmationCodeVM { get; } = new ConfirmationCodeViewModel();
         private ResetPasswordViewModel ResetPasswordVM { get; } = new ResetPasswordViewModel();
         private ChangeUsernameViewModel ChangeUsernameVM { get; } = new ChangeUsernameViewModel();
+        private ChangePasswordViewModel ChangePasswordVM { get; } = new ChangePasswordViewModel();
         private ReturnToLoginViewModel ReturnToLoginVM { get; } = new ReturnToLoginViewModel();
         private ForgotPasswordViewModel ForgotPasswordVM { get; } = new ForgotPasswordViewModel();
         private SubmitNewEmailViewModel SubmitNewEmailVM { get; } = new SubmitNewEmailViewModel();
@@ -109,6 +110,8 @@ namespace RPG_Launcher.ViewModel
             RegisterVM.HideView();
             ConfirmationCodeVM.HideView();
             ResetPasswordVM.HideView();
+            ChangeUsernameVM.HideView();
+            ChangePasswordVM.HideView();
             ReturnToLoginVM.HideView();
             ForgotPasswordVM.HideView();
             SubmitNewEmailVM.HideView();
@@ -186,12 +189,11 @@ namespace RPG_Launcher.ViewModel
             CurrentViewModel = ConfirmationCodeVM;
         }
 
-        public void ShowResetPasswordView(bool isForgotPasswordContext, string targetUser)
+        public void ShowResetPasswordView(string targetUser)
         {
             HideAllViews();
             ResetPasswordVM.ShowView();
 
-            ResetPasswordVM.SetViewContext(isForgotPasswordContext);
             ResetPasswordVM.TargetUser = targetUser;
 
             CurrentViewModel = ResetPasswordVM;
@@ -203,6 +205,14 @@ namespace RPG_Launcher.ViewModel
             ChangeUsernameVM.ShowView();
 
             CurrentViewModel = ChangeUsernameVM;
+        }
+
+        public void ShowChangePasswordView()
+        {
+            HideAllViews();
+            ChangePasswordVM.ShowView();
+
+            CurrentViewModel = ChangePasswordVM;
         }
 
         public void ShowReturnToLoginView(bool isError, string statusMessage)

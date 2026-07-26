@@ -13,22 +13,26 @@ using System.Windows.Input;
 
 namespace RPG_Launcher.ViewModel.Account
 {
-    public class ResetPasswordViewModel : ViewModelBase
+    public class ChangePasswordViewModel : ViewModelBase
     {
-        private bool isResetPasswordViewVisible = false;
+        private bool isViewVisible = false;
 
-        private string targetUser = string.Empty;
-        private SecureString securePassword = new();
+        private SecureString currentPassword = new();
+        private SecureString newPassword = new();
         private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
 
-        public string TargetUser
+        public SecureString CurrentPassword
         {
-            get => targetUser;
-            set { targetUser = value; OnPropertyChanged(nameof(TargetUser)); }
+            get => currentPassword;
+            set
+            {
+                currentPassword = value;
+                OnPropertyChanged(nameof(CurrentPassword));
+            }
         }
-        public SecureString SecurePassword
+        public SecureString NewPassword
         {
             // IMPORTANT: This is not directly bound to via the MVVM pattern. SecureStrings do not support
             //  binding by default, so we had to shift behavior to the code-behind. Whenever the PasswordBox
@@ -40,11 +44,11 @@ namespace RPG_Launcher.ViewModel.Account
             // The only real difference is how this field is updated; the code-behind has more
             //  responsibility in this case and directly controls what this value reads, rather than the
             //  other way around.
-            get => securePassword;
+            get => newPassword;
             set
             {
-                securePassword = value;
-                OnPropertyChanged(nameof(SecurePassword));
+                newPassword = value;
+                OnPropertyChanged(nameof(NewPassword));
 
                 // Do not clear error message here, instead clear it manually from the View code-behind. Clearing
                 //  it here has the unintended side effect of clearing the error message immediately when the view
@@ -71,7 +75,7 @@ namespace RPG_Launcher.ViewModel.Account
 
 
 
-        public ResetPasswordViewModel()
+        public ChangePasswordViewModel()
         {
             SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClickedCommand, CanExecuteSubmitButtonClickedCommand);
             CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
@@ -79,17 +83,17 @@ namespace RPG_Launcher.ViewModel.Account
 
         public override void ShowView()
         {
-            TargetUser = string.Empty;
-            SecurePassword.Clear();
+            CurrentPassword.Clear();
+            NewPassword.Clear();
             ErrorMessage = string.Empty;
             IsButtonInputEnabled = true;
 
-            isResetPasswordViewVisible = true;
+            isViewVisible = true;
         }
 
         public override void HideView()
         {
-            isResetPasswordViewVisible = false;
+            isViewVisible = false;
         }
 
 
@@ -98,16 +102,18 @@ namespace RPG_Launcher.ViewModel.Account
 
         private async Task ExecuteSubmitButtonClickedCommand(object? obj)
         {
-            NetworkCredential credential = new(TargetUser, SecurePassword); // TargetUser will always be valid username here.
+            NetworkCredential oldCredential = new(string.Empty, CurrentPassword);
+            NetworkCredential newCredential = new(string.Empty, NewPassword);
 
-            // NOTE: We already ensure that both password fields match within the code-behind.
+            // NOTE: We already ensure that new password and confirm password match within the code-behind.
 
             // Ensure password field follows standard password regex.
             string pattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,64}$";   // 8-64 chars, 1+ upper lower digit special (all specials)
-            if (!Regex.IsMatch(credential.Password, pattern))
+            if (!Regex.IsMatch(newCredential.Password, pattern))
             {
-                SecurePassword.Clear();
-                ErrorMessage = "Password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and symbol.";
+                CurrentPassword.Clear();
+                NewPassword.Clear();
+                ErrorMessage = "New password must be 8-64 characters and include at least one uppercase letter, lowercase letter, digit, and symbol.";
                 return;
             }
 
@@ -115,22 +121,19 @@ namespace RPG_Launcher.ViewModel.Account
             IsButtonInputEnabled = false;
 
             // After validating password, we can make actual API request to reset our password. Pulls reset token from AppData automatically.
-            var (StatusCode, Message) = await LoginApiService.SubmitResetPassword(credential);
+            var (StatusCode, Message) = await LoginApiService.ChangePassword(newCredential, oldCredential);
             if (StatusCode == 0)
             {
-                SecurePassword.Clear();
-
-                // Code 0 indicates success, password has been reset and we must now log in again. Logs out automatically within API method.
-                MainViewModel.Instance.ShowReturnToLoginView(isError: false, "Password reset successfully, please log in again.");
-
-                // Also updated saved username to the newly-reset account's username.
-                AppData.SavedUsername = TargetUser;
+                CurrentPassword.Clear();
+                NewPassword.Clear();
+                MainViewModel.Instance.ShowAccountView();
                 return;
             }
             else
             {
                 // Any other non-success code means either unexpected error (exception) or legitimate HTTP status code error.
-                SecurePassword.Clear();
+                CurrentPassword.Clear();
+                NewPassword.Clear();
                 ErrorMessage = Message;
                 IsButtonInputEnabled = true;
                 return;
@@ -140,7 +143,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteSubmitButtonClickedCommand(object? obj)
         {
-            return isResetPasswordViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
         #endregion
@@ -149,22 +152,18 @@ namespace RPG_Launcher.ViewModel.Account
 
         private void ExecuteCancelButtonClickedCommand(object? obj)
         {
-            // Cancel button can be clicked at any time to cancel the current reset process and return
-            //  to login. Note that an enforced password reset (flag set in database) will bring the
-            //  user back to the reset password screen every time.
-
-            AppData.PasswordResetToken = string.Empty;
-            MainViewModel.Instance.ShowLoginView();
+            MainViewModel.Instance.ShowAccountView();
         }
 
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
             // Disallow click if main button is not enabled (means awaiting API response).
-            return isResetPasswordViewVisible && isButtonInputEnabled;
+            return isViewVisible && isButtonInputEnabled;
         }
 
 
 
         #endregion
+
     }
 }

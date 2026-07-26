@@ -22,6 +22,7 @@ namespace RPG_Launcher.ViewModel.Account
         private string contextTitle = string.Empty;
         private string existingEmail = string.Empty;
         private string newEmail = string.Empty;
+        private SecureString currentPassword = new();
         private string errorMessage = string.Empty;
 
         private bool isButtonInputEnabled = true;
@@ -48,6 +49,26 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 newEmail = value;
                 OnPropertyChanged(nameof(NewEmail));
+                ErrorMessage = string.Empty;
+            }
+        }
+        public SecureString CurrentPassword
+        {
+            // IMPORTANT: This is not directly bound to via the MVVM pattern. SecureStrings do not support
+            //  binding by default, so we had to shift behavior to the code-behind. Whenever the PasswordBox
+            //  field is updated, we receive an update directly from the code-behind rather than binding
+            //  it directly to this ViewModel. This is necessary to allow PasswordBox.Clear() to be called,
+            //  which must be done the instant that the login button is pressed. We still process the login
+            //  here, pulling directly from this variable (which IMPORTANTLY is automatically updated via
+            //  the code-behind whenever the PasswordBox is changed in the UI).
+            // The only real difference is how this field is updated; the code-behind has more
+            //  responsibility in this case and directly controls what this value reads, rather than the
+            //  other way around.
+            get => currentPassword;
+            set
+            {
+                currentPassword = value;
+                OnPropertyChanged(nameof(CurrentPassword));
                 ErrorMessage = string.Empty;
             }
         }
@@ -120,6 +141,11 @@ namespace RPG_Launcher.ViewModel.Account
                 ErrorMessage = "Please enter a valid email.";
                 return;
             }
+            if (CurrentPassword.Length == 0)
+            {
+                ErrorMessage = "Current password must not be empty.";
+                return;
+            }
 
             // Disable button input before performing async request.
             IsButtonInputEnabled = false;
@@ -128,18 +154,18 @@ namespace RPG_Launcher.ViewModel.Account
             int StatusCode; string Message = string.Empty;
             if (isForMainEmail)
             {
-                (StatusCode, Message) = await LoginApiService.SubmitChangedEmail(trimmedEmail);
+                (StatusCode, Message) = await LoginApiService.SubmitChangedEmail(trimmedEmail, new NetworkCredential(ExistingEmail, CurrentPassword));
             }
             else
             {
-                (StatusCode, Message) = await LoginApiService.SubmitSecondaryEmail(trimmedEmail);
+                (StatusCode, Message) = await LoginApiService.SubmitSecondaryEmail(trimmedEmail, new NetworkCredential(ExistingEmail, CurrentPassword));
             }
 
             // Move on based on response and context.
             if (StatusCode == 0)
             {
                 // Code 0 indicates success, meaning the API has accepted our new email. We can move onto new email verification screen.
-                var context = (isForMainEmail) ? ConfirmationCodeViewModel.CodeContext.VerifyNewEmail : ConfirmationCodeViewModel.CodeContext.VerifySecondaryEmail;
+                var context = (isForMainEmail) ? ConfirmationCodeViewModel.CodeContext.VerifyNewPrimaryEmail : ConfirmationCodeViewModel.CodeContext.VerifySecondaryEmail;
                 MainViewModel.Instance.ShowConfirmationCodeView(context, NewEmail);
                 return;
             }

@@ -31,8 +31,6 @@ namespace RPG_Launcher.Model
             BaseAddress = new Uri("https://login.edranagame.com/")
         };
 
-
-
         /// <summary>
         /// Pings the API to determine whether the server is online. Returns a status code describing the success or
         ///  failure of the ping.
@@ -52,6 +50,10 @@ namespace RPG_Launcher.Model
                 return -1;
             }
         }
+
+
+
+        #region Account Access / Login
 
         /// <summary>
         /// Attempts to log in to the API using an existing refresh token. Makes an HTTPS request to the API
@@ -84,12 +86,12 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, clear refresh token and return -1.
                     AppData.RefreshToken = string.Empty;
-                    return (-1, "Refresh login failed: could not parse API response into usable object model");
+                    return (-1, "Refresh login successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
@@ -100,6 +102,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, $"Refresh login successful with login status code {responseModel.LoginStatusCode}");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Refresh login successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -143,11 +150,11 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Login failed: could not parse API response into usable object model");
+                    return (-1, "Login successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
@@ -158,6 +165,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, $"Login successful with login status code {responseModel.LoginStatusCode}");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Login successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -203,11 +215,11 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Submit MFA code failed: could not parse API response into usable object model");
+                    return (-1, "Submit MFA code successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within (should be 0).
@@ -219,6 +231,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, "Login completed using one-time MFA code");
             }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Submit MFA code successful, but API response error: could not parse API response into usable object model");
+            }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
@@ -226,6 +243,39 @@ namespace RPG_Launcher.Model
                 return (-1, "Submit MFA code failed: an unexpected error occurred during API request");
             }
         }
+
+        /// <summary>
+        /// Logs out of the API. Makes an HTTPS request to the API endpoint. Logout is always successful, even
+        ///  if no acknowledgement is received from the server. Automatically invalidates any stored tokens.
+        /// </summary>
+        public static async Task Logout()
+        {
+            // Call the API logout endpoint, passing it our access token so it can find us (logout requires valid access token).
+            // This method will not need to return anything. If we call this logout endpoint with an access token that the
+            //  server cannot find (somehow), it does not matter because the server will not allow us to use any endpoint
+            //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
+            //  should log the user out of everything).
+
+            try
+            {
+                // Make request to API, no response or content but requires access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/logout");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(ex.Message);
+            }
+
+            // Clear all tokens after logout, regardless of whether error was thrown. Fully log out client-side.
+            AppData.AccessToken = string.Empty;
+            AppData.RefreshToken = string.Empty;
+        }
+
+        #endregion
+
+        #region New Account
 
         /// <summary>
         /// Attempts to register a new user to the API with an email, username, and password. Makes an HTTPS
@@ -263,7 +313,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1. NOTE: REGISTRATION WAS SUCCESSFUL, but we have no login model.
@@ -279,6 +329,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, $"Registration successful for new user");
             }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Registration successful, but API response error: could not parse API response into usable object model");
+            }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
@@ -286,38 +341,6 @@ namespace RPG_Launcher.Model
                 return (-1, "Registration failed: an unexpected error occurred during API request");
             }
         }
-
-        /// <summary>
-        /// Logs out of the API. Makes an HTTPS request to the API endpoint. Logout is always successful, even
-        ///  if no acknowledgement is received from the server. Automatically invalidates any stored tokens.
-        /// </summary>
-        public static async Task Logout()
-        {
-            // Call the API logout endpoint, passing it our access token so it can find us (logout requires valid access token).
-            // This method will not need to return anything. If we call this logout endpoint with an access token that the
-            //  server cannot find (somehow), it does not matter because the server will not allow us to use any endpoint
-            //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
-            //  should log the user out of everything).
-
-            try
-            {
-                // Make request to API, no response or content but requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/logout");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
-                var rawResponse = await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.Message);
-            }
-
-            // Clear all tokens after logout, regardless of whether error was thrown. Fully log out client-side.
-            AppData.AccessToken = string.Empty;
-            AppData.RefreshToken = string.Empty;
-        }
-
-
-
         /// <summary>
         /// Requests the API resend a confirmation code to the currently-logged-in email, used for new account
         ///  email verification. Pulls the stored access token and sends to  the endpoint. Returns a status code
@@ -391,7 +414,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
@@ -405,8 +428,12 @@ namespace RPG_Launcher.Model
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
-                AppData.EmailChangeToken = string.Empty;                                // Reset on any verification regardless of context.
                 return (responseModel.LoginStatusCode, $"Email verification successful");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Email verification successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -415,6 +442,11 @@ namespace RPG_Launcher.Model
                 return (-1, "Email verification failed: an unexpected error occurred during API request");
             }
         }
+
+        #endregion
+
+
+        #region Forgot Password
 
         /// <summary>
         /// Requests a new 'forgot password' confirmation code to be sent to the account with the provided username or
@@ -459,7 +491,7 @@ namespace RPG_Launcher.Model
         /// <param name="usernameOrEmail"> The account username or email that the password reset is being initiated for. </param>
         /// <param name="confirmationCode"> The one-time confirmation code received sent to the user's email. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> InitiatePasswordReset(string usernameOrEmail, string confirmationCode)
+        public static async Task<(int, string)> InitiateResetPassword(string usernameOrEmail, string confirmationCode)
         {
             if (string.IsNullOrEmpty(usernameOrEmail) || string.IsNullOrEmpty(confirmationCode))
             {
@@ -469,7 +501,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API with content and parse response.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-password-reset")
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-reset-password")
                 {
                     Content = new StringContent(
                             JsonSerializer.Serialize(new { UsernameOrEmail = usernameOrEmail, Code = confirmationCode }),
@@ -511,7 +543,7 @@ namespace RPG_Launcher.Model
         /// </summary>
         /// <param name="credential"> A NetworkCredential containing the existing username and the new password. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> SubmitNewPasswordFromToken(NetworkCredential credential)
+        public static async Task<(int, string)> SubmitResetPassword(NetworkCredential credential)
         {
             // Ensure credentials and reset token are not empty.
             if (string.IsNullOrEmpty(credential.Password) || string.IsNullOrEmpty(AppData.PasswordResetToken))
@@ -522,7 +554,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API, requiring content and access token (with reset Role).
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-new-password")
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-reset-password")
                 {
                     Content = new StringContent(
                             JsonSerializer.Serialize(new { NewPassword = credential.Password }),
@@ -551,20 +583,25 @@ namespace RPG_Launcher.Model
             }
         }
 
+        #endregion
+
+        #region Account Management
+
         /// <summary>
         /// Attempts to change the current account's username via a login API call. Passes the desired new username
-        ///  to the API, automatically sending the access token currently stored in memory for validation. Returns a
-        ///  status code describing whether the username change was successful.
+        ///  to the API alongside the current account password, automatically sending the access token currently
+        ///  stored in memory for validation. Returns a status code describing whether the username change was successful.
         /// </summary>
         /// <param name="newUsername"> The desired new username for this account. </param>
+        /// /// <param name="credential"> The account's current password for security. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> ChangeUsername(string newUsername)
+        public static async Task<(int, string)> ChangeUsername(string newUsername, NetworkCredential credential)
         {
             // Ensure new username and access token are not empty.
             bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken || string.IsNullOrEmpty(newUsername))
+            if (!validToken || string.IsNullOrEmpty(newUsername) || string.IsNullOrEmpty(credential.Password))
             {
-                return (-1, "Change username failed: missing new username input");
+                return (-1, "Change username failed: missing new username or current password input");
             }
 
             try
@@ -573,7 +610,7 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/change-username")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { NewUsername = newUsername }),
+                            JsonSerializer.Serialize(new { NewUsername = newUsername, CurrentPassword = credential.Password }),
                             Encoding.UTF8,
                             "application/json")
                 };
@@ -587,7 +624,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
@@ -603,6 +640,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, $"Change username successful");
             }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Change username successful, but API response error: could not parse API response into usable object model");
+            }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
@@ -612,65 +654,29 @@ namespace RPG_Launcher.Model
         }
 
         /// <summary>
-        /// Requests a new 'change email' confirmation code from the API for the currently-logged-in user. Automatically
-        ///  passes our current access token to the endpoint, which is where the API retrieves the email to send the code
-        ///  to. Returns a status code describing whether the email change request was successful.
+        /// Attempts to change the current account's username via a login API call. Passes the desired new username
+        ///  to the API alongside the current account password, automatically sending the access token currently
+        ///  stored in memory for validation. Returns a status code describing whether the username change was successful.
         /// </summary>
+        /// <param name="newCredential"> The desired new password for this account. </param>
+        /// /// <param name="oldCredential"> The account's current password for security. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> RequestEmailChange()
+        public static async Task<(int, string)> ChangePassword(NetworkCredential newCredential, NetworkCredential oldCredential)
         {
+            // Ensure new password and access token are not empty.
             bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken)
+            if (!validToken || string.IsNullOrEmpty(newCredential.Password) || string.IsNullOrEmpty(oldCredential.Password))
             {
-                return (-1, "Request email change failed: could not refresh login session");
+                return (-1, "Change password failed: missing new password or current password input");
             }
 
             try
             {
-                // Make request to API, requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-email-change");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
-                var rawResponse = await _httpClient.SendAsync(request);
-                if (!rawResponse.IsSuccessStatusCode)
-                {
-                    // If not success status code, then there was some error, so return HTTP status code and error message.
-                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
-                    return ((int)rawResponse.StatusCode, errorMessage);
-                }
-
-                // Return 0 for success.
-                return (0, "Request email change successful");
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.Message);
-                return (-1, "Request email change failed: an unexpected error occurred during API request");
-            }
-        }
-
-        /// <summary>
-        /// Initiates the manual email change process via the API, passing in a confirmation code and automatically sending
-        ///  the locally-stored access token (requires full access). Returns an 'email change' access token which is stored
-        ///  and will be used for submitting and verifying a new email. Returns a status code describing whether the email
-        ///  change initiation was successful.
-        /// </summary>
-        /// <param name="confirmationCode"></param>
-        /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> InitiateEmailChange(string confirmationCode)
-        {
-            bool validToken = await EnsureAccessTokenIsValid();
-            if (!validToken || string.IsNullOrEmpty(confirmationCode))
-            {
-                return (-1, "Initiate email change failed: missing confirmation code");
-            }
-
-            try
-            {
-                // Make request to API with content and parse response.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-email-change")
+                // Make request to API, requiring content and access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/change-password")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { Code = confirmationCode }),
+                            JsonSerializer.Serialize(new { NewPassword = newCredential.Password, CurrentPassword = oldCredential.Password }),
                             Encoding.UTF8,
                             "application/json")
                 };
@@ -683,39 +689,50 @@ namespace RPG_Launcher.Model
                     return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
-                // Parse raw response into response model.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<EmailChangeTokenResponseModel>();
+                // Parse raw response into LoginResponseModel.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
-                    // If somehow we encounter a response model error, return -1.
-                    return (-1, "Initiate email change failed: could not parse API response into usable object model");
+                    // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
+                    return (-1, "Change password successful, but API response error: could not parse API response into usable object model");
                 }
 
-                // Store reset token, then return 0 for success.
-                AppData.EmailChangeToken = responseModel.EmailChangeToken;
-                return (0, "Initiate email change successful");
+                // Pull data from response (will be valid if we made it here), then return custom login code stored within.
+                AppData.SavedUsername = responseModel.Username;
+                AppData.SavedEmail = responseModel.PrimaryEmail;
+                AppData.SecondaryEmail = responseModel.SecondaryEmail;
+                AppData.RefreshToken = responseModel.RefreshToken;
+                AppData.AccessToken = responseModel.AccessToken;
+                AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
+                return (responseModel.LoginStatusCode, $"Change password successful");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Change password successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
-                // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Initiate email change failed: an unexpected error occurred during API request");
+                return (-1, "Change password failed: an unexpected error occurred during API request");
             }
         }
 
         /// <summary>
-        /// Submits the user's desired new email to the API, used for email change logic. Accepts just a newEmail string,
-        ///  but requires passing the currently-stored EmailChangeToken to validate access. Returns a status code
-        ///  describing whether the new email submission was successful.
+        /// Submits the user's desired new email to the API, used for email change logic. Passes the desired new
+        ///  email string to the API alongside the current account password, automatically supplying the current
+        ///  full access token for authorization. Returns a status code describing whether the new email submission
+        ///  was successful.
         /// </summary>
         /// <param name="newEmail"> The desired new email for this account. </param>
+        /// <param name="credential"> The account's current password for security. </param>
         /// <returns> A status code describing the request result. 0 for success, -1 for generic failure, HTTP status code otherwise. </returns>
-        public static async Task<(int, string)> SubmitChangedEmail(string newEmail)
+        public static async Task<(int, string)> SubmitChangedEmail(string newEmail, NetworkCredential credential)
         {
-            // Ensure credentials and email change token are not empty.
-            if (string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(AppData.EmailChangeToken))
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(credential.Password))
             {
-                return (-1, "Submit new email failed: local email change token missing or missing new email input");
+                return (-1, "Submit changed email failed: missing new email or current password input");
             }
 
             try
@@ -724,11 +741,11 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-changed-email")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { NewEmail = newEmail }),
+                            JsonSerializer.Serialize(new { NewEmail = newEmail, CurrentPassword = credential.Password }),
                             Encoding.UTF8,
                             "application/json")
                 };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.EmailChangeToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
@@ -766,7 +783,7 @@ namespace RPG_Launcher.Model
             try
             {
                 // Make request to API, requires access token.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/resend-email-verification-code");
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/resend-changed-email-verification-code");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
@@ -785,7 +802,6 @@ namespace RPG_Launcher.Model
                 return (-1, "Resend email verification code failed: an unexpected error occurred during API request");
             }
         }
-
 
         /// <summary>
         /// Attempts to verify the user-submitted email on manual change. Automatically sends the in-memory email
@@ -812,7 +828,7 @@ namespace RPG_Launcher.Model
                             Encoding.UTF8,
                             "application/json")
                 };
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.EmailChangeToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
                 {
@@ -822,7 +838,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
@@ -836,8 +852,12 @@ namespace RPG_Launcher.Model
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
-                AppData.EmailChangeToken = string.Empty;
                 return (responseModel.LoginStatusCode, $"Changed email verification successful");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Changed email verification successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -847,6 +867,9 @@ namespace RPG_Launcher.Model
             }
         }
 
+        #endregion
+
+        #region MFA Configuration
 
         /// <summary>
         /// Requests a new MFA credential setup, passing the stored access token to the API. Can only be called if
@@ -854,19 +877,19 @@ namespace RPG_Launcher.Model
         ///  code describing whether MFA was set up successfully, and a QR code in base64 if successful (error message otherwise).
         /// </summary>
         /// <returns> A status code describing the request result (success = 0), and a QR code in base64 string for if successful, error message otherwise. </returns>
-        public static async Task<(int, string)> SetupMfa()
+        public static async Task<(int, string)> BeginMfaSetup()
         {
             // Ensure new username and access token are not empty.
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken)
             {
-                return (-1, "Setup MFA failed: could not refresh login session");
+                return (-1, "Begin MFA setup failed: could not refresh login session");
             }
 
             try
             {
                 // Make request to API, requiring content and access token.
-                var request = new HttpRequestMessage(HttpMethod.Post, "users/setup-mfa");
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/begin-mfa-setup");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
                 var rawResponse = await _httpClient.SendAsync(request);
                 if (!rawResponse.IsSuccessStatusCode)
@@ -881,7 +904,7 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Setup MFA failed: could not parse API response into usable object model");
+                    return (-1, "Begin MFA setup failed: could not parse API response into usable object model");
                 }
 
                 return (0, responseModel.OtpAuthLink);
@@ -890,7 +913,7 @@ namespace RPG_Launcher.Model
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Setup MFA failed: an unexpected error occurred during API request");
+                return (-1, "Begin MFA setup failed: an unexpected error occurred during API request");
             }
         }
 
@@ -934,7 +957,7 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Verify MFA setup failed: could not parse API response into usable object model");
+                    return (-1, "Verify MFA setup successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
@@ -945,6 +968,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, responseModel.RecoveryCode);     // Return recovery code for display purposes.
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Verify MFA setup successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -968,7 +996,7 @@ namespace RPG_Launcher.Model
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(recoveryCode))
             {
-                return (-1, "Recover MFA failed: missing recovery code input");
+                return (-1, "Recover MFA configuration failed: missing recovery code input");
             }
 
             try
@@ -995,7 +1023,7 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Recover MFA failed: could not parse API response into usable object model");
+                    return (-1, "Recover MFA configuration failed: could not parse API response into usable object model");
                 }
 
                 return (0, responseModel.OtpAuthLink);
@@ -1004,7 +1032,7 @@ namespace RPG_Launcher.Model
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
-                return (-1, "Recover MFA failed: an unexpected error occurred during API request");
+                return (-1, "Recover MFA configuration failed: an unexpected error occurred during API request");
             }
         }
 
@@ -1042,7 +1070,7 @@ namespace RPG_Launcher.Model
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1.
-                    return (-1, "Regenerate MFA recovery code failed: could not parse API response into usable object model");
+                    return (-1, "Regenerate MFA recovery code successful, but API response error: could not parse API response into usable object model");
                 }
 
                 // Pull data from response (will be valid if we made it here), then return custom login code stored within.
@@ -1054,6 +1082,11 @@ namespace RPG_Launcher.Model
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
                 return (responseModel.LoginStatusCode, responseModel.RecoveryCode);     // Return recovery code for display purposes.
             }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Regenerate MFA recovery code successful, but API response error: could not parse API response into usable object model");
+            }
             catch (Exception ex)
             {
                 // Exceptions will only come from the HTTP request, meaning the action failed.
@@ -1062,7 +1095,9 @@ namespace RPG_Launcher.Model
             }
         }
 
-        #region Public: Secondary Account Email Setup
+        #endregion
+
+        #region Secondary Account Email Setup
 
         /// <summary>
         /// Submits a new secondary email address to the API, beginning the secondary email setup process. Requires
@@ -1071,8 +1106,9 @@ namespace RPG_Launcher.Model
         ///  secondary email address field. Returns a status code describing whether the request was successful.
         /// </summary>
         /// <param name="secondaryEmail"> The desired new secondary email for this account. </param>
+        /// <param name="credential"> The account's current password for security. </param>
         /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
-        public static async Task<(int, string)> SubmitSecondaryEmail(string secondaryEmail)
+        public static async Task<(int, string)> SubmitSecondaryEmail(string secondaryEmail, NetworkCredential credential)
         {
             bool validToken = await EnsureAccessTokenIsValid();
             if (!validToken || string.IsNullOrEmpty(secondaryEmail))
@@ -1086,7 +1122,7 @@ namespace RPG_Launcher.Model
                 var request = new HttpRequestMessage(HttpMethod.Post, "users/submit-secondary-email")
                 {
                     Content = new StringContent(
-                            JsonSerializer.Serialize(new { SecondaryEmail = secondaryEmail }),
+                            JsonSerializer.Serialize(new { SecondaryEmail = secondaryEmail, CurrentPassword = credential.Password }),
                             Encoding.UTF8,
                             "application/json")
                 };
@@ -1185,7 +1221,7 @@ namespace RPG_Launcher.Model
                 }
 
                 // Parse raw response into LoginResponseModel.
-                var responseModel = await rawResponse.Content.ReadFromJsonAsync<LoginResponseModel>();
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<AccessResponseModel>();
                 if (responseModel == null)
                 {
                     // If somehow we encounter a response model error, return -1. NOTE: VERIFICATION WAS SUCCESSFUL, but we have no login model.
@@ -1199,8 +1235,12 @@ namespace RPG_Launcher.Model
                 AppData.RefreshToken = responseModel.RefreshToken;
                 AppData.AccessToken = responseModel.AccessToken;
                 AppData.AccessTokenExpiration = responseModel.AccessTokenExpiration;
-                AppData.EmailChangeToken = string.Empty;                                // Reset on any verification regardless of context.
                 return (responseModel.LoginStatusCode, $"Secondary email verification successful");
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Secondary email verification successful, but API response error: could not parse API response into usable object model");
             }
             catch (Exception ex)
             {
@@ -1252,6 +1292,11 @@ namespace RPG_Launcher.Model
 
                 // Directly return connect token string.
                 return (0, connectTokenBase64);
+            }
+            catch (JsonException ex)
+            {
+                Trace.WriteLine(ex);
+                return (-1, "Play game failed: could not parse API response into usable connect token string");
             }
             catch (Exception ex)
             {

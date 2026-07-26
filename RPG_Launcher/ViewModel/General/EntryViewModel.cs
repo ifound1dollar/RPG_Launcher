@@ -120,7 +120,7 @@ namespace RPG_Launcher.ViewModel.General
             else if (StatusCode == 30)
             {
                 // Code 30 means MFA is not yet enabled, so request MFA setup and then show setup view.
-                (StatusCode, Response) = await LoginApiService.SetupMfa();
+                (StatusCode, Response) = await LoginApiService.BeginMfaSetup();
                 if (StatusCode != 0)
                 {
                     // If status code is bad, logout and return to login view.
