@@ -34,6 +34,7 @@
                        Foreground="AliceBlue"
                        FontSize="20"
                        FontFamily="Segoe UI Semibold"
+                       TextAlignment="Center"
                        HorizontalAlignment="Center"
                        Margin="0,15,0,0"/>
 
@@ -42,6 +43,7 @@
                        Foreground="LightBlue"
                        FontSize="14"
                        FontFamily="Segoe UI"
+                       TextAlignment="Center"
                        HorizontalAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="10,15,10,0"/>
@@ -90,6 +92,7 @@
                        Foreground="{Binding MessageBrush, Mode=TwoWay}"
                        FontSize="12"
                        FontFamily="Segoe UI"
+                       TextAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="10,10,10,0"/>
 

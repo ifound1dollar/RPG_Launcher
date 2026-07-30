@@ -33,8 +33,9 @@
             <!-- Error message. -->
             <TextBlock Text="{Binding StatusMessage, Mode=TwoWay}"
                        Foreground="{Binding MessageBrush, Mode=TwoWay}"
-                       FontSize="16"
+                       FontSize="18"
                        FontFamily="Segoe UI"
+                       TextAlignment="Center"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
                        Margin="10,75,10,0"/>

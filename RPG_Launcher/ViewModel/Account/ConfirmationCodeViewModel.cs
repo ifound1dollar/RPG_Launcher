@@ -15,7 +15,7 @@ namespace RPG_Launcher.ViewModel.Account
     public class ConfirmationCodeViewModel : ViewModelBase
     {
         public enum CodeContext { None, NewAccountConfirmation, ForgotPassword,
-            VerifyNewPrimaryEmail, VerifySecondaryEmail }
+            VerifyNewPrimaryEmail, VerifySecondaryEmail, MfaHardReset }
 
         private readonly Brush infoBrush = Brushes.CornflowerBlue;
         private readonly Brush errorBrush = Brushes.IndianRed;
@@ -107,6 +107,11 @@ namespace RPG_Launcher.ViewModel.Account
                 case CodeContext.VerifySecondaryEmail:
                     {
                         ContextTitle = "Verify Secondary Email";
+                        break;
+                    }
+                case CodeContext.MfaHardReset:
+                    {
+                        ContextTitle = "MFA Hard Reset";
                         break;
                     }
             }
@@ -222,6 +227,18 @@ namespace RPG_Launcher.ViewModel.Account
                             _ = LoginApiService.Logout();
                             MainViewModel.Instance.ShowReturnToLoginView(true,
                                 "Secondary email verified successfully, but unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
+                        break;
+                    }
+                case CodeContext.MfaHardReset:
+                    {
+                        (StatusCode, Message) = await LoginApiService.InitiateMfaHardReset(ConfirmationCode);
+                        if (StatusCode == 0)
+                        {
+                            // If successful, then the hard-reset was initiated and the account is now locked.
+                            MainViewModel.Instance.ShowReturnToLoginView(isError: false,
+                                "MFA reset successfully initiated. Please check your account email(s) for details.");
                             return;
                         }
                         break;

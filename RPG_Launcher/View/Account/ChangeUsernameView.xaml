@@ -98,11 +98,12 @@
 
             <!-- Error message. -->
             <TextBlock Text="{Binding ErrorMessage, Mode=TwoWay}"
-                Foreground="IndianRed"
-                FontSize="12"
-                FontFamily="Segoe UI"
-                TextWrapping="Wrap"
-                Margin="10,10,10,0"/>
+                        Foreground="IndianRed"
+                        FontSize="12"
+                        FontFamily="Segoe UI"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Margin="10,10,10,0"/>
 
             <!-- Submit button. Manually calls ViewModel command, necessary for PasswordBox security. -->
             <Button Name="ButtonSubmit"

@@ -88,6 +88,7 @@
                         Foreground="IndianRed"
                         FontSize="12"
                         FontFamily="Segoe UI"
+                        TextAlignment="Center"
                         TextWrapping="Wrap"
                         Margin="10,10,10,0"/>
 

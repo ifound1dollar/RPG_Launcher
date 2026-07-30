@@ -63,6 +63,14 @@ namespace RPG_Launcher.View.Account
             }
         }
 
+        private void LostTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (RecoverMfaVM.LostRecoveryCodeButtonClickedCommand.CanExecute(sender))
+            {
+                RecoverMfaVM.LostRecoveryCodeButtonClickedCommand.Execute(sender);
+            }
+        }
+
         private void CancelTextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (RecoverMfaVM.CancelButtonClickedCommand.CanExecute(sender))
@@ -70,5 +78,6 @@ namespace RPG_Launcher.View.Account
                 RecoverMfaVM.CancelButtonClickedCommand.Execute(sender);
             }
         }
+
     }
 }

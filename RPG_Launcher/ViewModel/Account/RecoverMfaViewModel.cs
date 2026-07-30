@@ -44,6 +44,7 @@ namespace RPG_Launcher.ViewModel.Account
 
         // COMMANDS
         public ICommand SubmitButtonClickedCommand { get; }
+        public ICommand LostRecoveryCodeButtonClickedCommand { get; }
         public ICommand CancelButtonClickedCommand { get; }
 
 
@@ -51,6 +52,7 @@ namespace RPG_Launcher.ViewModel.Account
         public RecoverMfaViewModel()
         {
             SubmitButtonClickedCommand = new ViewModelCommand(ExecuteSubmitButtonClickedCommand, CanExecuteSubmitButtonClickedCommand);
+            LostRecoveryCodeButtonClickedCommand = new ViewModelCommand(ExecuteLostRecoveryCodeButtonClicked, CanExecuteLostRecoveryCodeButtonClicked);
             CancelButtonClickedCommand = new ViewModelCommand(ExecuteCancelButtonClickedCommand, CanExecuteCancelButtonClickedCommand);
         }
 
@@ -110,6 +112,20 @@ namespace RPG_Launcher.ViewModel.Account
 
         #endregion
 
+        #region Private: LostRecoveryCodeButtonClicked
+
+        private void ExecuteLostRecoveryCodeButtonClicked(object? obj)
+        {
+            MainViewModel.Instance.ShowManageMfaView(ManageMfaViewModel.ManageMfaContext.HardReset);
+        }
+
+        private bool CanExecuteLostRecoveryCodeButtonClicked(object? obj)
+        {
+            return isViewVisible && isButtonInputEnabled;
+        }
+
+        #endregion
+
         #region Private: CancelButtonClicked
 
         private void ExecuteCancelButtonClickedCommand(object? obj)
@@ -123,7 +139,6 @@ namespace RPG_Launcher.ViewModel.Account
 
         private bool CanExecuteCancelButtonClickedCommand(object? obj)
         {
-            // Disallow click if main button is not enabled (means awaiting API response).
             return isViewVisible && isButtonInputEnabled;
         }
 

@@ -256,6 +256,9 @@ namespace RPG_Launcher.Model
             //  anyway. The access token will contain our username which is used to remove our refresh token as well (logout
             //  should log the user out of everything).
 
+            // First, notify launcher exit right before logout.
+            await NotifyLauncherExit();
+
             try
             {
                 // Make request to API, no response or content but requires access token.
@@ -570,9 +573,10 @@ namespace RPG_Launcher.Model
                     return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
-                // Else successful, so immediately log out and return 0 for success.
+                // Else successful, so immediately log out and return 0 for success. Server already logged out, so only do locally.
                 AppData.PasswordResetToken = string.Empty;
-                _ = Logout();                                   // Do not await logout.
+                AppData.AccessToken = string.Empty;
+                AppData.RefreshToken = string.Empty;
                 return (0, "New password submission successful, user must re-login");
             }
             catch (Exception ex)
@@ -1247,6 +1251,102 @@ namespace RPG_Launcher.Model
                 // Exceptions will only come from the HTTP request, meaning the action failed.
                 Trace.WriteLine(ex.Message);
                 return (-1, "Secondary email verification failed: an unexpected error occurred during API request");
+            }
+        }
+
+        #endregion
+
+        #region Public: MFA hard reset
+
+        /// <summary>
+        /// Requests that the API sends an MFA hard reset confirmation code to the account's primary and secondary
+        ///  email. This email will contain information on the reset process, and the user is expected to submit
+        ///  the code to the 'initiate MFA hard reset' endpoint to actually begin the process (and lock the
+        ///  account for security reasons). Returns a status code describing whether the request was successful.
+        /// NOTE: This endpoint can be used for both initial and resend request.
+        /// </summary>
+        /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
+        public static async Task<(int, string)> RequestMfaHardReset()
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken)
+            {
+                return (-1, "Request MFA hard reset failed: could not refresh login session");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and full access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/request-mfa-hard-reset");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Else successful, but change is only pending so do NOT clear email changed token or log out yet.
+                return (0, "Request MFA hard reset successful, user must now verify pending secondary email");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Request MFA hard reset failed: an unexpected error occurred during API request");
+            }
+        }
+
+        /// <summary>
+        /// Requests that the API actually initiate the MFA hard reset process. The user must submit the short-
+        ///  duration confirmation code that was sent to either their primary or secondary email; the API
+        ///  automatically determines which email it was sent to internally. If successful, the API locks the
+        ///  user's account and flags it for MFA reset either 7 days (primary email) or 24 hours (secondary
+        ///  email) in the future; the delay is for security reasons. Returns a status code describing whether
+        ///  the request was successful.
+        /// </summary>
+        /// <param name="confirmationCode"> The confirmation code which was sent to the primary or secondary email. </param>
+        /// <returns> A status code describing whether the request was successful, error message if unsuccessful. </returns>
+        public static async Task<(int, string)> InitiateMfaHardReset(string confirmationCode)
+        {
+            bool validToken = await EnsureAccessTokenIsValid();
+            if (!validToken || string.IsNullOrEmpty(confirmationCode))
+            {
+                return (-1, "Initiate MFA hard reset failed: could not refresh login session OR confirmation code field empty");
+            }
+
+            try
+            {
+                // Make request to API, requiring content and full access token.
+                var request = new HttpRequestMessage(HttpMethod.Post, "users/initiate-mfa-hard-reset")
+                {
+                    Content = new StringContent(
+                            JsonSerializer.Serialize(new { Code = confirmationCode }),
+                            Encoding.UTF8,
+                            "application/json")
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AppData.AccessToken);
+                var rawResponse = await _httpClient.SendAsync(request);
+                if (!rawResponse.IsSuccessStatusCode)
+                {
+                    // If not success status code, then there was some error, so return HTTP status code and error message.
+                    string errorMessage = await rawResponse.Content.ReadAsStringAsync();
+                    return ((int)rawResponse.StatusCode, errorMessage);
+                }
+
+                // Clear access token on success, as account is now hard-locked.
+                AppData.AccessToken = string.Empty;
+                AppData.RefreshToken = string.Empty;    // Should never be set, but clear just in case.
+
+                // Else successful, but change is only pending so do NOT clear email changed token or log out yet.
+                return (0, "Initiate MFA hard reset successful, user must now verify pending secondary email");
+            }
+            catch (Exception ex)
+            {
+                // Exceptions will only come from the HTTP request, meaning the action failed.
+                Trace.WriteLine(ex.Message);
+                return (-1, "Initiate MFA hard reset failed: an unexpected error occurred during API request");
             }
         }
 

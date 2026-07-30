@@ -33,6 +33,7 @@
                        Foreground="{Binding MessageBrush, Mode=TwoWay}"
                        FontSize="18"
                        FontFamily="Segoe UI Semibold"
+                       TextAlignment="Center"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
                        Margin="10,25,10,0"/>

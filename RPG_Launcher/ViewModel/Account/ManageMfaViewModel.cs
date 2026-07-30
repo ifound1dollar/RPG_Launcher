@@ -1,4 +1,5 @@
 ﻿using RPG_Launcher.Model;
+using RPG_Launcher.Util;
 using RPG_Launcher.ViewModel.Base;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace RPG_Launcher.ViewModel.Account
 {
     public class ManageMfaViewModel : ViewModelBase
     {
-        public enum ManageMfaContext { None, ResetMfa, GenerateNewRecovery }
+        public enum ManageMfaContext { None, ResetMfa, GenerateNewRecovery, HardReset }
 
         private bool isViewVisible = false;
         private ManageMfaContext context;
@@ -74,6 +75,12 @@ namespace RPG_Launcher.ViewModel.Account
                 Title = "Generate new MFA recovery code";
                 Description = "Clicking continue will generate a new MFA recovery code for the currently-active MFA setup." +
                     " Note that this will immediately replace the previously-generated MFA recovery code, rendering it obsolete.";
+            }
+            else if (context == ManageMfaContext.HardReset)
+            {
+                Title = "Hard reset MFA configuration";
+                Description = "Clicking continue will begin the MFA hard reset process for your account. An email will be sent" +
+                    " to your account email with details. If you have a verified secondary email, it will also be sent there.";
             }
             // Do nothing for none.
         }
@@ -136,6 +143,18 @@ namespace RPG_Launcher.ViewModel.Account
                             _ = LoginApiService.Logout();
                             MainViewModel.Instance.ShowReturnToLoginView(true,
                                 "Could not regenerate recovery code, unexpected account state detected in response. Please log in again.");
+                            return;
+                        }
+                        break;
+                    }
+                case ManageMfaContext.HardReset:
+                    {
+                        // Request MFA hard reset, which sends an email to both the user's primary and secondary email (if verified).
+                        (statusCode, response) = await LoginApiService.RequestMfaHardReset();
+                        if (statusCode == 0)
+                        {
+                            // If good status code, move onto confirmation code view with hard reset context.
+                            MainViewModel.Instance.ShowConfirmationCodeView(ConfirmationCodeViewModel.CodeContext.MfaHardReset, AppData.SavedUsername);
                             return;
                         }
                         break;

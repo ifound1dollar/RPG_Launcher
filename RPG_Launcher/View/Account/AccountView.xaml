@@ -403,6 +403,7 @@
                         Foreground="IndianRed"
                         FontSize="12"
                         FontFamily="Segoe UI"
+                        TextAlignment="Center"
                         TextWrapping="Wrap"
                         Margin="200,15,200,0"/>
 

@@ -40,7 +40,7 @@
                        TextWrapping="Wrap"
                        Margin="0,15,0,0"/>
 
-            <TextBlock Text="Please enter your MFA recovery code generated on initial MFA setup. This will display a new QR code to replace the original."
+            <TextBlock Text="Please enter the recovery code generated on initial MFA setup."
                        Width="200"
                        Foreground="LightBlue"
                        FontSize="14"
@@ -78,6 +78,7 @@
                        Foreground="IndianRed"
                        FontSize="12"
                        FontFamily="Segoe UI"
+                       TextAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="10,10,10,0"/>
 
@@ -119,6 +120,26 @@
                     </ControlTemplate>
                 </Button.Template>
             </Button>
+
+            <TextBlock Name="LostTextBlock"
+                       Text="Lost Recovery Code?"
+                       Background="Transparent"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center"
+                       Cursor="Hand"
+                       Margin="0,20,0,0"
+                       MouseLeftButtonDown="LostTextBlock_MouseLeftButtonDown">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="LightSlateGray"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="LightGray"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
 
             <!-- Cancel interactable (clickable) text block. -->
             <TextBlock Name="CancelTextBlock"
