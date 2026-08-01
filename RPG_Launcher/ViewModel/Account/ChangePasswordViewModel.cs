@@ -30,6 +30,10 @@ namespace RPG_Launcher.ViewModel.Account
             {
                 currentPassword = value;
                 OnPropertyChanged(nameof(CurrentPassword));
+                // Do not clear error message here, instead clear it manually from the View code-behind. Clearing
+                //  it here has the unintended side effect of clearing the error message immediately when the view
+                //  clears the password box, disallowing the user to read the error.
+                //ErrorMessage = string.Empty;
             }
         }
         public SecureString NewPassword

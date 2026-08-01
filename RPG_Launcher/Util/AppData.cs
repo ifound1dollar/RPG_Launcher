@@ -70,8 +70,9 @@ namespace RPG_Launcher.Util
 
         // Whether this application build is development or release. CHANGE INSTALL DIRECTORY AND EXECUTABLE NAME FOR RELEASE.
         private static readonly bool isDevelopment = true;
+
         // Application version, hard-coded. Publicly-readable Version property is used to read this.
-        private static readonly string version = "0.15.1";
+        private static readonly string version = "0.15.2";
         // Path to appdata.json file (should be working directory).
         private static readonly string appDataFilePath = "appdata.json";
         // Default game install directory. UPDATE THIS TO BE WORKING DIRECTORY IN RELEASE VERSIONS.

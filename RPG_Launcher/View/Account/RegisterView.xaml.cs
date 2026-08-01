@@ -121,9 +121,10 @@ namespace RPG_Launcher.View
 
         private void ClearPasswords()
         {
-            // Clear both password boxes.
+            // Clear both password boxes and ViewModel property.
             TextBoxPassword.Clear();
             TextBoxConfirmPassword.Clear();
+            RegisterVM.SecurePassword.Clear();
         }
     }
 }

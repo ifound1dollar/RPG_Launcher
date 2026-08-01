@@ -67,6 +67,14 @@ namespace RPG_Launcher.View
         {
             // Update ViewModel directly when this password box is updated. This includes after Clear() is called.
             LoginVM.SecurePassword = (TextBoxPassword.SecurePassword);
+
+            // Clear the error message whenever the text box updates UNLESS it has just been cleared. This must be
+            //  done here instead of in the ViewModel because when we clear the password box, automatically clearing
+            //  error message in the ViewModel will hide an error message before the user can read it.
+            if (TextBoxPassword.Password.Length > 0)
+            {
+                LoginVM.ErrorMessage = string.Empty;
+            }
         }
 
         private void ButtonLogin_Click(object sender, RoutedEventArgs e)
