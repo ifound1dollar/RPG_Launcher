@@ -131,7 +131,7 @@ namespace RPG_Launcher.ViewModel.Account
             }
 
             // Verify that email is legitimate using simple regex.
-            string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
             if (!Regex.IsMatch(trimmedEmail, pattern))
             {
                 SecurePassword.Clear();
