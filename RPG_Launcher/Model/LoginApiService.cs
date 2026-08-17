@@ -1160,11 +1160,11 @@ namespace RPG_Launcher.Model
                     return ((int)rawResponse.StatusCode, errorMessage);
                 }
 
-                // Read connect token as string, returning -1 if somehow null or empty.
-                var connectTokenBase64 = await rawResponse.Content.ReadAsStringAsync() ?? throw new JsonException();
+                // Parse raw response into ConnectTokenResponseModel. Will automatically throw exception within method on failure.
+                var responseModel = await rawResponse.Content.ReadFromJsonAsync<ConnectTokenResponseModel>() ?? throw new JsonException();
 
                 // Directly return connect token string.
-                return (0, connectTokenBase64);
+                return (0, responseModel.ConnectToken);
             }
             catch (JsonException ex)
             {
